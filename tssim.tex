@@ -1,0 +1,136 @@
+\documentclass{bioinfo}
+\copyrightyear{2017} \pubyear{2017}
+
+\newcommand{\plr}[1]{{\color{blue}\it #1}}
+
+\access{Advance Access Publication Date: Day Month Year}
+\appnotes{Application Notes}
+
+\begin{document}
+\firstpage{1}
+
+
+% Bioinformatics:
+% Application Notes (up to 2 pages; this is approx. 1300 words or 1000 words plus
+% one figure) Applications Notes are short descriptions of novel software or new
+% algorithm implementations, databases and network services (web servers, and
+% interfaces). Software or data must be freely available to non-commercial users.
+% Availability and Implementation must be clearly stated in the article. Authors
+% must also ensure that the software is available for a full TWO YEARS following
+% publication. Web services must not require mandatory registration by the user.
+% Additional Supplementary data can be published online-only by the journal. This
+% supplementary material should be referred to in the abstract of the Application
+% Note. If describing software, the software should run under nearly all
+% conditions on a wide range of machines. Web servers should not be browser
+% specific. Application Notes must not describe trivial utilities, nor involve
+% significant investment of time for the user to install. The name of the
+% application should be included in the title.
+
+\subtitle{Subject Section}
+
+\title[Recording the pedigree]{ftprime: Recording the pedigree: efficient simulation of whole genomes}
+\author{Corresponding Author\,$^{\text{\sfb 1,}*}$, Co-Author\,$^{\text{\sfb 2}}$ and Co-Author\,$^{\text{\sfb 2,}*}$}
+\address{$^{\text{\sf 1}}$Department, Institution, City, Post Code, Country and \\
+$^{\text{\sf 2}}$Department, Institution, City, Post Code,
+Country.}
+
+\corresp{$^\ast$To whom correspondence should be addressed.}
+
+\history{Received on XXXXX; revised on XXXXX; accepted on XXXXX}
+
+\editor{Associate Editor: XXXXXXX}
+
+\abstract{
+    To use genomic data for inference and prediction it is often necessary to obtain whole-genome information
+    from individual-based simulations,
+    but the computational burden of endowing each simulated individual with an entire genome can be substantial.
+    In this note we describe how to both (a) dramatically reduce this burden and 
+    (b) efficiently record the entire history of the population.
+    We do this by simulating only those loci that may affect reproduction (those having non-neutral variants),
+    and recording the entire history of genetic inheritance in an efficient data structure,
+    on which neutral mutations can be quickly placed afterwards.
+    \plr{make more clear data structure was already developed? refer to 'tree sequence' by name?}
+    The algorithm is implemented in python,
+    and is designed to be easily used by any forwards-time simulation software.
+\textbf{Availability and implementation:} \\
+\textbf{Contact:} \\
+\textbf{Supplementary information:} Supplementary data are available at \textit{Bioinformatics} online.}
+
+\maketitle
+
+\section{Introduction}
+
+% OUTLINE
+% 1. motivate need for whole-genome fwd-time simulations; point out that we only recently have the computing power to do this
+% 2. explain ARG: explain that for forwards-time only need selected loci as by defn all others can be put on afterwards
+% 3. back-of-the-envelope calculation to compare cost of tracking whole genomes versus putting mutations on ARG
+% 4. review something about your efficient methods for storing/traversing tree sequence
+% 5. write down algorithm used in ftprime to produce msprime-ready coalescence records
+% 6. comparison of speed in really simple case (but whole-chromosome) using simupop in both cases
+
+In recent years the increase in computing power --
+gradual only in comparison to the increase in our ability to sequence genomes --
+has made it possible to simulate the evolution of whole genomes of realistically-sized populations.
+This major milestone promises to remove the field's reliance on approximations of unknown applicability.
+Thus far, much of our understanding of how genomes evolve
+comes from models of one or a few linked loci \citep{ewens},
+and/or results derived under the assumption of neutrality.
+These are certainly important, but researchers today have widely differing views
+on the practical importance of widespread selection \citep{encode,graur,backgroundsel}.
+Thus far what little analytical progress has been made on models of ubiquitous selection
+are hard to check due to a lack of realistic simulation.
+
+Simulations of organisms endowed with functional, varying genomes
+interacting with each other and spatially and temporally varying environments
+will not only allow us to develop and test our understanding of evolution,
+but also to produce quantitative predictions of population dynamics --
+for instance, the spread of insecticide resistance and behavior modification of mosquitos.
+
+The most commonly used simulation methods to date rely on neutrality,
+as this assumption coupled with random mating allows the use of coalescent methods \citep{wakeley}.
+These drastically reduce the amount of required computation,
+because they exploit a time-reversal duality of such models
+to \emph{only} simulate the portion of history that determines the genomes in the modern population.
+How does this work?
+Suppose that to the \emph{population pedigree} --
+the entire history of parent-offspring relationships of an entire population going back to a remote time --
+we add information encoding the genetic outcomes of each ancestral meiosis --
+who inherited which parts of which parental chromosomes.
+This embellished graph is known as the \emph{ancestral recombination graph}, or ARG \citep{griffiths}.
+Combined with ancestral genotypes and the origins of new mutations,
+it completely specifies the genomic sequence of any individual in the population at any time.
+However, much less than the entire ARG is needed to specify relationships between any given set of samples --
+only those portions of it from which those samples have actually inherited, back to their most recent common ancestors.
+For instance, \plr{add diagram of simple example?}
+The assumptions of coalescent theory -- random mating and neutrality --
+imply that the stochastic law of this random set forms a Markov process looked at \emph{backwards} in time,
+and can hence be simulated without reference to the unnecessary remainder.
+Although this point was in principle known since \citet{griffithsmarjoram},
+only recent algorithmic advances made it possible to actually simulate the process correctly,
+without approximation, across whole genomes \citep{msprime}.
+
+These efficient methods are not available if either key assumption of coalescent theory --
+neutrality or random mating -- are broken.
+(Extensions can be made for only a few loci under selection \citep{hudson,krone}.)
+Forwards-time simulation, however, is burdened by recording and passing on entire genomes,
+which typically have tens to hundreds of millions of varying sites.
+
+
+\begin{methods}
+\section{Methods and Implementation}
+
+\end{methods}
+\section{Results and Discussion}
+
+
+
+\section{Conclusion}
+
+\section*{Acknowledgements}
+
+\section*{Funding}
+
+\bibliographystyle{natbib}
+\bibliography{refs.bib}
+
+\end{document}
