@@ -112,12 +112,93 @@ without approximation, across whole genomes \citep{msprime}.
 These efficient methods are not available if either key assumption of coalescent theory --
 neutrality or random mating -- are broken.
 (Extensions can be made for only a few loci under selection \citep{hudson,krone}.)
-Forwards-time simulation, however, is burdened by recording and passing on entire genomes,
+Forwards-time, individual-based simulation, however, is burdened by recording and passing on entire genomes,
 which typically have tens to hundreds of millions of varying sites.
+Such simulations must explicitly record any non-neutral genetic variants,
+because these affect the demographic process.
+However, neutral variants, by definition, do not, 
+and so if the demographic history is recorded
+they can be simulated afterwards.
+
+Wrap-up paragraph.  
+This is what we do, which lets us both record history
+and be more efficient.
 
 
 \begin{methods}
 \section{Methods and Implementation}
+
+Since msprime provides a number of tools for manipulating tree sequences,
+adding mutations,
+and producing output (e.g., VCF files)
+we need only determine a method for properly recording history and passing it to msprime.
+
+\subsection{msprime: Tree sequences and coalescence records}
+
+First we recall the data storage methods used by msprime \citep[see][for more details]{msprime}.
+
+To record the history and identity of a set of sampled genomes,
+it is only necessary to record commmon ancestry (or, \emph{coalescence}) events --
+most recent common ancestors of distinct segments of sampled genomes --
+and the identity and location of any mutations that these most recent common ancestors carry
+that are not shared by any other recorded ancestor.
+\plr{(not quite right)}
+
+The topology of the ARG
+is recorded by msprime as a list of Coalescence Records, which are tuples of the form
+\texttt{(left,right,parent,children)},
+which indicates that the individuals listed in \texttt{children}
+have inherited the segment of genome between \texttt{left} and \texttt{right}
+from the ancestor \texttt{parent}.
+Individuals are identified by integers,
+and there is also a table recording the \emph{birth time} of each individual.
+
+For a set of coalescence records to be consistent,
+it is required that:
+\begin{enumerate}
+    \item The birth time of any \texttt{children} must be strictly after the birth time of the \texttt{parent}.
+    \item The set of intervals on which individual $a$ is a child must be disjoint, for every $a$.
+    \item The set of intervals on which individual $a$ is a parent must be disjoint, for every $a$.
+\end{enumerate}
+These ensure that the coalescence records unambiguously specify a subset of the genealogy at any location on the genome,
+but do not ensure that the entire history of the samples is specified.
+Furthermore, to allow for efficient algorithms, msprime also requires that
+\begin{enumerate} \setcounter{enumi}{3}
+    \item The samples must be numbered \texttt{0,...,n-1}, and the smallest non-sampled label must be an internal node.
+        \plr{perhaps remove this one}
+    \item The list of \texttt{children} in a coalescence record must be sorted.
+    \item Records must be sorted in nondecreasing order by birth time of the \texttt{parent}.
+    \item Birth times must be strictly greater than zero.
+\end{enumerate}
+
+\subsection{Recording history}
+
+Since we do not know from which ancestors
+the eventual genetic samples will inherit,
+to record the history of the samples
+we must record the results of all reproduction events -- 
+the entire ARG.
+To do this, and conform with the format above, we maintain
+an ordered dictionary \texttt{arg},
+with one entry for each parent,
+whose entries are of the form
+\texttt{id:(time,records)},
+where \texttt{id} is the integer ID of the parent,
+\texttt{time} is the birth time of the parent,
+and \texttt{records} is a list of nonoverlapping coalescence records, sorted by left endpoint.
+We update this structure each time a new individual is born.
+Suppose that individual $I$ is born at time $t$ to parents $p_0$ and $p_1$,
+with recombination breakpoints $0=x_0 < x_1 < x_2 < \cdots < x_n \le 1$,
+so that $I$ inherits the genomic segment $[0,x_1)$ from $p_0$,
+the segment $[x_1,x_2)$ from $p_1$, and so forth (here $n \ge 1$).
+When this occurs, we:
+\begin{enumerate}
+    \item append a new entry \texttt{I:(t,[])} to the list \texttt{arg}; and
+    \item for each $1 \le k \le n$, merge the new record \texttt{(x[k-1],x[k],p[k mod 2],(I,))}
+        into the existing records in `arg[p[k mod 2]]`.
+\end{enumerate}
+We need to merge these records
+so as to retain sortedness described above.
 
 \end{methods}
 \section{Results and Discussion}
