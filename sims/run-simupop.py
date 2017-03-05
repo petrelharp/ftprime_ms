@@ -37,6 +37,7 @@ parser.add_argument("-g","--logfile", dest="logfile", type=str,
         help="name of log file (or '-' for stdout)", default="-")
 parser.add_argument("-s","--selloci_file", dest="selloci_file", type=str,
         help="name of file to output selected locus information", default="sel_loci.txt")
+
 args = parser.parse_args()
 
 if args.generations is None:

@@ -6,32 +6,53 @@ postprocessed with msprime to add neutral loci.
 
 import gzip
 import sys
-from optparse import OptionParser
+from argparse import ArgumentParser
 import math
 import time
 import random
 from ftprime import RecombCollector
 import msprime
 
-parser = OptionParser(description=description)
-parser.add_option("-T","--generations",dest="generations",help="number of generations to run for")
-parser.add_option("-N","--popsize",dest="popsize",help="size of each subpopulation",default=100)
-parser.add_option("-L","--length",dest="length",help="number of bp in the chromosome",default=1e4)
-parser.add_option("-l","--nloci",dest="nloci",help="number of selected loci",default=20)
-parser.add_option("-m","--migr",dest="migr",help="migration proportion between adjacent populations",default=.01)
-parser.add_option("-u","--sel_mut_rate",dest="sel_mut_rate",help="mutation rate of selected alleles",default=1e-7)
-parser.add_option("-r","--recomb_rate",dest="recomb_rate",help="recombination rate",default=2.5e-8)
-parser.add_option("-a","--gamma_alpha",dest="gamma_alpha",help="alpha parameter in gamma distributed selection coefficients",default=.23)
-parser.add_option("-b","--gamma_beta",dest="gamma_beta",help="beta parameter in gamma distributed selection coefficients",default=5.34)
-parser.add_option("-k","--nsamples",dest="nsamples",help="number of *diploid* samples, total")
-parser.add_option("-A","--ancestor_age",dest="ancestor_age",help="time to ancestor above beginning of sim")
-parser.add_option("-U","--mut_rate",dest="mut_rate",help="neutral mutation rate",default=1e-7)
-parser.add_option("-t","--treefile",dest="treefile",help="name of output file for trees (default: not output)",default=None)
+parser = ArgumentParser(description=description)
+parser.add_argument("-T","--generations", dest="generations", type=int,
+        help="number of generations to run for")
+parser.add_argument("-N","--popsize", dest="popsize", type=int,
+        help="size of the population", default=100)
+parser.add_argument("-r","--recomb_rate", dest="recomb_rate", type=float,
+        help="recombination rate", default=2.5e-8)
+parser.add_argument("-L","--length", dest="chrom_length", type=int,
+        help="number of bp in the chromosome", default=100)
+parser.add_argument("-U","--neut_mut_rate", dest="neut_mut_rate", type=float,
+        help="neutral mutation rate", default=1e-7)
+parser.add_argument("-l","--nselloci", dest="nselloci", type=int,
+        help="number of selected loci", default=20)
+parser.add_argument("-u","--sel_mut_rate", dest="sel_mut_rate", type=float,
+        help="mutation rate of selected alleles", default=1e-7)
+parser.add_argument("-a","--gamma_alpha", dest="gamma_alpha", type=float,
+        help="alpha parameter in gamma distributed selection coefficients", default=.23)
+parser.add_argument("-b","--gamma_beta", dest="gamma_beta", type=float, 
+        help="beta parameter in gamma distributed selection coefficients", default=5.34)
+parser.add_argument("-k","--nsamples", dest="nsamples", type=int,
+        help="number of *diploid* samples, total")
+parser.add_argument("-o","--outfile", dest="outfile", type=str,
+        help="name of output PED file (default: not output)", default=None)
+parser.add_argument("-g","--logfile", dest="logfile", type=str,
+        help="name of log file (or '-' for stdout)", default="-")
+parser.add_argument("-s","--selloci_file", dest="selloci_file", type=str,
+        help="name of file to output selected locus information", default="sel_loci.txt")
+parser.add_argument("-A","--ancestor_age",dest="ancestor_age", type=int,
+	help="time to ancestor above beginning of sim", default=1000)
+parser.add_argument("-t","--treefile",dest="treefile", type=str,
+	help="name of output file for trees (default: not output)", default=None)
 
-parser.add_option("-o","--outfile",dest="outfile",help="name of output VCF file (default: not output)",default=None)
-parser.add_option("-g","--logfile",dest="logfile",help="name of log file (or '-' for stdout)",default="-")
-parser.add_option("-s","--selloci_file",dest="selloci_file",help="name of file to output selected locus information",default="sel_loci.txt")
-(options,args) =  parser.parse_args()
+args = parser.parse_args()
+
+if args.generations is None:
+    parser.print_help()
+    sys.exit()
+
+if args.nsamples is None:
+    args.nsamples = args.popsize
 
 import simuOpt
 simuOpt.setOptions(alleleType='mutant')
@@ -55,51 +76,35 @@ def fileopt(fname,opts):
         fobj = open(fname,opts)
     return fobj
 
-if options.outfile is not None:
-    outfile = fileopt(options.outfile, "w")
-logfile = fileopt(options.logfile, "w")
-selloci_file = options.selloci_file
+if args.outfile is not None:
+    outfile = fileopt(args.outfile, "w")
+logfile = fileopt(args.logfile, "w")
+selloci_file = args.selloci_file
 
 logfile.write("Options:\n")
-logfile.write(str(options)+"\n")
+logfile.write(str(args)+"\n")
 logfile.write(time.strftime('%X %x %Z')+"\n")
 logfile.write("----------\n")
 logfile.flush()
 
-generations=int(options.generations)
-popsize=int(options.popsize)
-nloci=int(options.nloci)
-alpha=float(options.gamma_alpha)
-beta=float(options.gamma_beta)
-length=float(options.length)
-recomb_rate=float(options.recomb_rate)
-sel_mut_rate=float(options.sel_mut_rate)
-mut_rate=float(options.mut_rate)
-migr=float(options.migr)
-nsamples=int(options.nsamples)
-ancestor_age=float(options.ancestor_age)
-
-# increase spacing between loci as we go along the chromosome
-spacing_fac=9
-rel_positions=[0.0 for k in range(nloci)]
-for k in range(nloci):
-    rel_positions[k] = rel_positions[k-1] + random.expovariate(1)*(1+spacing_fac*k/nloci)
-pos_fac=length/(rel_positions[-1]+random.expovariate(1)*(1+spacing_fac))
-locus_position=[x*pos_fac for x in rel_positions]
+# locations of the loci along the chromosome?
+rel_positions = [random.expovariate(1) for k in range(args.nselloci)]
+pos_fac = args.nselloci/(sum(rel_positions) + random.expovariate(1))
+locus_position = [x*pos_fac for x in rel_positions]
 
 # initially polymorphic alleles
 init_freqs=[[k/100,1-k/100,0,0] for k in range(1,11)]
-locus_classes=[min(len(init_freqs)-1,math.floor(random.expovariate(1))) for k in range(nloci)]
-init_classes=[list(filter(lambda k: locus_classes[k]==x,range(nloci))) for x in range(len(init_freqs))]
-
+locus_classes=[min(len(init_freqs)-1,math.floor(random.expovariate(1))) for k in range(args.nselloci)]
+init_classes=[list(filter(lambda k: locus_classes[k]==x,range(args.nselloci))) for x in range(len(init_freqs))]
 init_geno=[sim.InitGenotype(freq=init_freqs[k],loci=init_classes[k]) for k in range(len(init_freqs))]
 
 # record recombinations
 rc = RecombCollector(
-        nsamples=nsamples, generations=generations, N=popsize*npops,
-        ancestor_age=ancestor_age, length=length, locus_position=locus_position)
+        nsamples=args.nsamples, generations=args.generations, N=args.popsize,
+        ancestor_age=args.ancestor_age, length=args.nselloci, locus_position=locus_position)
 
 ###
+# random selection coefficients:
 # modified from http://simupop.sourceforge.net/manual_svn/build/userGuide_ch5_sec9.html
 
 class GammaDistributedFitness:
@@ -125,8 +130,8 @@ class GammaDistributedFitness:
             return 1. - 2.*s
 
 pop = sim.Population(
-        size=[popsize]*npops, 
-        loci=[nloci], 
+        size=args.popsize,
+        loci=[args.nselloci],
         lociPos=locus_position,
         infoFields=['ind_id','fitness','migrate_to'])
 
@@ -136,15 +141,14 @@ pop.evolve(
         sim.IdTagger(),
     ]+init_geno,
     preOps=[
-        sim.Migrator(rate=migr),
-        sim.AcgtMutator(rate=[sel_mut_rate], model='JC69'),
-        sim.PyMlSelector(GammaDistributedFitness(alpha, beta),
-            output=">>"+selloci_file),
+        sim.SNPMutator(u=args.sel_mut_rate,v=0,loci=range(1,args.nselloci)),
+        sim.PyMlSelector(GammaDistributedFitness(args.gamma_alpha, args.gamma_beta),
+            loci=range(1,args.nselloci), output=">>"+selloci_file),
     ],
     matingScheme=sim.RandomMating(
         ops=[
             sim.IdTagger(),
-            sim.Recombinator(intensity=recomb_rate,
+            sim.Recombinator(intensity=args.recomb_rate,
                 output=rc.collect_recombs,
                 infoFields="ind_id"),
         ] ),
@@ -152,7 +156,7 @@ pop.evolve(
         sim.Stat(numOfSegSites=sim.ALL_AVAIL, step=50),
         sim.PyEval(r"'Gen: %2d #seg sites: %d\n' % (gen, numOfSegSites)", step=50)
     ],
-    gen = generations
+    gen = args.generations
 )
 
 logfile.write("Done simulating!\n")
@@ -160,8 +164,7 @@ logfile.write(time.strftime('%X %x %Z')+"\n")
 logfile.write("----------\n")
 logfile.flush()
 
-# writes out events in this form:
-# offspringID parentID startingPloidy rec1 rec2 ....
+# add samples to the tree sequence
 
 rc.add_samples()
 
@@ -186,10 +189,10 @@ logfile.flush()
 mut_seed=random.randrange(1,1000)
 logfile.write("Generating mutations with seed "+str(mut_seed)+"\n")
 rng = msprime.RandomGenerator(mut_seed)
-minimal_ts.generate_mutations(mut_rate,rng)
+minimal_ts.generate_mutations(args.neut_mut_rate, rng)
 
-if options.treefile is not None:
-    minimal_ts.dump(options.treefile)
+if args.treefile is not None:
+    minimal_ts.dump(args.treefile)
 
 logfile.write("Generated mutations!\n")
 logfile.write(time.strftime('%X %x %Z')+"\n")
@@ -198,7 +201,7 @@ logfile.write("Sequence length: {}\n".format(minimal_ts.get_sequence_length()))
 logfile.write("Number of trees: {}\n".format(minimal_ts.get_num_trees()))
 logfile.write("Number of mutations: {}\n".format(minimal_ts.get_num_mutations()))
 
-if options.outfile is None:
+if args.outfile is None:
     print("NOT writing out genotype data.\n")
 else:
     minimal_ts.write_vcf(outfile,ploidy=1)
