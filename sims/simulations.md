@@ -1,3 +1,9 @@
+This uses:
+
+- [ftprime](https://github.com/ashander/ftprime)
+- [msprime](https://github.com/petrelharp/msprime/tree/has_mutations) before refactoring: commit 8a894a99b42bb3a58e85fe7cbf7200e3cc9bd595
+- [simuPOP](https://github.com/BoPeng/simuPOP)
+
 Proposed default simulation parameters:
 
 - randomly mating population of size 1,000
