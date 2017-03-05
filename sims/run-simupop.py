@@ -16,7 +16,7 @@ parser.add_argument("-T","--generations", dest="generations", type=int,
 parser.add_argument("-N","--popsize", dest="popsize", type=int,
         help="size of the population", default=100)
 parser.add_argument("-r","--recomb_rate", dest="recomb_rate", type=float,
-        help="recombination rate", default=2.5e-8)
+        help="recombination rate", default=1e-7)
 parser.add_argument("-L","--length", dest="chrom_length", type=int,
         help="number of bp in the chromosome", default=100)
 parser.add_argument("-U","--neut_mut_rate", dest="neut_mut_rate", type=float,
@@ -30,7 +30,7 @@ parser.add_argument("-a","--gamma_alpha", dest="gamma_alpha", type=float,
 parser.add_argument("-b","--gamma_beta", dest="gamma_beta", type=float, 
         help="beta parameter in gamma distributed selection coefficients", default=5.34)
 parser.add_argument("-k","--nsamples", dest="nsamples", type=int,
-        help="number of *diploid* samples, total")
+        help="number of *diploid* samples, total", default=100)
 parser.add_argument("-o","--outfile", dest="outfile", type=str,
         help="name of output PED file (default: not output)", default=None)
 parser.add_argument("-g","--logfile", dest="logfile", type=str,
@@ -43,9 +43,6 @@ args = parser.parse_args()
 if args.generations is None:
     parser.print_help()
     sys.exit()
-
-if args.nsamples is None:
-    args.nsamples = args.popsize
 
 import simuOpt
 simuOpt.setOptions(alleleType='mutant')
