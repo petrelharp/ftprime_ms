@@ -43,11 +43,11 @@ Country.}
 \abstract{
     To use genomic data for inference and prediction it is often necessary to obtain whole-genome information
     from individual-based simulations,
-    but the computational burden of endowing each simulated individual with an entire genome can be substantial.
+    but the computational burden of tracking the genome of each simulated individual can be substantial.
     In this note we describe how to both (a) dramatically reduce this burden and 
     (b) efficiently record the entire history of the population.
     We do this by simulating only those loci that may affect reproduction (those having non-neutral variants),
-    and recording the entire history of genetic inheritance in an efficient data structure,
+    and recording the entire history of genetic inheritance in an efficient representation of the ancestral recombination graph,
     on which neutral mutations can be quickly placed afterwards.
     \plr{make more clear data structure was already developed? refer to 'tree sequence' by name?}
     The algorithm is implemented in python,
@@ -57,6 +57,15 @@ Country.}
 \textbf{Supplementary information:} Supplementary data are available at \textit{Bioinformatics} online.}
 
 \maketitle
+
+Other title ideas: (I think it has to start with the `software name', for Bioinformatics applications notes anyhow)
+
+Coalescence theory in forwards time
+
+The ancestral recombination graph from individual-based simulations
+
+History, and whole genomes too
+
 
 \section{Introduction}
 
@@ -71,19 +80,20 @@ Country.}
 In recent years the increase in computing power --
 gradual only in comparison to the increase in our ability to sequence genomes --
 has made it possible to simulate the evolution of whole genomes of realistically-sized populations.
-This major milestone promises to remove the field's reliance on approximations of unknown applicability.
-Thus far, much of our understanding of how genomes evolve
+This major milestone allows researchers to investigate models of much greater complexity
+than was previously acheivable.
+Thus far, much of our understanding of how populations evolve
 comes from models of one or a few linked loci \citep{ewens},
 and/or results derived under the assumption of neutrality.
 These are certainly important, but researchers today have widely differing views
 on the practical importance of widespread selection \citep{encode,graur,backgroundsel}.
-Thus far what little analytical progress has been made on models of ubiquitous selection
-are hard to check due to a lack of realistic simulation.
-
-Simulations of organisms endowed with functional, varying genomes
+% Thus far what little analytical progress has been made understanding
+% how potentially many functional genomic variants might evolve in ecologically realistic environments
+% are hard to check due to a lack of realistic simulation methods.
+Simulations of organisms carrying with functional, varying genomes
 interacting with each other and spatially and temporally varying environments
 will not only allow us to develop and test our understanding of evolution,
-but also to produce quantitative predictions of population dynamics --
+but also to produce quantitative predictions of eco-evolutionary dynamics --
 for instance, the spread of insecticide resistance and behavior modification of mosquitos.
 
 The most commonly used simulation methods to date rely on neutrality,
