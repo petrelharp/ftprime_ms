@@ -298,8 +298,9 @@ for i in 0:N-1:
 (Alternatively, the tables could be initialized by the results of a coalescent simulation.)
 
 \paragraph{Iterate:}
-We then step through the generations:
-\plr{Add mutations to this:}
+We then step through the generations,
+using the functions \texttt{random\_mutation} and \texttt{random\_allele}
+to choose positions and alleles for mutations, respectively:
 \begin{lstlisting}[language=Python]
 for t in 1:T:
     for i in 0:N-1:
@@ -318,6 +319,17 @@ for t in 1:T:
             if bp < L:
                 edgesets.add_row(left=bp, right=L,
                                   parent=b, children=(u,))
+            num_muts = random.poisson(mut_rate)
+            for j in 1:num_muts:
+                pos = random_mutation()
+                if pos not in sites.position:
+                    s = sites.num_rows
+                    sites.add_row(position=pos, 
+                           ancestral_state=random_allele())
+                else:
+                    s = sites.position.index(pos)
+                mutations.add_row(site=s, node=u, 
+                           derived_state=random_allele())
     pop = new_pop
 \end{lstlisting}
 
