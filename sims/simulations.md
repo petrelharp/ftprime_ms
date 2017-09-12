@@ -4,6 +4,14 @@ This uses:
 - [msprime](https://github.com/petrelharp/msprime/tree/has_mutations) before refactoring: commit 8a894a99b42bb3a58e85fe7cbf7200e3cc9bd595
 - [simuPOP](https://github.com/BoPeng/simuPOP)
 
+To run the benchmark script, do
+```sh
+python benchmark-simuPOP.py --seed 43 --nsamples 50 > benchmark-out.txt
+```
+For default parameters and other info see comments in the script
+
+# Old version
+
 Proposed default simulation parameters:
 
 - randomly mating population of size 1,000
