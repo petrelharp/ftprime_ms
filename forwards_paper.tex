@@ -8,7 +8,7 @@
 \usepackage{enumitem}
 \usepackage{listings}
 \bibliographystyle{plainnat}
-\usepackage[T1]{fontenc}
+% \usepackage[T1]{fontenc}
 
 \include{macros}
 
@@ -115,26 +115,6 @@ one can lay down neutral mutations on top of that history afterwards,
 without loss of generality.
 Precisely, we would need to know the genealogical tree relating all sampled individuals
 at each position along the genome.
-
-There is another compelling reason for recording the entire genealogical history.
-In many applications, simulations are run for the purpose of comparing summary statistics of the resulting genomes
-to those computed from real data,
-with the purpose of inferring demographic history or identifying regions under selection.
-However, for the same reason that neutral mutations can be laid down afterwards on the sequence of genealogical trees resulting from a simulation,
-any summary statistic of genetic variation can be expressed as a statistic of the distribution of genealogical trees along the genome,
-with additional noise introduced by mutations.
-For instance, mean pairwise sequence diversity, $\theta$,
-is most easily thought of as an estimator of $2 \mu t_{TMRCA}$, the mean time to most recent common ancestor
-multiplied by twice the mutation rate,
-with a relative error that is independent of the actual $t_{TMRCA}$.
-As additional measurement noise makes simulation-based inference methods such as ABC or trained classifiers more diffcult,
-it could be beneficial to compare the statistics observed in the data
-to their expected values conditioned on the genealogical history,
-as remaining mutational noise is not informative.
-\plr{Say better.  A quick way to demonstrate this point?}
-
-There is an obvious cost to recording all of history from a simulation,
-rather than just the current state.
 In this paper, we show how to use algorithmic tools and data structures developed for the coalescent simulator \msprime
 to efficiently record, and later process, this history.
 
@@ -175,6 +155,21 @@ First we describe the data structures we use for recording genealogical history,
 as implemented in \msprime{}.
 These derive from those described in \citet{msprime},
 but have been modified to remove redundancy.
+The tables below give the example tree sequence of Figure \ref{fig:ex_tree_seq}.
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[width=0.6\textwidth]{example_tree_seq}
+    \end{center}
+    \caption{
+        A pictorial representation of the ARG
+        relating three samples to each other
+        over a chromosome of length 1.0.
+        Mutations shown in the example tables of the text
+        are marked with red stars.
+        \label{fig:ex_tree_seq}
+    }
+\end{figure}
 
 To clarify terminology,
 below a \emph{tree} refers to
@@ -189,14 +184,23 @@ A tree sequence does not necessarily carry complete genealogical information abo
 but calling a node a \emph{sample} implies that complete information is present for that ancestor,
 i.e., the node is associated with a point in every tree in the tree sequence.
 Since each node represents a certain ancestor, it has a
-unique ``time``, thought of as her birth time, which determines the height
+unique ``time'', thought of as her birth time, which determines the height
 of any branching points she is associated with.  A given node will be
 associated with branching points of all trees across a region if that node
 is the most recent common ancestor to the subtending tips across that region.  
 This information is stored in the columns of a \textbf{Node Table}:
-\begin{align*}
-    \text{flags,} \qquad \text{population,} \qquad \text{time} \\ 
-\end{align*}
+\begin{center}
+\begin{tabular}{cccc}
+    id   &  is\_sample &  population &  time \\
+    0    &  1          & 0           & 0 \\
+    1    &  1          & 0           & 0 \\
+    2    &  1          & 0           & 0 \\
+    3    &  0          & 0           & 0.3 \\
+    4    &  0          & 0           & 0.5 \\
+    5    &  0          & 0           & 0.6 \\
+    6    &  0          & 0           & 0.7 \\
+\end{tabular}
+\end{center}
 where ``flags'' records other information 
 (e.g., a binary mask of `1' indicates the node is a sample).
 Importantly, the \textbf{node ID} of a node is given implicitly
@@ -209,9 +213,17 @@ the parental node, and a list of children nodes who have inherited that segment.
 As each such record describes a collection of edges across a swatch of trees in the tree sequence,
 we call these \emph{edgesets} 
 and store them in the columns of an \textbf{Edgeset Table:}
-\begin{align*}
-    \text{left,} \qquad \text{right,} \qquad \text{parent,} \qquad \text{children}
-\end{align*}
+\begin{center}
+\begin{tabular}{cccc}
+    left & right & parent & children \\
+    0.2  &  0.8  &  3     & 0,2 \\
+    0.0  &  0.2  &  4     & 1,2 \\
+    0.2  &  0.8  &  4     & 1,3 \\
+    0.8  &  1.0  &  4     & 1,2 \\
+    0.8  &  1.0  &  5     & 0,4 \\
+    0.0  &  0.2  &  6     & 0,4  \\
+\end{tabular}
+\end{center}
 
 To record information about genetic variants we need to also record each mutation
 and which nodes have inherited that mutation.
@@ -221,22 +233,31 @@ that inherited that mutation.
 As more than one mtuation may occur at a given site,
 we separate this information into two tables,
 first, the \textbf{Site Table} records for each variant site
-\begin{align*}
-    \text{position,} \qquad \text{ancestral state}
-\end{align*}
+\begin{center}
+\begin{tabular}{ccc}
+    id  &   position  & ancestral\_state \\
+    0   &  0.1        & 0 \\
+    1   &  0.5        & 0 \\
+\end{tabular}
+\end{center}
 Here ``position'' is a (floating point) position along the chromosome,
 and ``ancestral state'' is the genotype of the root of the tree at that site.
 As for nodes, \textbf{site IDs} are given implicitly
 by the (zero-based) index of the rows.
 Then, we record in a \textbf{Mutation Table}
-\begin{align*}
-    \text{site,} \qquad \text{node,} \qquad \text{derived state}
-\end{align*}
+\begin{center}
+\begin{tabular}{ccc}
+    site  & node  & derived\_state \\
+    0	  & 4	  & 1 \\
+    1	  & 3	  & 1 \\
+    1	  & 2	  & 0 \\
+\end{tabular}
+\end{center}
 in which ``site'' is the ID of the site at wihch this mutation occurred,
 ``node'' is the ID of the highest node that has inherited this mutation,
 and ``derived state'' is the genotype at this site of any individuals inheriting this mutation,
 unless another mutation occurs.
-\plr{Omit migrations?}
+% \plr{Omit migrations?}
 
 \paragraph{Definition of valid tables}
 Here are the formal requirements for a set of nodes and edgesets to make sense,
@@ -386,10 +407,7 @@ the main difference being that parental choice, mutations, and recombination loc
 are determined by the input tree sequence
 rather than randomly generated.
 An example is shown in Figure \ref{fig:method_diagram}.
-\plr{(trying to make the point strongly in the figure, that everything can be stored quite concisely)}
 
-\plr{Note that you can begin the forwards-time simulation with the results of a previous (coalescent) one,
-which is helpful so you don't need to run for so long (cite Wilkins).}
 In this scheme,
 at any point in the simulation genealogical history is recorded in a tree sequence.
 This has two additional advantages.
