@@ -2,11 +2,11 @@
 import gzip
 import sys
 import time
-import csv
 import random
 from ftprime import RecombCollector
 import msprime
 import argparse
+import pandas as pd
 
 description = '''
 Benchmark
@@ -107,9 +107,9 @@ parser.add_argument("--gamma_scale","-b", type=float, dest="gamma_scale",
 parser.add_argument("--gc", "-G", dest="simplify_interval", type=int,
         help="Interval between simplify steps.", default=500)
 parser.add_argument("--logfile","-g", type=str, dest="logfile",
-        help="name of log file (or '-' for stdout)",default="-")
-parser.add_argument("--csvfile","-c", type=str, dest="csvfile",
-        help="name of csv file")
+        help="name of log file (or '-' for stdout)",default="/dev/null")
+parser.add_argument("--outfile1","-o", type=str, dest="outfile1",
+        help="name of csv file to write")
 parser.add_argument("--seed", "-d", dest="seed", type=int, help="random seed")
 
 # optional args
@@ -138,7 +138,6 @@ sim.setRNG(seed=args.seed)
 random.seed(args.seed)
 
 logfile = fileopt(args.logfile, "w")
-csvfile = fileopt(args.csvfile, "w+")
 
 logfile.write("Options:\n")
 logfile.write(str(args)+"\n")
@@ -195,11 +194,7 @@ class GammaDistributedFitness:
         else:
             return max(0.0, 1. - s)
 
-time_dict = {'time_prepping': None,
-             'time_simulating': None,
-             'time_finalizing': None}
-
-start = time.time()
+before_time = time.time()
 
 init_geno=[sim.InitGenotype(freq=1.0)]
 
@@ -223,8 +218,6 @@ node_ids = {x:j for x, j in zip(haploid_labels, init_ts.samples())}
 rc = RecombCollector(ts=init_ts, node_ids=node_ids,
                      locus_position=locus_position,
                      benchmark=True)
-end_prep = time.time()
-time_dict['time_prepping'] = end_prep - start
 
 pop.evolve(
     initOps=[
@@ -254,8 +247,8 @@ pop.evolve(
     ],
     gen = args.generations
 )
-end_sim = time.time()
-time_dict['total_runtime'] = end_sim - end_prep
+
+tsim = time.time()- before_time
 
 logfile.write("Done simulating!\n")
 logfile.write(time.strftime('%X %x %Z')+"\n")
@@ -277,7 +270,21 @@ logfile.write("----------\n")
 logfile.flush()
 
 ts = rc.args.tree_sequence()
+
 times = rc.args.timings.times
+args.gc = args.simplify_interval  # so use same name below
+
+## begin block similar to K Thornton's
+# Take times from args before they change.
+times['fwd_sim_runtime'] = tsim
+times['N'] = args.popsize
+times['theta'] = args.theta
+times['rho'] = args.rho
+times['simplify_interval'] = args.gc
+d = pd.DataFrame.from_dict(times, orient = 'index')
+d.reset_index(inplace=True)
+d=d.rename(columns={'index':'variable',0:'value'})
+d.to_csv(args.outfile1,sep='\t',index=False,compression='gzip')
 
 del rc
 
@@ -325,14 +332,6 @@ logfile.write("Number of mutations: {}\n".format(mutated_ts.get_num_mutations())
 
 logfile.write("All done!\n")
 
-end_fin = time.time()
-time_dict['finalizing'] = end_fin - end_sim
-# logfile.write(str(time_dict) + '\n')
-
-
-results_dict = {'N': args.popsize, 'rho': args.rho, 'theta': args.theta,
-                'total_runtime': time_dict['total_runtime']}
-tsim = time_dict['total_runtime']
 ttime = tsim + sum([value for key, value in times.items()])
 logfile.write('Time spent in simulation was {} seconds. ({}% of total)\n'.format(tsim, tsim / ttime))
 logfile.write('Time spent related to msprime functionality:\n')
@@ -345,11 +344,3 @@ logfile.write('\tSorting: {} seconds ({}%).\n'.format(
 logfile.write('\tSimplifying: {} seconds ({}%).\n'.format(
 	times['simplifying'], times['simplifying'] / ttime))
 logfile.close()
-
-writer = csv.DictWriter(csvfile, fieldnames=('N', 'theta', 'rho',
-                                             'total_runtime',
-                                             'fwd_sim_runtime',
-                                             'msprime_runtime'))
-writer.writeheader()
-writer.writerow(results_dict)
-csvfile.close()

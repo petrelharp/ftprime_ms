@@ -1,2 +1,2 @@
 #!/bin/bash
-python3 benchmark-simuPOP.py --seed 43 --nsam 10 --pdel 0.1 --theta 1 --rho 1 -N 100 --csvfile out.csv
+python3 benchmark-simuPOP.py --seed 43 --nsam 10 --pdel 0.1 --theta 1 --rho 1 -N 100 --outfile1 out.csv.gz
