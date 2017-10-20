@@ -129,6 +129,9 @@ if args.record_neutral:
 if args.generations is None:
     args.generations = args.popsize * 20
 
+from simuOpt import setOptions
+setOptions(alleleType = 'binary')
+
 import simuPOP as sim
 
 sim.setRNG(seed=args.seed)
