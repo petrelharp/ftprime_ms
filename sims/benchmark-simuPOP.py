@@ -192,9 +192,9 @@ class GammaDistributedFitness:
         else:
             return max(0.0, 1. - s)
 
-time_dict = {'prepping': None,
-             'simulating': None,
-             'finalizing': None}
+time_dict = {'time_prepping': None,
+             'time_simulating': None,
+             'time_finalizing': None}
 
 start = time.time()
 
@@ -218,9 +218,10 @@ haploid_labels = [(k,p) for k in first_gen
                         for p in (0,1)]
 node_ids = {x:j for x, j in zip(haploid_labels, init_ts.samples())}
 rc = RecombCollector(ts=init_ts, node_ids=node_ids,
-                     locus_position=locus_position)
+                     locus_position=locus_position,
+                     benchmark=True)
 end_prep = time.time()
-time_dict['prepping'] = end_prep - start
+time_dict['time_prepping'] = end_prep - start
 
 pop.evolve(
     initOps=[
@@ -273,6 +274,8 @@ logfile.write("----------\n")
 logfile.flush()
 
 ts = rc.args.tree_sequence()
+times = rc.args.timings.times
+
 del rc
 
 logfile.write("Loaded into tree sequence!\n")
@@ -295,18 +298,18 @@ logfile.flush()
 
 rng = msprime.RandomGenerator(mut_seed)
 nodes = msprime.NodeTable()
-edgesets = msprime.EdgesetTable()
+edges = msprime.EdgeTable()
 sites = msprime.SiteTable()
-ts.dump_tables(nodes=nodes, edgesets=edgesets)
+ts.dump_tables(nodes=nodes, edges=edges)
 if args.record_neutral:
-    mutated_ts = msprime.load_tables(nodes=nodes, edgesets=edgesets,
+    mutated_ts = msprime.load_tables(nodes=nodes, edges=edges,
                                      sites=sites)
 elif not args.record_neutral:
     mutations = msprime.MutationTable()
     mutgen = msprime.MutationGenerator(rng, args.mut_rate)
-    mutgen.generate(nodes, edgesets, sites, mutations)
+    mutgen.generate(nodes, edges, sites, mutations)
     mutated_ts = msprime.load_tables(
-        nodes=nodes, edgesets=edgesets, sites=sites, mutations=mutations)
+        nodes=nodes, edges=edges, sites=sites, mutations=mutations)
 
 del ts
 
@@ -321,12 +324,25 @@ logfile.write("All done!\n")
 
 end_fin = time.time()
 time_dict['finalizing'] = end_fin - end_sim
-logfile.write(str(time_dict) + '\n')
+# logfile.write(str(time_dict) + '\n')
 
-logfile.close()
 
 results_dict = {'N': args.popsize, 'rho': args.rho, 'theta': args.theta,
                 'total_runtime': time_dict['total_runtime']}
+tsim = time_dict['total_runtime']
+ttime = tsim + sum([value for key, value in times.items()])
+logfile.write('Time spent in simulation was {} seconds. ({}% of total)\n'.format(tsim, tsim / ttime))
+logfile.write('Time spent related to msprime functionality:\n')
+logfile.write('\tPrepping: {} seconds ({}%).\n'.format(
+	times['prepping'], times['prepping'] / ttime))
+logfile.write('\tAppending: {} seconds ({}%).\n'.format(
+	times['appending'], times['appending'] / ttime))
+logfile.write('\tSorting: {} seconds ({}%).\n'.format(
+	times['sorting'], times['sorting'] / ttime))
+logfile.write('\tSimplifying: {} seconds ({}%).\n'.format(
+	times['simplifying'], times['simplifying'] / ttime))
+logfile.close()
+
 writer = csv.DictWriter(csvfile, fieldnames=('N', 'theta', 'rho',
                                              'total_runtime',
                                              'fwd_sim_runtime',
