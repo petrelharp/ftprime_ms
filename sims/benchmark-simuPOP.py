@@ -109,7 +109,7 @@ parser.add_argument("--gc", "-G", dest="simplify_interval", type=int,
 parser.add_argument("--logfile","-g", type=str, dest="logfile",
         help="name of log file (or '-' for stdout)",default="/dev/null")
 parser.add_argument("--outfile1","-o", type=str, dest="outfile1",
-        help="name of csv file to write")
+        help="name of csv file to write timing statisitcs.")
 parser.add_argument("--seed", "-d", dest="seed", type=int, help="random seed")
 
 # optional args
@@ -120,14 +120,18 @@ parser.add_argument("--mut_rate","-U", type=float, dest="mut_rate",
 parser.add_argument("--treefile","-t", type=str, dest="treefile",
         help="name of output file for trees (default: not output)",default=None)
 parser.add_argument("--generations","-T", type=int, dest="generations",
-        help="number of generations to run for (default 20N)", default=None)
+        help="number of generations to run for (default SIMLEN * N)",
+                    default=None)
+parser.add_argument("--simlen","-s", type=int, dest="multiplier",
+        help="multiplier of popsize to run for (unless `generations` is specified)",
+                    default=10)
 
 args = parser.parse_args()
 if args.record_neutral:
     sys.exit(1)
 
 if args.generations is None:
-    args.generations = args.popsize * 20
+    args.generations = args.popsize * args.multiplier
 
 from simuOpt import setOptions
 setOptions(alleleType = 'binary')
@@ -194,7 +198,7 @@ class GammaDistributedFitness:
         else:
             return max(0.0, 1. - s)
 
-before_time = time.time()
+before_time = time.process_time()
 
 init_geno=[sim.InitGenotype(freq=1.0)]
 
@@ -248,7 +252,7 @@ pop.evolve(
     gen = args.generations
 )
 
-tsim = time.time()- before_time
+tsim = time.process_time()- before_time
 
 logfile.write("Done simulating!\n")
 logfile.write(time.strftime('%X %x %Z')+"\n")
@@ -276,14 +280,12 @@ args.gc = args.simplify_interval  # so use same name below
 
 ## begin block similar to K Thornton's
 # Take times from args before they change.
-times['fwd_sim_runtime'] = tsim
-times['N'] = args.popsize
-times['theta'] = args.theta
-times['rho'] = args.rho
-times['simplify_interval'] = args.gc
-d = pd.DataFrame.from_dict(times, orient = 'index')
-d.reset_index(inplace=True)
-d=d.rename(columns={'index':'variable',0:'value'})
+times['total_runtime'] = [tsim]
+times['N'] = [args.popsize]
+times['theta'] = [args.theta]
+times['rho'] = [args.rho]
+times['simplify_interval'] = [args.gc]
+d = pd.DataFrame(times)
 d.to_csv(args.outfile1,sep='\t',index=False,compression='gzip')
 
 del rc
@@ -331,16 +333,4 @@ logfile.write("Number of trees: {}\n".format(mutated_ts.get_num_trees()))
 logfile.write("Number of mutations: {}\n".format(mutated_ts.get_num_mutations()))
 
 logfile.write("All done!\n")
-
-ttime = tsim + sum([value for key, value in times.items()])
-logfile.write('Time spent in simulation was {} seconds. ({}% of total)\n'.format(tsim, tsim / ttime))
-logfile.write('Time spent related to msprime functionality:\n')
-logfile.write('\tPrepping: {} seconds ({}%).\n'.format(
-	times['prepping'], times['prepping'] / ttime))
-logfile.write('\tAppending: {} seconds ({}%).\n'.format(
-	times['appending'], times['appending'] / ttime))
-logfile.write('\tSorting: {} seconds ({}%).\n'.format(
-	times['sorting'], times['sorting'] / ttime))
-logfile.write('\tSimplifying: {} seconds ({}%).\n'.format(
-	times['simplifying'], times['simplifying'] / ttime))
 logfile.close()
