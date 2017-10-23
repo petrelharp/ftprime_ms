@@ -52,7 +52,7 @@
     we must use forwards-time, individual-based simulation.
     These are much slower due in part to carrying around neutral genotypes irrelevant to the process.
     Here we show how to efficiently produce and store the entire history of ancestry and recombination
-    (the ARG) from an individual-based simulation,
+    from an individual-based simulation,
     on which neutral mutations can be placed afterwards.
     This has the promise of making large-scale, whole-genome simulations with realistic geography and selection finally possible.
 \end{abstract}
@@ -138,25 +138,20 @@ In so doing we record the \emph{population pedigree} --
 the entire history of parent-offspring relationships of an entire population going back to a remote time --
 as well as information encoding the genetic outcomes of each ancestral meiosis --
 who inherited which parts of which parental chromosomes.
-This embellished graph is known as the \emph{ancestral recombination graph}, or {ARG} \citep{griffiths}.
+This embellished pedigree contains all the information necessary 
+to construct the genealogical tree that relates each individual to each other 
+at each position on the genome, i.e., the \emph{tree sequence}.
 Combined with ancestral genotypes and the origins of new mutations,
-it completely specifies the genomic sequence of any individual in the population at any time.
-However, much less than the entire ARG is needed to specify relationships
-between any given set of samples --
-only those portions of it from which those samples have actually inherited,
-back to their most recent common ancestors.
-The assumptions of coalescent theory
-% -- random mating and neutrality --
-imply that this random set describes a Markov process looked at \emph{backwards} in time,
-and can hence be simulated without reference to the unnecessary remainder
-\citet{griffithsmarjoram,msprime}.
-This stochastic process is also called the ``ARG'',
-but we reserve this name for the embellished graph itself.
-% Although this point was in principle known since \citet{griffithsmarjoram},
-% only recent algorithmic advances made it possible to actually simulate the process correctly,
-% without approximation, across whole chromosomes \citep{msprime}.
-\jk{I find this confusing I'm afraid. I agree we should mention the ARG but I think only in passing.
-I have never found a situation in which an ARG made things easier to understand!}
+it also completely specifies the genomic sequence of any individual in the population at any time.
+This is much more than we need to know, however,
+so we discard all information irrelevant to the genetic history 
+of the \emph{sampled} individuals,
+which results in considerable savings.
+
+Another way of representing this same information 
+is known as the \emph{ancestral recombination graph}, or {ARG} \citep{griffiths1997ancestral},
+which has been the subject of substantial study 
+under the assumptions of coalescent theory \citep{wiuf1997number,wiuf1999ancestry,marjoram2006coalescent,wilton2015smc}.
 
 
 %%%%%%%%%%%%%%%%%%%%%%
@@ -240,7 +235,7 @@ The tables below give the example tree sequence of Figure \ref{fig:ex_tree_seq}.
         \includegraphics[width=0.6\textwidth]{example_tree_seq}
     \end{center}
     \caption{
-        A pictorial representation of the ARG
+        A pictorial representation of a tree sequence
         relating three samples to each other
         over a chromosome of length 1.0.
         Mutations shown in the example tables of the text
@@ -361,7 +356,7 @@ then, \texttt{simplify} enforces requirements 7 and 8 (and does much more; see b
 
 
 %%%%%%
-\subsection*{Recording the ARG in forwards time}
+\subsection*{Recording the pedigree in forwards time}
 
 To record the genealogical history of a simulation
 we need to record two things for each new chromosome:
@@ -443,7 +438,7 @@ which can then be loaded into a tree sequence with \msprime.
     \end{center}
     \caption{
         A simple example of the method.
-        \textbf{Top:} the ARG shown on the left relates ten haploid individuals to each other.
+        \textbf{Top:} the diagram on the left relates ten haploid individuals to each other.
         It is recorded, in forwards time,
         in 10 node records (one for each individual)
         and 14 edgeset records (one for each distinctly inherited segment).
@@ -564,7 +559,7 @@ All sorts of good reasons to want to have whole-genome simulations.
 
 \appendix
 
-\section{More general method for recording the ARG}
+\section{More general method for recording the pedigree}
 
 \plr{moved from above}
 
