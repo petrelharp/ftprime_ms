@@ -215,31 +215,47 @@ this state (unless further mutations are encountered). Three mutations are shown
 in Figure~\ref{fig:example_tree_sequence}, illustrated by red hexagons. The first
 mutation occurs at site zero (which is in the left-hand tree), which is a simple
 mutation resulting in node $2$ inheriting the state 'T'. The second side (in the
-right hand tree) has two mutations: one occuring over node $3$ changing the state to
+right hand tree) has two mutations: one occurring over node $3$ changing the state to
 `C' and a back mutation over node $1$ changing the state to `G'.
 \jk{Not sure if I'm labouring the point here: this should be reasonably obvious.
 Perhaps if we added the state changes to the trees, and the states of the leaves
 below the samples, we could get rid of all the example discussion here?}
 
+This encoding of a sequence of trees and accompanying mutational information is
+very concise. To illustrate this, we ran a simulation of $500,000$ samples of a
+$200$ megabase human-like chromosome ($N_e=10^4$ and per-base mutation and
+recombination rates of $10^{-8}$ per generation) using \msprime. This resulted
+in about 1 million distinct marginal trees and $1.1$ million infinite-sites
+mutations. The HDF5 file encoding the nodes, edges, sites and mutations (as
+described above) for this simulation consumed 157MiB of storage space. Using
+the \msprime\ Python API, the time required to load this file into memory was
+around 1.5 seconds, and the time required to iterate over all 1 million tree
+was 2.7 seconds. In contrast, recording the topological information in Newick
+format would require around 20 TiB and storing the genotype information
+in VCF would require about 1 TiB. Working with either the Newick or VCF encoding
+of this dataset would be exceedingly cumbersome, likely requiring several
+days of CPU time simply to read the information info memory. \jk{Could
+add concrete timing estimates based on subsets here, but maybe overdoing it?}
 
-\jk{Other stuff we can review here:}
-\begin{enumerate}
-\item Encoding a tree sequence topology like this is very efficient, much, much more compact than newick.
-Can refer to example in msprime paper, or could do a large running example here. Say 500K samples of
-human CHR1, something like that. Newick will be hundreds of TB.
-
-\item Can also make the point that it's much more efficient than, say, VCF. We could drop some
-mutations on the example above, and then report how big it would be if encoded with VCF and BCF.
-
-\item The \msprime\ API is very efficient for working with these large datasets. Examples on
-how long it takes to iterate over all the trees, compute pi, etc.
-
-\item The point of all this is to emphasise that not only is it efficient to generate the
-data as a tree sequence, it's also very efficient to store and process it this way too. By the
-time we get to the end of this section we should have convinced the reader of this.
-
-\end{enumerate}
-
+The tree sequence encoding is very compact but it is also very efficient to process.
+Many algorithms to compute statistics of interest for population genetics
+are naturally expressed in terms of tree topologies. For example, the
+pairwise nucleotide diversity $\pi$, is defined as the average number of
+differences between sequences in the sample. Computing $\pi$ directly
+from observed sequence data requires $O(n^2 m)$ time, since we must
+compare all pairs of samples at every site. However, given the topology of
+the trees at every site and the locations of mutations much better algorithms
+are possible. Using the fact that we can count the number of samples below
+a given node efficiently using previously described tree sequence
+algorithms~\citep{kelleher2016efficient}, the time required to compute $\pi$
+becomes roughly $O(n \log n + m)$.
+The \msprime\ API provides a method to compute $\pi$ among arbitrary subsets of the
+samples in a tree sequence, and calculating $\pi$ over all 500K samples
+in the example above required about 1.2 seconds.
+\jk{I haven't checked the analysis of computing $\pi$ here and not thought about
+it too deeply. I guess we should also compare this with something else in order to
+show that this time is pretty good. We could get a subset of the sites and push
+the data into pylibseq maybe, or scikit-allel??}
 
 %%%%%%
 \subsection*{Recording the pedigree in forwards time}
