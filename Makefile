@@ -2,7 +2,7 @@
 
 all: forwards_paper.pdf
 
-forwards_paper.pdf : method_diagram.pdf references.bib
+forwards_paper.pdf : method_diagram.pdf references.bib example_tree_sequence.pdf
 
 clean: 
 	-rm *.aux *.log *.bbl *.blg
@@ -28,3 +28,5 @@ clean:
 %.pdf : %.ink.svg
 	inkscape $< --export-pdf=$@
 
+example_tree_sequence.pdf: example_tree_sequence.asy
+	asy -f pdf example_tree_sequence.asy
