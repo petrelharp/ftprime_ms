@@ -19,3 +19,30 @@
 \newcommand{\EEsup}[2]{\E^{#1}\!\left[#2\right]}
 
 \newcommand{\bone}{\mathbf{1}}
+
+% These macros are borrowed from TAOCPMAC.tex
+\newcommand{\slug}{\hbox{\kern1.5pt\vrule width2.5pt height6pt depth1.5pt\kern1.5pt}}
+\def\xskip{\hskip 7pt plus 3pt minus 4pt}
+\newdimen\algindent
+\newif\ifitempar \itempartrue % normally true unless briefly set false
+\def\algindentset#1{\setbox0\hbox{{\bf #1.\kern.25em}}\algindent=\wd0\relax}
+\def\algbegin #1 #2{\algindentset{#21}\alg #1 #2} % when steps all have 1 digit
+\def\aalgbegin #1 #2{\algindentset{#211}\alg #1 #2} % when 10 or more steps
+\def\alg#1(#2). {\medbreak % Usage: \algbegin Algorithm A (algname). This...
+  \noindent{\bf#1}({\it#2\/}).\xskip\ignorespaces}
+\def\kalgstep#1.{\ifitempar\smallskip\noindent\else\itempartrue
+   \hskip-\parindent\fi
+   \hbox to\algindent{\bf\hfil #1.\kern.25em}%
+   \hangindent=\algindent\hangafter=1\ignorespaces}
+
+\newcommand{\algstep}[3]{\kalgstep #1 [#2] #3 }
+\newenvironment{taocpalg}[3]{%
+\vspace{1em}%
+\algbegin Algorithm #1. ({#2}). #3 }
+{\vspace{1em}}
+
+\newcommand{\randomuniform}[0]{\mathcal{R}_U}
+\newcommand{\randomdiscrete}[0]{\mathcal{R}_D}
+\newcommand{\algref}[1]{#1}
+% \newcommand{\tablenotation}[1]{\mathcal{#1}}
+% \newcommand{\tableaddrow}[0]{\mbox{add}}
