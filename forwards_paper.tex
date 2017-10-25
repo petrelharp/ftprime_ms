@@ -260,79 +260,93 @@ the data into pylibseq maybe, or scikit-allel??}
 %%%%%%
 \subsection*{Recording the pedigree in forwards time}
 
-To record the genealogical history of a simulation
+To record the genealogical history of a forwards in time simulation
 we need to record two things for each new chromosome:
-the birth time,
-and the endpoints and parental IDs of each distinctly inherited segment.
-This is recorded easily, without further processing,
-in the tables described above.
-
-For concreteness, here we write out in pseudocode
-how to run a neutral Wright--Fisher simulation
-with overlapping generations
-that records genealogical history in this way.
+the birth time, and the endpoints and parental IDs of each distinctly inherited segment.
+For concreteness, here we write out in pseudocode how to run a neutral Wright--Fisher simulation
+with overlapping generations that records genealogical history in this way.
 The simulation will run for $T$ generations,
-and has $N$ haploid individuals, each carrying a single chromosome of length L,
-on which for simplicity we assume there is exactly one crossover per generation.
-The probability of death per individual each generation is \texttt{death\_prob},
-and the whole-chromosome mutation rate per individual is \texttt{mut\_rate}.
+and has $N$ haploid individuals, each carrying a single chromosome of length L.
+For simplicity we assume there is exactly one crossover per generation.
+The probability of death per individual each generation is $\delta$.
 
-\paragraph{Initialize:}
-We will build the tables \nodes, \edgesets, \sites, and \mutations,
-and keep track of the IDs of the current generation in the list \texttt{pop}.
-\begin{lstlisting}[language=Python]
-for i in 0:N-1:
-    nodes.add_row(time=T)
-    pop[i] = i
-\end{lstlisting}
-(Alternatively, the tables could be initialized by the results of a coalescent simulation.)
+Let $\randomuniform(A)$ to be an element of the set $A$ chosen
+uniformly at random (note that each instance of $\randomuniform(A)$ within
+an algorithm listing represents an independent draw from the set $A$).
 
-\paragraph{Iterate:}
-We then step through the generations,
-using the functions \texttt{random\_mutation} and \texttt{random\_allele}
-to choose positions and alleles for mutations, respectively:
-\begin{lstlisting}[language=Python]
-for t in 1:T:
-    for i in 0:N-1:
-        if random.uniform() > death_prob:
-            new_pop[i] = pop[i]
-        else:
-            u = nodes.num_rows  # the ID of the new individual
-            new_pop[i] = u
-            nodes.add_row(time = T-t)
-            a = random.sample(pop)
-            b = random.sample(pop)
-            bp = random.sample(0:L)
-            if bp > 0:
-                edgesets.add_row(left=0, right=bp,
-                                  parent=a, children=(u,))
-            if bp < L:
-                edgesets.add_row(left=bp, right=L,
-                                  parent=b, children=(u,))
-            num_muts = random.poisson(mut_rate)
-            for j in 1:num_muts:
-                pos = random_mutation()
-                if pos not in sites.position:
-                    s = sites.num_rows
-                    sites.add_row(position=pos,
-                           ancestral_state=random_allele())
-                else:
-                    s = sites.position.index(pos)
-                mutations.add_row(site=s, node=u,
-                           derived_state=random_allele())
-    pop = new_pop
-\end{lstlisting}
+\begin{taocpalg}{W}{Forwards-time tree sequence}
+{Runs a forwards time Wright--Fisher simulation of a populations with $N$
+individuals with a probability of death per generation $\delta$ and a chromosome of length
+$L$ for $T$ generations. On termination, there will be $n$ nodes with times recorded
+in the vector $\tau$, and $E$ will contain a set of $(\ell, r, p, c)$ tuples
+describing the recorded edges.
+}
 
-\paragraph{Finalize:}
-to obtain a tree sequence, we need only transform the tables to the required format:
-\begin{lstlisting}
-sort_tables(nodes, edgesets, sites, mutations)
-simplify_tables(nodes, edgesets, sites, mutations)
-\end{lstlisting}
-which can then be loaded into a tree sequence with \msprime.
-(These two functions operate on the tables in place.)
+\algstep{W1.}{Initialisation.}{
+ For $0 \leq j < N$, set $P_j \leftarrow j$ and $\tau_j \leftarrow T$.
+Set $E\leftarrow \emptyset$ and $n \leftarrow N$.
+}
+
+\algstep{W2.}{Generation loop.}{ If $t = 0$ terminate.
+Set $t \leftarrow t - 1$ and $j \leftarrow 0$.
+}
+
+\algstep{W3.}{Individual loop.}{ If $j = N$ set $P \leftarrow P'$ and go to \algref{W2}.
+}
+
+\algstep{W4.}{Mortality.}{ If $\randomuniform([0, 1)) > \delta$, set $P'_j \leftarrow P_j$
+    and go to \algref{W7}.
+}
+
+\algstep{W5.}{New node.}{Set $P'_j \leftarrow n$ and $\tau_n \leftarrow t$.
+}
+
+\algstep{W6.}{Choose parents.}{Set $a \leftarrow \randomuniform(\{0, \dots, N - 1\})$,
+    $b \leftarrow \randomuniform(\{0, \dots, N - 1\})$ and $x \leftarrow \randomuniform([0, L))$.
+}
+
+\algstep{W7.}{Record edges}{Set $E \leftarrow E \cup \left\{ (0, x, P_a, n), (x, L, P_b, n) \right\}$
+    and $n \leftarrow n + 1$.
+}
+
+\algstep{W8.}{Loop tail}{Set $j \leftarrow j + 1$ and go to \algref{W4}.
+}
+
+\jk{I haven't checked this carefully. If we used 1-based indexes it might make things a bit
+simpler}.
+\end{taocpalg}
+
+Algorithm~\algref{W} is a very simple implementation of a Wright--Fisher model
+intended to illustrate how we can record the nodes and edges of a tree sequence
+forwards in time. We begin in~\algref{W1} by allocating our initial population $P$
+and creating $N$ nodes with birth time $T$ generations ago, recorded in the
+vector $\tau$. The set $E$ is used to store the edges that we output during the
+simulation, and $n$ is the number of nodes created so far (and so, the ID of
+the next node we create). Steps~\algref{W2} and~\algref{W3} simply loop over
+the generation clock $t$ and individual index $j$. In~\algref{W4} we check if
+an individual $P_j$ has died in this generation. If it has, we replace it in
+steps \algref{W5}--\algref{W7}; if not, we proceed immediately to the next
+individual. When an individual in the population dies, we first allocate
+a new node with ID $n$ in~\algref{W5} and record its birth time. Then,
+in step~\algref{W6} we choose two indexes $a$ and $b$ uniformly (giving us
+parents $P_a$ and $P_b$) and choose a breakpoint $x$. We record the effects of this
+event by storing two new edges: one recording that the parent of node $n$
+from $0$ to $x$ is $P_a$, and another recording that the parent of $n$
+from $x$ to $L$ is $P_b$. We then complete the replacement event by incrementing
+$n$, ready to represent the next new node.
 
 
+\begin{enumerate}
+\item Explain how to add mutational information. We can also do this afterwards on the
+output trees if they are nuetral.
+\item Explain that we can input these trees into an mpsrime tree sequence and they will
+work fine. Perhaps a diagram to show the kind of trees we get? (Multiroots, lots of unary nodes.
+Can use the msprime SVG API to draw these?) We could refer ahead to figure 2
+instead though.
+\item However, there is huge amount of redundancy in these. The amount of information stored
+grows linearly with time.
+
+\end{enumerate}
 
 \begin{figure}
     \begin{center}
