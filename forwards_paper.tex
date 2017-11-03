@@ -186,8 +186,7 @@ time 1.5 and 2.5 respectively.
         edges that define these topologies. The right-hand panels show the specific encoding
         of this tree sequence in the four tables (nodes, edges, sites and mutations) defined
         by \msprime.
-        \jk{The figure needs to be rescaled a bit to give more space to the trees. We could also use a
-        time scale next to the trees.}
+        \jk{Some minor alignment issues present here.}
         \label{fig:example_tree_sequence}
     }
 \end{figure}
@@ -217,9 +216,6 @@ mutation occurs at site zero (which is in the left-hand tree), which is a simple
 mutation resulting in node $2$ inheriting the state 'T'. The second side (in the
 right hand tree) has two mutations: one occurring over node $3$ changing the state to
 `C' and a back mutation over node $1$ changing the state to `G'.
-\jk{Not sure if I'm labouring the point here: this should be reasonably obvious.
-Perhaps if we added the state changes to the trees, and the states of the leaves
-below the samples, we could get rid of all the example discussion here?}
 
 This encoding of a sequence of trees and accompanying mutational information is
 very concise. To illustrate this, we ran a simulation of $500,000$ samples of a
@@ -234,10 +230,9 @@ was 2.7 seconds. In contrast, recording the topological information in Newick
 format would require around 20 TiB and storing the genotype information
 in VCF would require about 1 TiB. Working with either the Newick or VCF encoding
 of this dataset would be exceedingly cumbersome, likely requiring several
-days of CPU time simply to read the information info memory. \jk{Could
-add concrete timing estimates based on subsets here, but maybe overdoing it?}
+days of CPU time simply to read the information info memory.
 
-The tree sequence encoding is very compact but it is also very efficient to process.
+The tree sequence encoding is compact but it is also efficient to process.
 Many algorithms to compute statistics of interest for population genetics
 are naturally expressed in terms of tree topologies. For example, the
 pairwise nucleotide diversity $\pi$, is defined as the average number of
@@ -335,10 +330,29 @@ from $0$ to $x$ is $P_a$, and another recording that the parent of $n$
 from $x$ to $L$ is $P_b$. We then complete the replacement event by incrementing
 $n$, ready to represent the next new node.
 
+This algorithm records only the topological information resulting from the
+forwards in time Wright-Fisher process, but it is straightforward to add
+mutational information. This can be done in two different ways.
+We can record mutations that occur during the simulation quite simply.
+For example, in Algorithm~\algref{W} we would generate mutations after
+we have recorded the edges joining the new node $n$ to its parents
+$P_a$ and $P_b$ in step \algref{W7}.
+For example, if we assume that infinite sites mutations
+occur at rate $\mu$ per generation then there are $\mbox{Poisson}\left((r - \ell)(\tau_p
+- \tau_c)\right)$ mutations on each edge $(\ell, r, p, c)$. Each of these mutations
+will occur on a discinct site $x$ drawn uniformly from $(\ell, r]$ and be over node $c$.
+It is straightforward to record this information during the simulation, but it
+is significantly simpler and more efficient to generate these mutations
+after the simulation has completed. In the case of infinite sites mutations
+there is no difference between generating these mutations during the forwards
+in time simulation and after it has completed. We are using precisely the same
+information.
+
+It is significantly more efficient to generate mutations as a separate process
+after the topological simulation has completed because we will generate many
+mutations that will be lost in the population.
 
 \begin{enumerate}
-\item Explain how to add mutational information. We can also do this afterwards on the
-output trees if they are nuetral.
 \item Explain that we can input these trees into an mpsrime tree sequence and they will
 work fine. Perhaps a diagram to show the kind of trees we get? (Multiroots, lots of unary nodes.
 Can use the msprime SVG API to draw these?) We could refer ahead to figure 2
