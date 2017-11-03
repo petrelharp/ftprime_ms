@@ -279,18 +279,17 @@ describing the recorded edges.
 
 \algstep{W1.}{Initialisation.}{
  For $0 \leq j < N$, set $P_j \leftarrow j$ and $\tau_j \leftarrow T$.
-Set $E\leftarrow \emptyset$ and $n \leftarrow N$.
+Set $E\leftarrow \emptyset$, $t \leftarrow T$ and $n \leftarrow N$.
 }
 
 \algstep{W2.}{Generation loop.}{ If $t = 0$ terminate.
-Set $t \leftarrow t - 1$ and $j \leftarrow 0$.
+Set $P'_j \leftarrow P_j$ for $0\leq j < N$ and then set $t \leftarrow t - 1$ and $j \leftarrow 0$.
 }
 
 \algstep{W3.}{Individual loop.}{ If $j = N$ set $P \leftarrow P'$ and go to \algref{W2}.
 }
 
-\algstep{W4.}{Mortality.}{ If $\randomuniform([0, 1)) > \delta$, set $P'_j \leftarrow P_j$
-    and go to \algref{W7}.
+\algstep{W4.}{Mortality.}{ If $\randomuniform([0, 1)) \geq \delta$ go to \algref{W8}.
 }
 
 \algstep{W5.}{New node.}{Set $P'_j \leftarrow n$ and $\tau_n \leftarrow t$.
@@ -304,7 +303,7 @@ Set $t \leftarrow t - 1$ and $j \leftarrow 0$.
     and $n \leftarrow n + 1$.
 }
 
-\algstep{W8.}{Loop tail}{Set $j \leftarrow j + 1$ and go to \algref{W4}.
+\algstep{W8.}{Loop tail}{Set $j \leftarrow j + 1$ and go to \algref{W3}.
 }
 
 \jk{I haven't checked this carefully. If we used 1-based indexes it might make things a bit
@@ -347,6 +346,17 @@ after the simulation has completed. In the case of infinite sites mutations
 there is no difference between generating these mutations during the forwards
 in time simulation and after it has completed. We are using precisely the same
 information.
+
+\begin{figure}
+    \begin{center}
+        \includegraphics{wf-before}
+        \includegraphics{wf-after}
+    \end{center}
+    \caption{\label{fig:wf-trees}
+    }
+\end{figure}
+
+
 
 It is significantly more efficient to generate mutations as a separate process
 after the topological simulation has completed because we will generate many
