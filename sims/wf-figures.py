@@ -5,6 +5,9 @@ import random
 import msprime
 
 def wright_fisher(N, delta, L, T):
+    """
+    Direct implementation of Algorithm W.
+    """
     edges = msprime.EdgeTable()
     tau = []
     P = [j for j in range(N)]
@@ -39,16 +42,20 @@ def wright_fisher(N, delta, L, T):
 
 if __name__ == "__main__":
 
-    random.seed(1)
-    ts = wright_fisher(5, 0.95, 1, 10)
+    random.seed(2)
+    ts = wright_fisher(5, 0.95, 1, 6)
     t = next(ts.trees())
     print(t.draw(format="unicode"))
-    t.draw(path="wf-before.svg")
+    h = 200
+    t.draw(path="wf-before.svg", width=200, height=h)
     tss, node_map = ts.simplify(map_nodes=True)
     node_labels = {
         node_map[j]: str(j) for j in range(node_map.shape[0])}
     t = next(tss.trees())
+    # Rescale the height so that the nodes in the new tree are at the
+    # same height as those in the old tree.
+    h = h * 6 / 7
     print(t.draw(format="unicode", node_label_text=node_labels))
-    t.draw(path="wf-after.svg", node_label_text=node_labels)
+    t.draw(path="wf-after.svg", node_label_text=node_labels, width=200, height=h)
 
 
