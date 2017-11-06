@@ -134,7 +134,7 @@ if args.generations is None:
     args.generations = args.popsize * args.multiplier
 
 from simuOpt import setOptions
-setOptions(alleleType = 'binary')
+setOptions(alleleType = 'mutant')
 setOptions(optimized=True)
 
 
