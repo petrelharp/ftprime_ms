@@ -135,6 +135,8 @@ if args.generations is None:
 
 from simuOpt import setOptions
 setOptions(alleleType = 'binary')
+setOptions(optimized=True)
+
 
 import simuPOP as sim
 
