@@ -217,6 +217,8 @@ id_tagger.apply(pop)
 # NB: we have to simulate an initial tree sequence
 first_gen = pop.indInfo("ind_id")
 init_ts = msprime.simulate(2*len(first_gen),
+                           Ne=args.popsize,
+                           recombination_rate=args.recomb_rate,
                            length=max(locus_position))
 haploid_labels = [(k,p) for k in first_gen
                         for p in (0,1)]
