@@ -2,7 +2,7 @@
 
 all: forwards_paper.pdf
 
-forwards_paper.pdf : method_diagram.pdf references.bib example_tree_sequence.pdf wf-before-after.pdf
+forwards_paper.pdf : method_diagram.pdf references.bib example_tree_sequence.pdf wf-before-after.pdf simplify-state-diagram.pdf
 
 clean: 
 	-rm *.aux *.log *.bbl *.blg
