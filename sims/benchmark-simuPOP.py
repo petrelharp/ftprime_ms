@@ -125,6 +125,10 @@ parser.add_argument("--generations","-T", type=int, dest="generations",
 parser.add_argument("--simlen","-s", type=int, dest="multiplier",
         help="multiplier of popsize to run for (unless `generations` is specified)",
                     default=10)
+parser.add_argument("--verbose", "-v", dest="verbose", action='store_true')
+parser.add_argument("--num-vars", "-n", dest="num_vars", action='store_true',
+                    help="print the number of variants post mut")
+
 
 args = parser.parse_args()
 if args.record_neutral:
@@ -136,6 +140,8 @@ if args.generations is None:
 from simuOpt import setOptions
 setOptions(alleleType = 'mutant')
 setOptions(optimized=True)
+if not args.verbose:
+    setOptions(quiet=True)
 
 
 import simuPOP as sim
@@ -152,6 +158,9 @@ logfile.write("----------\n")
 logfile.flush()
 
 # define defaults for benchmark
+# scalings:
+# theta = 4 * Ne * mutation rate per bp * total number of bp
+# rho = 4 * Ne * mutation rate per bp * total number of bp
 npops = 1
 rloci = args.rho / (args.popsize * 4 * args.recomb_rate)
 uloci = args.theta / (args.popsize * 4 * args.mut_rate)
@@ -247,9 +256,6 @@ pop.evolve(
                              infoFields="ind_id"),
         ] ),
     postOps=[
-        sim.Stat(numOfSegSites=sim.ALL_AVAIL, step=REPORTING_STEP,
-                 vars=['numOfSegSites', 'numOfFixedSites']),
-        sim.PyEval(r"'Gen: %2d #seg/#fixed sites: %d / %d\n' % (gen, numOfSegSites, numOfFixedSites)", step=REPORTING_STEP),
         sim.PyOperator(lambda pop: rc.simplify(pop.indInfo("ind_id")) or True,
                        step=args.simplify_interval),
     ],
@@ -326,7 +332,8 @@ elif not args.record_neutral:
     mutgen.generate(nodes, edges, sites, mutations)
     mutated_ts = msprime.load_tables(
         nodes=nodes, edges=edges, sites=sites, mutations=mutations)
-
+if args.num_vars:
+    print(len([i for i in mutated_ts.variants()]))
 del ts
 
 logfile.write("Generated mutations!\n")
