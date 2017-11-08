@@ -172,7 +172,7 @@ args.sel_mut_rate = args.mut_rate * args.pdel
 # >The default positions are 1, 2, 3, 4, ... on each
 # >chromosome.
 
-locus_position = list(range(0, args.nloci))
+locus_position = list(i / args.nloci for i in range(0, args.nloci))
 
 # logfile.write("Locus positions:\n")
 # logfile.write(str(locus_position)+"\n")
