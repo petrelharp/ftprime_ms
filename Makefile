@@ -2,10 +2,13 @@
 
 all: forwards_paper.pdf
 
-forwards_paper.pdf : method_diagram.pdf references.bib example_tree_sequence.pdf
+forwards_paper.pdf : method_diagram.pdf references.bib example_tree_sequence.pdf sims/wf-after.pdf sims/wf-before.pdf
 
 clean: 
 	-rm *.aux *.log *.bbl *.blg
+
+sims/wf-after.svg sims/wf-before.svg : sims/wf-figures.py
+	python3 $<
 
 %.pdf : %.tex %.bbl
 	while ( pdflatex $<;  grep -q "Rerun to get" $*.log ) do true ; done
@@ -24,6 +27,9 @@ clean:
 
 %.png : %.pdf
 	convert -density 300 $< -flatten $@
+
+%.pdf : %.svg
+	inkscape $< --export-pdf=$@
 
 %.pdf : %.ink.svg
 	inkscape $< --export-pdf=$@
