@@ -11,7 +11,7 @@ parser.add_argument("--popsize","-N", type=int, dest="popsize",
 parser.add_argument("--theta","-ϴ", type=int, dest="theta",
                     help="total mutation rate for whole chromosome: theta = 4 N u/site (sites)", default=100)
 parser.add_argument("--rho","-ρ", type=int, dest="rho",
-                    help="total recombination rate for whole chromosome: rho = 4 N r/site (sites)", default=100)
+                    help="total **diploid** recombination rate for whole chromosome: rho = 4 N r/site (sites)", default=100)
 parser.add_argument("--nsam","-k", type=int, dest="nsam",
                     help="total number of samples with msprime", default=10)
 parser.add_argument("--sims","-n", type=int, dest="NUM",
@@ -35,8 +35,8 @@ rec_rate = rho/4. / L /Ne
 S_msprime = []
 
 for _ in range(args.NUM):
-    g = msprime.simulate(args.nsam, Ne=Ne, length=L, mutation_rate=mut_rate,
-                         recombination_rate=rec_rate)
+    g = msprime.simulate(2 * args.nsam, Ne=Ne, length=L, mutation_rate=mut_rate,
+                         recombination_rate=rec_rate / 2.0)
     S_msprime.append(len([i for i in g.variants()]))
 
 rng = msprime.RandomGenerator(random.randint(1, 2**32 - 1))

@@ -1,0 +1,34 @@
+d.table('S_rmin.txt', header=TRUE)
+> print('dist of S')
+[1] "dist of S"
+> mean(d$msprime_S)
+[1] 1119.06
+> mean(d$ftprime_S)
+[1] 1115.51
+> ks.test(d$ftprime_S, d$msprime_S)
+
+        Two-sample Kolmogorov-Smirnov test
+
+data:  d$ftprime_S and d$msprime_S
+D = 0.08, p-value = 0.9062
+alternative hypothesis: two-sided
+
+Warning message:
+In ks.test(d$ftprime_S, d$msprime_S) :
+  p-value will be approximate in the presence of ties
+> mean(d$msprime_Rmin)
+[1] 106.92
+> mean(d$ftprime_Rmin)
+[1] 105.53
+> ks.test(d$ftprime_Rmin, d$msprime_Rmin)
+
+        Two-sample Kolmogorov-Smirnov test
+
+data:  d$ftprime_Rmin and d$msprime_Rmin
+D = 0.12, p-value = 0.4676
+alternative hypothesis: two-sided
+
+Warning message:
+In ks.test(d$ftprime_Rmin, d$msprime_Rmin) :
+  p-value will be approximate in the presence of ties
+
