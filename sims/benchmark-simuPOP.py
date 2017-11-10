@@ -88,9 +88,9 @@ parser = argparse.ArgumentParser(description=description)
 parser.add_argument("--popsize","-N", type=int, dest="popsize",
         help="size of each subpopulation",default=100)
 parser.add_argument("--theta","-ϴ", type=int, dest="theta",
-                    help="total mutation rate for whole chromosome: theta = 4 N u/site (sites)", default=100)
+                    help="total mutation rate for whole **diploid** chromosome: theta = 4 N u/site (sites)", default=100)
 parser.add_argument("--rho","-ρ", type=int, dest="rho",
-                    help="total recombination rate for whole chromosome: rho = 4 N r/site (sites)", default=100)
+                    help="total recombination rate for whole **diploid** chromosome: rho = 4 N r/site (sites)", default=100)
 parser.add_argument("--nsam","-k", type=int, dest="nsamples",
         help="number of *diploid* samples, total",)
 parser.add_argument("--pdel","-p", type=float, dest="pdel",
@@ -128,6 +128,8 @@ parser.add_argument("--simlen","-s", type=int, dest="multiplier",
 parser.add_argument("--verbose", "-v", dest="verbose", action='store_true')
 parser.add_argument("--num-vars", "-n", dest="num_vars", action='store_true',
                     help="print the number of variants post mut")
+parser.add_argument("--len-trees", "-l", dest="len_trees", action='store_true',
+                    help="print the dist of tree lengths pre mut")
 
 
 args = parser.parse_args()
@@ -227,7 +229,7 @@ id_tagger.apply(pop)
 first_gen = pop.indInfo("ind_id")
 init_ts = msprime.simulate(2*len(first_gen),
                            Ne=args.popsize,
-                           recombination_rate=args.recomb_rate,
+                           recombination_rate=args.recomb_rate / 2.0,
                            length=max(locus_position))
 haploid_labels = [(k,p) for k in first_gen
                         for p in (0,1)]
@@ -334,6 +336,10 @@ elif not args.record_neutral:
         nodes=nodes, edges=edges, sites=sites, mutations=mutations)
 if args.num_vars:
     print(len([i for i in mutated_ts.variants()]))
+
+if args.len_trees:
+    print([t.total_branch_length for t in ts.trees()])
+
 del ts
 
 logfile.write("Generated mutations!\n")
