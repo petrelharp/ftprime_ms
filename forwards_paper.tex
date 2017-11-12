@@ -237,7 +237,7 @@ Given the topology defined by the nodes and edges, \emph{sites} and \emph{mutati
 encode the sequence information for each sample in an efficient way. Each site
 is associated with a position on the genome and an ancestral state. For example,
 in Figure~\ref{fig:example_tree_sequence} we have two sites, one at position
-2 wieth ancestral state `A' and the other at position 7 with ancestral state `G'. If
+2 with ancestral state `A' and the other at position 7 with ancestral state `G'. If
 no mutations occur, all samples inherit the ancestral state at a given site.
 Each mutation occurs above a specific node at a given site, 
 and results in a specific derived state. 
@@ -263,7 +263,7 @@ around 1.5 seconds, and the time required to iterate over all 1 million trees
 was 2.7 seconds. In contrast, recording the topological information in Newick
 format would require around 20 TiB and storing the genotype information
 in VCF would require about 1 TiB --
-a compression factor of 200,000.
+a compression factor of 144,000.
 Working with either the Newick or VCF encoding
 of this dataset would likely require several
 days of CPU time simply to read the information info memory.
@@ -274,21 +274,21 @@ days of CPU time simply to read the information info memory.
 
 To record the genealogical history of a forwards in time simulation
 we need to record two things for each new chromosome:
-the birth time, and the endpoints and parental IDs of each distinctly inherited segment.
+the birth time, and the endpoints and parental IDs of each distinctly inherited segment,
+which are naturally stored as the \emph{nodes} and \emph{edges} of a tree sequence.
 For concreteness, here we write out in pseudocode how to run a neutral Wright--Fisher simulation
 with overlapping generations that records genealogical history in this way.
 The simulation will run for $T$ generations,
 and has $N$ haploid individuals, each carrying a single chromosome of length L.
-For simplicity we assume there is exactly one crossover per generation.
+For simplicity we sample exactly one crossover per generation.
 The probability of death per individual each generation is $\delta$.
-
-Let $\randomuniform(A)$ to be an element of the set $A$ chosen
-uniformly at random (note that each instance of $\randomuniform(A)$ within
-an algorithm listing represents an independent draw from the set $A$).
+We will use
+$\randomuniform(A)$ to denote an element of the set $A$ chosen uniformly at random 
+(and each such instance represents and independent draw).
 
 \begin{taocpalg}{W}{Forwards-time tree sequence}
-{Runs a forwards time Wright--Fisher simulation of a populations with $N$
-individuals with a probability of death per generation $\delta$ and a chromosome of length
+{Simulates a randomly mating population of $N$ haploid individuals,
+with a probability of death per generation $\delta$ and a chromosome of length
 $L$ for $T$ generations. On termination, there will be $n$ nodes with times recorded
 in the vector $\tau$, and $E$ will contain a set of $(\ell, r, p, c)$ tuples
 describing the recorded edges.
@@ -300,7 +300,7 @@ Set $E\leftarrow \emptyset$, $t \leftarrow T$ and $n \leftarrow N$.
 }
 
 \algstep{W2.}{Generation loop.}{ If $t = 0$ terminate.
-Set $P'_j \leftarrow P_j$ for $0\leq j < N$ and then set $t \leftarrow t - 1$ and $j \leftarrow 0$.
+Set $P' \leftarrow P$ and then set $t \leftarrow t - 1$ and $j \leftarrow 0$.
 }
 
 \algstep{W3.}{Individual loop.}{ If $j = N$ set $P \leftarrow P'$ and go to \algref{W2}.
@@ -323,8 +323,6 @@ Set $P'_j \leftarrow P_j$ for $0\leq j < N$ and then set $t \leftarrow t - 1$ an
 \algstep{W8.}{Loop tail}{Set $j \leftarrow j + 1$ and go to \algref{W3}.
 }
 
-\jk{I haven't checked this carefully. If we used 1-based indexes it might make things a bit
-simpler}.
 \end{taocpalg}
 
 Algorithm~\algref{W} is a very simple implementation of a Wright--Fisher model
@@ -353,16 +351,18 @@ We can record mutations that occur during the simulation quite simply.
 For example, in Algorithm~\algref{W} we would generate mutations after
 we have recorded the edges joining the new node $n$ to its parents
 $P_a$ and $P_b$ in step \algref{W7}.
-For example, if we assume that infinite sites mutations
-occur at rate $\mu$ per generation then there are $\mbox{Poisson}\left((r - \ell)(\tau_p
+For example, if we assume that mutations occur according to the infinite sites model
+at rate $\mu$ per generation per unit length then there are 
+$\mbox{Poisson}\left(\mu (r - \ell)(\tau_p
 - \tau_c)\right)$ mutations on each edge $(\ell, r, p, c)$. Each of these mutations
-will occur on a distinct site $x$ drawn uniformly from $(\ell, r]$ and be over node $c$.
+will occur on a distinct site $x$ drawn uniformly from $(\ell, r]$ and be associated with node $c$.
 It is straightforward to record this information during the simulation, but it
 is significantly simpler and more efficient to generate these mutations
-after the simulation has completed. In the case of infinite sites mutations
-there is no difference between generating these mutations during the forwards
-in time simulation and after it has completed. We are using precisely the same
-information.
+after the simulation has completed. 
+% In the case of infinite sites mutations
+% there is no difference between generating these mutations during the forwards
+% in time simulation and after it has completed. We are using precisely the same
+% information.
 
 \begin{figure}
     \begin{center}
@@ -376,12 +376,14 @@ information.
     }
 \end{figure}
 
-It is significantly more efficient to generate mutations as a separate process
-after the topological simulation has completed because we will generate many
-mutations that will be lost in the population. Figure~\ref{fig:wf-trees} shows
-an example of a marginal genealogy produced by a forwards-time Wright-Fisher
-process like Algorithm~\algref{W}. There are two different trees in this
-figure: one shows all the edges output by the simulation and the other
+Besides the cost of transmitting genotypes,
+generating mutations as a separate process after the topological simulation has completed 
+avoids generating the many mutations that are lost in the population. 
+Figure~\ref{fig:wf-trees} shows
+an example of a marginal genealogy produced by a forwards-time Wright--Fisher
+process like Algorithm~\algref{W}. 
+On the left is the tree showing all the edges output by the simulation, 
+while on the right
 is the minimal tree representing the ancestry of the currently alive
 population. Clearly there is a great deal of redundancy in the topological
 information output by the simulation.
@@ -389,32 +391,22 @@ information output by the simulation.
 There are two sources of redundancy here. The first type of redundancy arises
 from nodes in tree that have only one child. In Algorithm~\algref{W} we do
 not attempt to track coalescence events but simply record all parent-child
-relationships in the history of the population. As such, my of these edges
+relationships in the history of the population. As such, many of these edges
 will record the simple passing of genealogical information from parent to child
 and only some small subset will correspond to coalesences within the marginal
 trees. The second source of redundancy in the output of Algorithm~\algref{W}
-is due to the fact that lineages die out: there will be a large number of
-individuals in the simulation that leave no ancestors in the present day
-population. Node 26 in Figure~\ref{fig:wf-trees}a, for example, leaves no
-ancestors in the current population and so the entire path tracing back to
+is due to the fact that lineages die out: a large number of
+individuals in the simulation leave no descendants in the present day population. 
+Node 26 in Figure~\ref{fig:wf-trees}a, for example, leaves no
+ancestors in the current population, and so the entire path tracing back to
 the root is redundant.
 
-One of the reasons that it is more efficient to generate mutations on the
-genealogies after we have completed the forwards in time simulation is
-because we avoid the cost of generating mutations on these dead-end branches.
-It is only with the benefit of hindsight that we can know which lineages end
-up being ancestral to the sample, and we can avoid a substantial cost of
-generating and maintaining mutational information on these evolutionary
-dead-ends. Assuming mutations are rare, another  reason that it is more efficient
-to place mutations on the trees afterwards is that we have far fewer edges
-in the trees: because we have removed all the intermediate `unary' nodes, we
-have fewer edges to generate mutations on.
-
-There are many advantages to having minimal genealogies such as show in
-Figure~\ref{fig:wf-trees}. Computing this minimal representation of the
+A minimal genealogy such as in Figure~\ref{fig:wf-trees}
+has fewer edges on which to place mutations.
+There are many more advantages to simplifying the genealogies to this point.
+Computing this minimal representation of the
 edges output by a forward-time simulation is an instance of a more
-general problem that we refer to as `tree sequence simplification'. We discuss
-this problem and an efficient solution in the next subsection.
+general problem that cover in the next section.
 
 %%%%%%
 \subsection*{Tree sequence simplification}
