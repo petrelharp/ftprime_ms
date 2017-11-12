@@ -408,21 +408,21 @@ Computing this minimal representation of the
 edges output by a forward-time simulation is an instance of a more
 general problem that cover in the next section.
 
+
 %%%%%%
 \subsection*{Tree sequence simplification}
 
-Suppose we have a tree sequence consisting of a set of nodes and edges as
-described earlier, and we have some subset of the nodes in this tree sequence
-that we are interested in (our `samples').  We wish to reduce the input tree sequence
+Suppose that we are only interested in a subset of the nodes (our `samples')
+of a tree sequence,
+and so wish to reduce this input tree sequence
 into the minimum representation of the topologies that include the specified
 samples. The output tree sequence must have the following properties:
 \begin{enumerate}
-\item we must have the same marginal trees with respect to the samples as
-the input;
-\item within the marginal trees, all non-sample vertices must has at least
-two children (i.e., unary tree vertices are removed);
-\item any nodes and edges not reachable from the sampled nodes are removed;
-\item there are no adjacent redundant edges, i.e, pairs of edges $(\ell, x, p,
+\item All marginal trees must match the subtree induced by the samples of the corresponding tree in the input tree sequence.
+\item Within the marginal trees, all non-sample vertices must has at least
+two children (i.e., unary tree vertices are removed), unless the vertex is a sample.
+\item Any nodes and edges not ancestral to the sampled nodes are removed.
+\item There are no adjacent redundant edges, i.e, pairs of edges $(\ell, x, p,
 c)$ and $(x, r, p, c)$ which can be represented with a single edge
 $(\ell, r, p, c)$.
 \end{enumerate}
@@ -434,10 +434,11 @@ $(\ell, r, p, c)$.
     \caption{
         A simple example of the method.
         \textbf{Top:} the diagram on the left relates ten haploid individuals to each other.
-        It is recorded, in forwards time,
-        in 10 node records (one for each individual)
+        It has 10 node records (one for each individual)
         and 14 edge records (one for each distinctly inherited segment).
-        Blue numbers denote crossing over locations in each meiosis.
+        Blue numbers denote crossing over locations in each meiosis --
+        for instance, $C$ and $D$ were parents to $F$,
+        who inherited the left 70\% of the chromosome from $D$ and the remainder from $C$.
         The individuals $B$, $C$, and $D$ inherit clonally from $A$.
         \textbf{Center:} the five distinct trees relating all individuals to each other
         found across the chromosome (blue numbers denote locations on the chromosome).
@@ -445,48 +446,64 @@ $(\ell, r, p, c)$.
         \textbf{Bottom:} tables recording the tree sequence after simplification
         with nodes $I$ and $J$ as samples.
         The mapping from labels in the forwards time simulation to nodes in the tree sequence
-        is shown in red,
-        which allows additional records to be added as the simulation progresses.
+        is shown in red.
+        % which allows additional records to be added as the simulation progresses.
         \label{fig:method_diagram}
     }
 \end{figure}
 
-In the current context of running forwards in time simulations, the tables of
-nodes and edges that we record all of history for everyone alive at any time through the simulation.
+The tree sequences produced by forwards simulations, 
+record all of history for everyone alive at any time through the simulation.
 This is much more than we need to reconstruct the genealogies and sequences
-of the current day population. We can use the process of simplification here to
-reduce this down to the minimal set of nodes and edges required to represent
-the information that we are interested in. We can also use simplification if  we have some very
+of the current population.
+Simplification is essential to reduce this 
+to a manageable quantity that still contains all
+the information that we are interested in. 
+Simplification is also useful if we have a
 large tree sequence representing a large dataset and we wish to extract the
 information relevant to a subset of the samples.
 
-Roughly, simplification works by tracing ancestry from the samples backwards
-through the recorded history, adding node and edge records to the output
-only when coalescent events are reached. This works exactly as in \msprime,
-allowing substantial re-use of algorithms; the main difference being that
-parental choice, mutations, and recombination locations are determined by the
-input tree sequence rather than randomly generated. An example is shown in
-Figure \ref{fig:method_diagram}.
+The approach that we take is based on Hudson's algorithm for simulating
+the coalescent with recombination~\citep{hudson1983properties,kelleher2016efficient};
+the implementaiton of simplify parallels the implementation of Hudson's algorithm in \msprime.
+Conceptually, this works by 
+(a) beginning by painting the chromosome each sample a distinct color;
+(b) moving back through history, 
+copying the colors of each chromosome to the portions of its' parental chromosomes
+from which it was inherited;
+(c) each time we would paint two colors in the same spot (a coalescence),
+record that information as an edge and instead paint a brand-new color; 
+and
+(d) once all colors have coalesced on a given segment,
+stop propagating it.
+This ``paint pot'' description misses some details --
+for instance, we must ensure that all coalescing segments in a given individual
+are assigned the \emph{same} new color --
+but is reasonably close.
+The process is depicted in Figure~\ref{fig:simplify_state}.
 
 \begin{figure}
     \begin{center}
         \includegraphics{simplify-state-diagram}
     \end{center}
     \caption{
-        A depiction of the state of the simplification algorithm.
+        A depiction of the state of the simplification algorithm
+        at each point in time,
+        in the example of Figure~\ref{fig:method_diagram}.
         \label{fig:simplify_state}
     }
 \end{figure}
 
-The approach that we take is based on Hudson's algorithm for simulating
-the coalescent with
-recombination~\citep{hudson1983properties,kelleher2016efficient}. The main
-state of the algorithm is a set of ancestral segments; each segment $(\ell, r,
-u)$ represents a tract of ancestral material in which the node $u$ is
-associated with the genomic interval $[\ell, r)$. In the same manner
-as Hudson's algorithm, we represent the set of extant lineages as a
-set of individuals, where each ancestral individual is composed of a
-linked list of these segments. The node $u$ in each ancestral sequence
+More concretely,
+the algorithm works by moving back through time,
+processing each edge in the input tree sequence in chronological order.
+The main state of the algorithm at each point in time is a set of ancestral segments:
+each segment $(\ell, r, u)$ represents a tract of ancestral material in which the node $u$ is
+associated with the genomic interval $[\ell, r)$. 
+These segments are stored in a collection of linked lists,
+one list of segments for each ancestral lineage present at that time.
+(These lineages are the ``colors'' above.)
+The node $u$ in each ancestral sequence
 is the node ID associated with this segment in the output tree sequence.
 We maintain a map $A$ such that $A_j$ is segment chain for node $j$ in
 the input tree sequence.
@@ -696,15 +713,56 @@ but perhaps it will prove useful elsewhere.
 %%%%%%%%%%%%%%%%%%%%%%
 \section*{Methods}
 
+\plr{some of this can move back to an appendix, but since they want methods at the end,
+it's the sort of thing they want here.}
+
 %%%%%%%%%%%%%%
 \subsection*{Simuation methods}
 
 Jaime and Kevin to describe simulation methods here (separately).
 
 
-\plr{some of this can move back to an appendix, but since they want methods at the end,
-it's the sort of thing they want here.}
+%%%%%%%%%%%%%%
+\subsection*{Simplification}
 
+Here we describe the simplification algorithm.
+\plr{I am trying it out to see what it looks like.}
+
+\begin{taocpalg}{S}{Simplify a tree sequence}
+{Simplifies the input tree sequence.
+}
+
+
+\algstep{S0.}{Initialize.}{
+    Set the samples.
+}
+
+\algstep{S1.}{Input parent loop.}{Loop over parents, chronologically.
+}
+
+\algstep{S2.}{Process parent edges.}{Loop over edges associated with this parent, removing ancestry from each child.
+}
+
+\algstep{S3.}{Merge ancestors.}{Merge the resulting segments into a new ancestor for this parent.
+}
+
+\end{taocpalg}
+
+This uses
+\begin{taocpalg}{R}{Remove ancestry}
+    {Remove ancestry on a segment from an ancestor.}
+
+
+\end{taocpalg}
+and
+\begin{taocpalg}{M}{Merge ancestors}
+    {Merge a collection of segments and create a new ancestor.}
+
+
+\end{taocpalg}
+
+
+%%%%%%%%%%%%%%
 \subsection*{Data structures:}
 \jk{Moved from above.}
 
