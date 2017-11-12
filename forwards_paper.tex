@@ -24,7 +24,7 @@
 
 \begin{document}
 
-\title{Efficient forwards-time simulation with ancestral recombination graphs}
+\title{Efficient forwards-time simulation with tree sequences}
 \author{Jerome Kelleher,
         Kevin R. Thornton,
         Jaime Ashander, and
@@ -33,32 +33,25 @@
 
 \emph{Note:} author order not determined
 
+
 \begin{abstract}
-    To use genomic data for inference and prediction
-    it is often necessary to obtain whole-genome information
-    from individual-based simulations,
-    but the computational burden of tracking the genome of each simulated individual can be substantial.
+    The computational burden of tracking individual genomes 
+    in a population genetics simulation can be substantial.
     In this note we describe how to both (a) dramatically reduce this burden and
     (b) efficiently record the entire history of the population.
     We do this by simulating only those loci that may affect reproduction (those having non-neutral variants),
     and recording the entire history of genetic inheritance in an efficient representation of the ancestral recombination graph,
-    on which neutral mutations can be quickly placed afterwards.
-    \plr{make more clear data structure was already developed? refer to 'tree sequence' by name?}
-    The algorithm is implemented in python,
-    and is designed to be easily used by any forwards-time simulation software.
-
-    Coalescent simulations are very helpful but require random mating and neutrality.
-    For continuous space, polygenic selection, or detailed dissection of life history,
-    we must use forwards-time, individual-based simulation.
-    These are much slower due in part to carrying around neutral genotypes irrelevant to the process.
-    Here we show how to efficiently produce and store the entire history of ancestry and recombination
-    from an individual-based simulation,
-    on which neutral mutations can be placed afterwards.
-    This has the promise of making large-scale, whole-genome simulations with realistic geography and selection finally possible.
+    on which neutral mutations can be quickly placed afterwards --
+    the \emph{tree sequence} introduced in the software package \msprime.
+    We implement the method in two popular fowards-time simulation frameworks,
+    and show it leads to order-of-magnitude speedups.
+    % This has the promise of making large-scale, whole-genome simulations with realistic geography and selection finally possible.
 \end{abstract}
 
+% NOTE: I tend to use semantic linebreaks.
+% Please excuse the ragged right margins in the source.
 
-\textbf{OUTLINE}
+previous \textbf{OUTLINE}, possibly out-of-date but left for comparison.
 \begin{enumerate}
     \item motivate need for whole-genome fwd-time simulations; point out that we only recently have the computing power to do this
     \item explain ARG: explain that for forwards-time only need selected loci as by defn all others can be put on afterwards
@@ -74,8 +67,6 @@
 %%%%%%%%%%%%%%%%%%%%%%
 \section*{Introduction}
 
-\plr{perhaps some of this veers into methods rather than introduction}
-
 Since the 1980's, coalescent theory has enabled computer simulation of the results of population genetics models
 identical to that which would be produced by large, randomly mating populations over long periods of time
 without actually requiring simulation of so many generations or meioses.
@@ -86,45 +77,57 @@ and finally, providing a computationally feasible method to produce computer sim
 However, these powerful advances came with substantial caveats:
 the backwards-in-time processes that are described by coalescent theory
 are only \emph{Markovian}, and thus feasible to work with,
-thanks to the important assumptions of (a) random mating, and (b) neutrality.
-\plr{Brief statement why this is.  Also include stationarity?}
-Both assumptions can be side-stepped to a limited extent, and so coalescent methods are now commonly used to
-simulate the results of population dynamics of a collection of randomly mating populations exchanging migrants,
-having a small number of loci under selection.
-Mapping results of such models onto real species can be challenging,
-as these are often distributed across geographical space and may have large numbers of loci under various sorts of selection.
+thanks to the important assumptions of 
+(a) random mating, 
+(b) neutrality,
+and (c) small sample size relative to the population size.
+The first two assumptions can be side-stepped to a limited extent, 
+but it remains a challenge to map results of coalescent models
+onto species that are distributed across continuous geographical space 
+and/or have large numbers of loci under various sorts of selection.
 Furthermore, the relationship between the life history of a species --
 fecundity and mortality schedules, allee effects, and demographic fluctuations --
 are all absorbed into a single compound parameter, the coalescence rate.
+The third assumption is no longer safe, either --
+for example, a recent study~\citep{martin2017human}
+simulated 600,000 samples of human chromosome 20
+% to assess the impact of European biased reference panels in genome wide association studies. 
+Several studies have now shown that in samples of size approaching that of the population,
+genealogical properties may be distorted relative to the coalescent expectation
+\citep{wakeley2003gene,maruvka2011recovering,bhaskar2014distortion}.
 These considerations, and increasing computational power, have led to a resurgence of interest in forwards-time, individual-based simulations.
 
-Another critical assumption of the coalescent is that the sample size $n$ is much smaller
-than the effective population size $N_e$. With the very large sample sizes becoming common
-in human genetics, this is no longer a safe assumption. For example, a recent study~\citep{martin2017human}
-simulated 600,000 samples of human chromosome 20 to assess the impact of European biased
-reference panels in genome wide association studies. While many results of the
-coalescent are surprisingly
-robust to violations of the assumption that $n \ll N$, there are instances where genealogical properties
-are distorted and coalescent simulations may be
-misleading~\citep{wakeley2003gene,maruvka2011recovering,bhaskar2014distortion}.
-A hybrid approach, in which the recent history of a large sample of
-individuals is simulated under a detailed forwards-in-time model and the deep history
-under the coalescent, is an attractive prospect.
-\jk{Not sure where this should go; perhaps in the discussion? We can make the point that
-by keeping track of the genealogies forwards in time we can easily combine these with the
-deep history simulated by msprime}
+%% Merged this above; moved the "hybrid approach" to the conclusion.
+% Another critical assumption of the coalescent is that the sample size $n$ is much smaller
+% than the effective population size $N_e$. 
+% With the very large sample sizes becoming common
+% in human genetics, this is no longer a safe assumption. 
+% For example, a recent study~\citep{martin2017human}
+% simulated 600,000 samples of human chromosome 20 to assess the impact of European biased
+% reference panels in genome wide association studies. While many results of the
+% coalescent are surprisingly
+% robust to violations of the assumption that $n \ll N$, there are instances where genealogical properties
+% are distorted and coalescent simulations may be
+% misleading~\citep{wakeley2003gene,maruvka2011recovering,bhaskar2014distortion}.
+% A hybrid approach, in which the recent history of a large sample of
+% individuals is simulated under a detailed forwards-in-time model and the deep history
+% under the coalescent, is an attractive prospect.
+% \jk{Not sure where this should go; perhaps in the discussion? We can make the point that
+% by keeping track of the genealogies forwards in time we can easily combine these with the
+% deep history simulated by msprime}
 
-With modern computing power, pure demographic calculations are not a barrier,
-even though biological population sizes are often above $10^6$,
-and coalescent theory tells us that a population of size $N$
-must be run for a multiple of $N$ generations to produce stable genetic patterns.
+Modern computing power easily allows purely \emph{demographic} simulations
+of a population having even hundreds of millions of individuals,
+even though theory tells us that a population of size $N$
+must be run for many multiples of $N$ generations to produce stable genetic patterns.
 However, if our interest lies in the resulting genetic patterns of variation
 -- and often, the point of such simulations is to compare to real data --
 then such simulations must somehow produce at the end data for each individual on a genomic scale.
 As samples of most species genomes harbor tens or hundreds of millions of variant sites,
-naively carrying full genotypes for even modest numbers of individuals through a simulation becomes quickly prohibitive.
+naively carrying full genotypes for even modest numbers of individuals through a simulation 
+becomes quickly prohibitive.
 
-However, it is thought that much of that variation is selectively neutral (or nearly so).
+However, it is thought that most genetic variation is selectively neutral (or nearly so).
 By definition, the alleles carried by individuals in a population at neutral sites
 do not affect the population process.
 For this reason, if one records the entire genealogical history of a population over the course of a simulation,
@@ -132,7 +135,8 @@ one can lay down neutral mutations on top of that history afterwards,
 without loss of generality.
 Precisely, we would need to know the genealogical tree relating all sampled individuals
 at each position along the genome.
-In this paper, we show how to use algorithmic tools and data structures developed for the coalescent simulator \msprime\
+In this paper, we show how to use algorithmic tools and data structures developed for the 
+coalescent simulator \msprime{}
 to efficiently record, and later process, this history.
 
 In so doing we record the \emph{population pedigree} --
@@ -148,71 +152,99 @@ This is much more than we need to know, however,
 so we discard all information irrelevant to the genetic history
 of the \emph{sampled} individuals,
 which results in considerable savings.
-
 Another way of representing this same information
 is known as the \emph{ancestral recombination graph}, or {ARG} \citep{griffiths1997ancestral},
 which has been the subject of substantial study
 under the assumptions of coalescent theory \citep{wiuf1997number,wiuf1999ancestry,marjoram2006coalescent,wilton2015smc}.
 
+\plr{Quick review of simulation software, esp that other one that does the same thing.}
+
+\plr{Make clear that the main product here is the \msprime{} interface,}
+part of which is the tables schema.
+
 
 %%%%%%%%%%%%%%%%%%%%%%
-\section*{Methods}
+\section*{Results}
 
-\plr{Reminder of what we need to know in the end (the trees), and
-    quick review of \msprime{} methods: sparse trees, tree differences.}
+\plr{Order is intro-results-discussion-methods.}
+
+Below, we first describe the conceptual and algorithmic foundations for the method:
+(a) the new \emph{tables} format for storing tree sequences;
+(b) an algorithm to output tree sequence information on the fly
+    from a forwards-time simulation;
+and (c) a method to \emph{simplify} a tree sequence, i.e., remove redundant information.
+This is followed by benchmarking comparisons
+with real, forwards-time simulations.
+
 
 %%%%%%
-\subsection*{Tree sequences}
+\subsection*{Recording a tree sequence}
 
-A tree sequence is an efficient encoding for a sequence of correlated trees such as
-is produced by recombination. The encoding is efficient because branches that are
-shared by adjacent trees are stored once, rather than repeatedly for each tree.
-The topology of a tree sequence is defined via a set of \emph{nodes} and
-\emph{edges}. A node in a tree sequence refers to a distinct ancestor and
-corresponds to the vertices in the individual genealogies along the sequence.
+A \emph{tree sequence} is an encoding for the sequence of correlated trees 
+that describes the history of a sexual population.
+It is efficient because branches that are shared by adjacent trees are stored once, 
+rather than repeatedly for each tree.
+The topology of a tree sequence is defined via its \emph{nodes} and \emph{edges},
+while information about variants are recorded as \emph{sites} and \emph{mutations}.
+The format for these four tables is given in more detail in the Methods;
+here we explain conceptually,
+using the example of Figure~\ref{fig:example_tree_sequence}.
+
+The \emph{nodes} of a tree sequence 
+correspond to the vertices in the individual genealogies along the sequence,
+and each node refers to a distinct ancestor.
 Since each node represents a specific ancestor, it has a unique ``time'',
 thought of as her birth time, which determines the height of any vertices
-she is associated with. In the example of Figure~\ref{fig:example_tree_sequence}
-we have a total of five nodes. Nodes 0, 1 and 2 occur at time 0 and are our
-samples. Nodes 3 and 4 represent the ancestors of these samples, and were born at
-time 1.5 and 2.5 respectively.
+she is associated with. 
+The example of Figure~\ref{fig:example_tree_sequence} has five nodes:
+nodes 0, 1 and 2 occur at time 0 and are the \emph{samples},
+while nodes 3 and 4 represent those ancestors necessary to record their genealogy,
+who were born at time 1.5 and 2.5 respectively.
 
 \begin{figure}
     \begin{center}
         \includegraphics[width=\textwidth]{example_tree_sequence}
     \end{center}
     \caption{
-        An example tree sequence with three samples over a chromosome of length 10. In the
-        left-most panel we show the tree sequence pictorially in two different ways:
-        in the top are the tree topologies and the bottom shows the spatial extent of the
-        edges that define these topologies. The right-hand panels show the specific encoding
-        of this tree sequence in the four tables (nodes, edges, sites and mutations) defined
-        by \msprime.
+        An example tree sequence with three samples over a chromosome of length 10.
+        The left-hand panel shows the tree sequence pictorially in two different ways:
+        (top) as a sequence of tree topologies 
+        and (bottom) the spatial extent of the edges that define these topologies. 
+        The right-hand panels show the specific encoding
+        of this tree sequence in the four tables (nodes, edges, sites and mutations) 
+        defined by \msprime.
+        \plr{Whoops!  genotype of 1 in the second tree should be `G'!}
         \jk{Some minor alignment issues present here.}
+        \plr{turns out this is no fun to edit in inkscape.  
+            I can re-make to match the other figs
+            but will leave alone for now: it's good!}
         \label{fig:example_tree_sequence}
     }
 \end{figure}
 
-The topology of a tree sequence is defined by the \emph{edges} which define how
-nodes relate to each other over specific genomic intervals. Each edge is a tuple
-$(\ell, r, p, c)$, where $[\ell, r)$ is a half-open genomic interval defining the
-spatial extend of the edge; $p$ and $c$ are the parent and child nodes specifying
-a single branch in the tree over this interval. The spatial extent of the
-edges defining the topology of Figure~\ref{fig:example_tree_sequence} in the
-bottom left panel. For example, the branch joining nodes 1 to 3 is shared in both trees,
-and is recorded in a single edge extending over the whole chromosome. It is this
-method of capturing the shared structure between adjacent trees that makes the
+The \emph{edges} define how nodes relate to each other over specific genomic intervals. 
+Each edge records: 
+% is a tuple $(\ell, r, p, c)$, where
+the endpoints $[\ell, r)$ of the half-open genomic interval defining the
+spatial extent of the edge; 
+and the identities $p$ and $c$ of the parent and child nodes
+of a single branch that occurs in all trees covering this interval.
+The spatial extent of the edges defining the topology of Figure~\ref{fig:example_tree_sequence}
+are shown in the bottom left panel. 
+For example, the branch joining nodes 1 to 3 appears both trees,
+and so is recorded as a single edge extending over the whole chromosome. 
+It is this method of capturing the shared structure between adjacent trees that makes the
 tree sequence encoding very compact and algorithmically efficient.
 
-Recovering the sequence of trees from a collection of edges is straightforward:
+Recovering the sequence of trees from this information is straightforward:
 each point along the genome that the tree topology changes
 is accompanied by the end of some \emph{edges} and the beginning of others.
 Since each \emph{edge} records the genomic interval 
 over which a given node inherits from a particular ancestor,
 to construct the tree at a certain point in the genome
 we need only retrieve all edges overlapping that point
-and construct the corresponding edges.
-To construct the tree at a nearby location,
+and construct the corresponding tree.
+To modify the tree to reflect the genealogy at a nearby location,
 we need only remove those edges whose intervals do not overlap that location,
 and add those new edges whose intervals do.
 Incidentally, this property that edges naturally encode \emph{differences}
@@ -224,16 +256,19 @@ Given the topology defined by the nodes and edges, \emph{sites} and \emph{mutati
 encode the sequence information for each sample in an efficient way. Each site
 is associated with a position on the genome and an ancestral state. For example,
 in Figure~\ref{fig:example_tree_sequence} we have two sites, one at position
-2 and ancestral state `A' and the other at position 7 with ancestral state `G'. If
+2 wieth ancestral state `A' and the other at position 7 with ancestral state `G'. If
 no mutations occur, all samples inherit the ancestral state at a given site.
-A mutation occurs over a specific node at a given site, and results in a specific
-derived state. Thus, all samples below the mutation node in the tree will inherit
-this state (unless further mutations are encountered). Three mutations are shown
-in Figure~\ref{fig:example_tree_sequence}, illustrated by red hexagons. The first
-mutation occurs at site zero (which is in the left-hand tree), which is a simple
-mutation resulting in node $2$ inheriting the state 'T'. The second side (in the
-right hand tree) has two mutations: one occurring over node $3$ changing the state to
-`C' and a back mutation over node $1$ changing the state to `G'.
+Each mutation occurs above a specific node at a given site, 
+and results in a specific derived state. 
+Thus, all samples below the mutation node in the tree will inherit this state 
+(unless further mutations are encountered). 
+Three mutations are shown in Figure~\ref{fig:example_tree_sequence}, 
+illustrated by red hexagons. 
+The first mutation occurs at site zero (in the left-hand tree), and is a simple
+mutation resulting in node $2$ inheriting the state 'T'. 
+The second site (in the right hand tree) has two mutations: 
+one occurring over node $3$ changing the state to `C', 
+and a back mutation over node $1$ changing the state to `G'.
 
 This encoding of a sequence of trees and accompanying mutational information is
 very concise. To illustrate this, we ran a simulation of $500,000$ samples of a
@@ -243,11 +278,13 @@ in about 1 million distinct marginal trees and $1.1$ million infinite-sites
 mutations. The HDF5 file encoding the nodes, edges, sites and mutations (as
 described above) for this simulation consumed 157MiB of storage space. Using
 the \msprime\ Python API, the time required to load this file into memory was
-around 1.5 seconds, and the time required to iterate over all 1 million tree
+around 1.5 seconds, and the time required to iterate over all 1 million trees
 was 2.7 seconds. In contrast, recording the topological information in Newick
 format would require around 20 TiB and storing the genotype information
-in VCF would require about 1 TiB. Working with either the Newick or VCF encoding
-of this dataset would be exceedingly cumbersome, likely requiring several
+in VCF would require about 1 TiB --
+a compression factor of 200,000.
+Working with either the Newick or VCF encoding
+of this dataset would likely require several
 days of CPU time simply to read the information info memory.
 
 
@@ -499,6 +536,19 @@ time of migration across the range has limited effect on modern genealogies
 \citep{wilkins_separation} (other than possibly changing effective population
 size \citet{durretspatial}), this may not negatively affect realism.
 
+\paragraph{Sequential simplification}
+Even without storing genomes,
+a forwards-time simulation algorithm can rapidly fill a large amount of memory.
+Since much of this is redundant, the \emph{simplify} algorithm can be periodically applied
+to the tree sequence accumulated so far,
+pruning out unnecessary history and greatly reducing the required amount of memory.
+To do this, 
+\emph{simplify} treats the entire current generation as the ``samples'';
+and since node IDs change,
+the simulation procedure must maintain a mapping between the individual IDs 
+used by the simulation and the node IDs in the tree sequence.
+Examples of this procedure are implmemented in our simulation methods (below).
+
 
 %%%%%%
 \subsection*{Overview of the API}
@@ -544,10 +594,17 @@ encoding of tree topologies and contiguous arrays of data to store this
 encoding, we can achieve data transfer rates that would be impossible under
 any text-based approach while retaining excellent portability.
 
-%%%%%%%%%%%%%%%%%%%%%%
-\section*{Results}
+% Outline:
+% 1. estimates and analytical results
+% 2. in practice: measurements from simulations
+\subsection*{Estimates of run-time complexity}
 
-\plr{Estimates of run-time complexity}
+For simple WF alg with exactly one recomb per gen, should be 2Nt edges; post-simplification should be 2N log N * rho edges
+because each tree change is the start of a new edge;
+since 2N log N is also the number of segregating sites, this same thing gives us the computation for mutations
+
+
+
 Suppose that we wish to run a forwards-time simulation of $N$ individuals for $T$ generations,
 in which there are $S$ selected loci and $L$ neutral loci using a similar
 method to Algorithm~\algref{W}.
@@ -600,6 +657,8 @@ It's probably worthwhile thinking about this a bit.}
 % \end{center}
 % \end{table}
 
+\subsection*{Simulation benchmarks}
+
 Comparison of simulation with/without msprime, using simuPOP
 or maybe just a simple haploid simulation with 1000 QTL and stabilizing selection on a trait (say).
 
@@ -607,8 +666,10 @@ Maybe an estimate of how long \emph{just} the ARG recording and simplification t
 so that then we can say how fast the simulator would have to be to do $10^6$ whole chromosomes for $10^7$ generations
 in a day.
 
+
 %%%%%%%%%%%%%%%%%%%%%%
 \section*{Conclusion}
+
 
 This works great and very fast.
 
@@ -635,15 +696,41 @@ the data into pylibseq maybe, or scikit-allel??}
 
 This is a general-purpose strategy that can be applied to other methods.
 
-All sorts of good reasons to want to have whole-genome simulations.
+A hybrid approach, in which the recent history of a large sample of
+individuals is simulated under a detailed forwards-in-time model and the deep history
+under the coalescent, is an attractive prospect.
+\jk{Not sure where this should go; perhaps in the discussion? We can make the point that
+by keeping track of the genealogies forwards in time we can easily combine these with the
+deep history simulated by msprime}
+
+Parallelization will be important;
+this requires only one-way communication.
+
+A final note:
+in preparing this manuscript, 
+we debated a number of possible terms for the embellished pedigree,
+i.e., the ``pedigree with ancestral recombination information''.
+Current etymologica consensus \citep{liberman2014little} has
+``pedigree'' derived from the french ``pied de grue'' for the foot of a crane
+(whose branching pattern resembes the bifurcation of a single parent-offspring relationship).
+An analogous term for the embellished pedigree might be \emph{nedigree},
+from ``nid de grue'',
+as the nest of a crange is a large jumble of (forking) branches.
+We thought it unwise to use this term throughout the manuscript,
+but perhaps it will prove useful elsewhere.
+
 
 %%%%%%%%%%%%%%%%%%%%%%
-\section*{Acknowledgements}
+\section*{Methods}
+
+%%%%%%%%%%%%%%
+\subsection*{Simuation methods}
+
+Jaime and Kevin to describe simulation methods here (separately).
 
 
-\bibliography{references}
-
-\appendix
+\plr{some of this can move back to an appendix, but since they want methods at the end,
+it's the sort of thing they want here.}
 
 \subsection*{Data structures:}
 \jk{Moved from above.}
@@ -855,6 +942,14 @@ Simplification keeps the tables to a managable size.
 Since the map $L$ is updated to maintain the association between individuals in the simulation
 and nodes in the tree sequence, simplification can be run regularly,
 as the simulation progresses.
+
+%%%%%%%%%%%%%%%%%%%%%%
+\section*{Acknowledgements}
+
+
+\bibliography{references}
+
+\appendix
 
 
 \end{document}
