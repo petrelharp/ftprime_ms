@@ -97,8 +97,8 @@ genealogical properties may be distorted relative to the coalescent expectation
 \citep{wakeley2003gene,maruvka2011recovering,bhaskar2014distortion}.
 These considerations, and increasing computational power, have led to a resurgence of interest in forwards-time, individual-based simulations.
 
-Modern computing power easily allows purely \emph{demographic} simulations
-of a population having even hundreds of millions of individuals,
+Modern computing power easily allows simulations of birth, death and reproduction
+in a population having even hundreds of millions of individuals,
 even though theory tells us that a population of size $N$
 must be run for many multiples of $N$ generations to produce stable genetic patterns.
 However, if our interest lies in the resulting genetic patterns of variation
@@ -161,8 +161,8 @@ with real, forwards-time simulations.
 %%%%%%
 \subsection*{Recording a tree sequence}
 
-A \emph{tree sequence} is an encoding for the sequence of correlated trees 
-that describes the history of a sexual population.
+A \emph{tree sequence} is an encoding for the sequence of correlated trees,
+such as those that describe the history of a sexual population.
 It is efficient because branches that are shared by adjacent trees are stored once, 
 rather than repeatedly for each tree.
 The topology of a tree sequence is defined via its \emph{nodes} and \emph{edges},
@@ -406,7 +406,7 @@ has fewer edges on which to place mutations.
 There are many more advantages to simplifying the genealogies to this point.
 Computing this minimal representation of the
 edges output by a forward-time simulation is an instance of a more
-general problem that cover in the next section.
+general problem that we cover in the next section.
 
 
 %%%%%%
