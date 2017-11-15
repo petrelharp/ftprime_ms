@@ -24,7 +24,7 @@
 
 \begin{document}
 
-\title{Efficient forwards-time simulation with tree sequences}
+\title{Efficient pedigree recording for fast population genetics simulation}
 \author{Jerome Kelleher,
         Kevin R. Thornton,
         Jaime Ashander, and
@@ -726,21 +726,41 @@ Jaime and Kevin to describe simulation methods here (separately).
 \subsection*{Simplification}
 
 Here we describe the simplification algorithm.
-\plr{I am trying it out to see what it looks like.}
+The flow is close to our implementation,
+but the description below uses set operations,
+while in the implementation,
+all ancestors are maintained as linked lists of segments
+ordered by left endpoint.
 
 \begin{taocpalg}{S}{Simplify a tree sequence}
-{Simplifies the input tree sequence.
+{Simplifies the input tree sequence:
+    input consists of 
+    a list of sample IDs, $S$, of length $n$,
+    a list of edges, $\mathcal{E_I}$,
+    and a list of nodes $\mathcal{N_I}$.
+    The genome length is $L$.
+    The output will be stored in a list of edges $\mathcal{E_O}$ 
+    and nodes $\mathcal{N}_O$.
+    This also maintains the list $N$ that gives the mapping 
+    from $\mathcal{N_I}$ to $\mathcal{N_O}$,
+    so that if $M[p] = u$ then the $p^\text{th}$ ancestor in $N_I$
+    is the same as the $u^\text{th}$ ancestor in $N_0$.
+    The internal state is $\mathcal{A}$, the list of ancestors
+    (which are collections of ancestral segments).
 }
 
-
 \algstep{S0.}{Initialize.}{
-    Set the samples.
+    Set $\mathcal{A}[j] \leftarrow (0, L, j)$ 
+    and $\mathcal{N}_O[j] \leftarrow \mathcal{N}_I[S[j]]$ for $0 \le j < N$.
+    Set $Q \leftarrow \emptyset$,
+    and $M[p] \leftarrow -1$ for $0 \le p < \text{length}(N_I)$.
 }
 
 \algstep{S1.}{Input parent loop.}{Loop over parents, chronologically.
 }
 
-\algstep{S2.}{Process parent edges.}{Loop over edges associated with this parent, removing ancestry from each child.
+\algstep{S2.}{Remove ancestry.}{Call Algorithm \algref{R} 
+    on each edge corresponding to the current parent.
 }
 
 \algstep{S3.}{Merge ancestors.}{Merge the resulting segments into a new ancestor for this parent.
@@ -748,16 +768,77 @@ Here we describe the simplification algorithm.
 
 \end{taocpalg}
 
-This uses
+The first step is, for each edge $(\ell, r, p, c)$,
+simply to replace any ancestry segment $[a, b)$ held by ancestor $c$
+with $[a,b) \setdiff [\ell, r)$ 
+(deleting the segment or splitting in two if necessary),
+and adding the removed segment $[a,b) \cap [\ell, r)$ to the merge queue $Q$:
 \begin{taocpalg}{R}{Remove ancestry}
-    {Remove ancestry on a segment from an ancestor.}
+    {Given an edge $(\ell, r, p, c)$,
+    and a list $\mathcal{A}[c]$ of the $m$ ancestral segments corresponding to $c$,
+    remove segments overlapping $[\ell, r)$ from $\mathcal{A}[c]$,
+    and add those overlapping segments to $Q$.
+    }
 
+    \algstep{R1.}{Segment loop.}{Loop over ancestral segments in $\mathcal{A}[c]$:
+    if $j=m$, terminate; else let $(a, b, u) = \mathcal{A}[c][j]$.
+    }
+
+    \algstep{R2.}{Add to merge queue.}{If $[a,b) \cap [\ell,r) \neq \emptyset$,
+    append $(\max(a,\ell), \min(b,r), u)$ to $Q$.
+    }
+
+    \algstep{R3.}{Remove ancestry.}{If $[a,b) \cap [\ell,r) != \emptyset$,
+    delete $\mathcal{A}[c][j]$ and insert in its place
+    $(\min(a,\ell), \max(a,\ell), u)$ (if $a<\ell$) 
+    and/or $(\min(b,r), \max(b,r), u)$ (if $r<b$).
+    }
 
 \end{taocpalg}
-and
-\begin{taocpalg}{M}{Merge ancestors}
-    {Merge a collection of segments and create a new ancestor.}
 
+Next we must merge these ancestry segments,
+creating the new ancestor $p$,
+outputting edges and a node if coalescence has occurred.
+\begin{taocpalg}{M}{Merge ancestors}
+    {Merge a collection of segments and create a new ancestor.
+    This operates on the merge queue $Q$ above,
+    which is a list of ancestral segments,
+    and creates the new ancestor $\mathcal{A}[p]$.}
+
+    \algstep{M1.}{Segment loop.}{While $\mathrm{length}(Q)>0$:}
+
+    \algstep{M2.}{Find next segment overlap boundaries}{
+    Let $\ell \leftarrow \min\{x.\ell : x \in Q\}$
+    and $H \leftarrow \{x \in Q : x.\ell = \ell\}$.
+    Also let $\ell_+ \leftarrow \min\{x.\ell : x \in Q \setdiff H\}$
+    and $r = \min(\ell_+, \min\{x.r : x \in H\})$.
+    }
+
+    \algstep{M3.}{Copy single segment.}{If $\mathrm{length}(H) == 1$,
+    set $\alpha \leftarrow (\ell, r, H[0].n)$.
+    If also $p \in S$, then append $(\alpha.\ell, \alpha.r, N[p], \alpha.c)$ to $\mathcal{E}_O$
+    and then set $\alpha.c \leftarrow M[p]$.
+    Go to \algref{M7}.
+    }
+
+    \algstep{M4.}{Coalescence head.}{If $(h \leftarrow \mathrm{length}(H)) > 1$,
+    if $M[p] == -1$ set $M[p] \leftarrow \text{length}(N_O)$
+    and append $N_I[p]$ to $N_O$.
+    Set $\alpha \leftarrow (\ell, r, M[p])$.
+    }
+
+    \algstep{M6.}{Record edges.}{
+    For each $x \in H$, append $(\ell, r, M[p], x.n)$ to $\mathcal{E}_O$.
+    }
+
+    \algstep{M7.}{Update $Q$.}{
+    Set $Q \leftarrow Q \setdiff \{x \in Q : x.r == r\}$
+    and then set $x.\ell = \ell$ for all remaining $x \in Q$.
+    }
+
+    \algstep{M8.}{Add segment to ancestor.}{
+    Append $\alpha$ to $\mathcal{A}[p]$ and return to \algref{M1}.
+    }
 
 \end{taocpalg}
 
