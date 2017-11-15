@@ -15,7 +15,7 @@ import seaborn as sns
 
 def wright_fisher(N, T, simplify_interval=1):
     """
-    An implementation of algorithm T where we simplify after every generation.
+    An implementation of algorithm W where we simplify after every generation.
     The goal here is to measure the number of edges in the tree sequence
     representing the history as a function of time.
 
@@ -71,16 +71,20 @@ def verify():
 def plot():
     num_reps = 10
     for n in [10, 100, 1000]:
+        T = 10 * n
+        A = np.zeros((num_reps, T))
         for j in range(num_reps):
-            _, S = wright_fisher(n, 100)
-            plt.plot(S)
+            _, S = wright_fisher(n, T)
+            A[j] = S
+            plt.plot(S, alpha=0.5)
             print(n, j, "done")
+        mean = np.mean(A, axis=0)
+        plt.plot(mean, color="black", lw=3)
         plt.title("N = {}".format(n))
         plt.xlabel("Generations")
         plt.ylabel("Number of edges")
         plt.savefig("{}.png".format(n))
         plt.clf()
-
 
 
 
