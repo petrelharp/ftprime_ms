@@ -497,24 +497,20 @@ The process is depicted in Figure~\ref{fig:simplify_state}.
 
 More concretely,
 the algorithm works by moving back through time,
-processing each edge in the input tree sequence in chronological order.
-The main state of the algorithm at each point in time is a set of ancestral segments:
-each segment $(\ell, r, u)$ represents a tract of ancestral material in which the node $u$ is
-associated with the genomic interval $[\ell, r)$. 
-These segments are stored in a collection of linked lists,
-one list of segments for each ancestral lineage present at that time.
+processing each parent in the input tree sequence in chronological order.
+The main state of the algorithm at each point in time is a set of ancestral lineages,
+and each lineage is a collection of ancestral segments.
+An ancestral segment $(\ell, r, u)$ is found in a lineage
+if the output node $u$ inherits the genomic interval $[\ell, r)$ from that lineage.
+% These segments are stored in a collection of linked lists,
+% one list of segments for each ancestral lineage present at that time.
 (These lineages are the ``colors'' above.)
-The node $u$ in each ancestral sequence
-is the node ID associated with this segment in the output tree sequence.
-We maintain a map $A$ such that $A_j$ is segment chain for node $j$ in
+We also maintain a map $A$ such that $A_j$ is segment chain for node $j$ in
 the input tree sequence.
+Crucially, the time required to run the algorithm is linear in the number of edges of the input tree sequence..
 
-\jk{I'm not sure this is the right level of detail to tackle this description
-at. What's the goal of this algorithm description? Are we trying to
-establish some properties of the algorithm or just give the reader a high-level
-flavour of how it works??}
-
-In this scheme, at any point in the simulation genealogical history is recorded
+\paragraph{Sequential simplification}
+At any point the simulation scheme above, genealogical history is recorded
 in a tree sequence. This has two additional advantages. First, simplification
 can be run periodically through the simulation, taking the set of samples to be
 the entire currently alive population. This is important as it keeps memory
@@ -527,22 +523,11 @@ time of migration across the range has limited effect on modern genealogies
 \citep{wilkins_separation} (other than possibly changing effective population
 size \citet{durretspatial}), this may not negatively affect realism.
 
-\paragraph{Sequential simplification}
-Even without storing genomes,
-a forwards-time simulation algorithm can rapidly fill a large amount of memory.
-Since much of this is redundant, the \emph{simplify} algorithm can be periodically applied
-to the tree sequence accumulated so far,
-pruning out unnecessary history and greatly reducing the required amount of memory.
-To do this, 
-\emph{simplify} treats the entire current generation as the ``samples'';
-and since node IDs change,
-the simulation procedure must maintain a mapping between the individual IDs 
-used by the simulation and the node IDs in the tree sequence.
-Examples of this procedure are implmemented in our simulation methods (below).
-
 
 %%%%%%
 \subsection*{Overview of the API}
+
+\plr{leaving this alone for the moment: to stay here? move?}
 
 The \msprime\ Python API provides a powerful platform for working with
 tree topology and mutation data. We refer to the part of \msprime\
@@ -585,68 +570,55 @@ encoding of tree topologies and contiguous arrays of data to store this
 encoding, we can achieve data transfer rates that would be impossible under
 any text-based approach while retaining excellent portability.
 
-% Outline:
-% 1. estimates and analytical results
-% 2. in practice: measurements from simulations
 \subsection*{Estimates of run-time complexity}
 
-For simple WF alg with exactly one recomb per gen, should be 2Nt edges; post-simplification should be 2N log N * rho edges
-because each tree change is the start of a new edge;
-since 2N log N is also the number of segregating sites, this same thing gives us the computation for mutations
+Consider a simulation of a Wright-Fisher population of $2N$ haploid individuals 
+using Algorithm~\algref{W}
+for $T$ generations,
+with the probability of death, $\delta$, set to 1 for simplicity.
+Since there is exactly one crossing over every generation,
+this produces tables of 
+$2NT$ nodes and
+$4NT$ edges.
+Suppose that $T$ is large enough that all samples coalesce within the simulation with high probability,
+so that $T \sim 20N$, say.
+After simplification, we are left with the tree sequence describing the history
+of only the current generation of $2N$ individuals.
+This tree sequence has $4N-2$ edges to describe the leftmost tree,
+and one additional edge each time the marginal tree changes along the sequence.
+Coalescent theory tells us that 
+the expected total length of edges in a marginal tree is approximately $4N\log(2N)$,
+which is also equal to the mean number of ancestral recombination events that occur on a branch of the marginal tree,
+since we have taken one crossover per generation.
+Not all such recombinations actually change the tree topology,
+and so this gives us an upper bound on the number of edges.
+Similarly, not every new edge derives from a never-before-seen node,
+but the number of nodes is at most equal to the number of edges plus the sample size.
+With $T=20N$, this reduces the initial storage of $160 N^2$ items to $2N(4\log(2N) + 3)$;
+at $N=10^4$, a factor of 20,000.
 
+\plr{We could compute the recursions for these quantities explicitly for this simple WF case...}
 
+If we were to add mutations in forwards time 
+under the infinite-sites model with total mutation rate per generation $\mu$,
+there would also be around $\mu 2NT$ mutations (and the same number of sites).
+Since mutations fall as recombinations do on the marginal trees,
+adding them after simplification results in only around $\mu 4 N \log(2N)$ mutations.
+This furthermore avoids the computational burden of propagating mutations forwards through the generations.
 
-Suppose that we wish to run a forwards-time simulation of $N$ individuals for $T$ generations,
-in which there are $S$ selected loci and $L$ neutral loci using a similar
-method to Algorithm~\algref{W}.
-We will estimate run-time complexity and memory usage for both a ``naive'' strategy that carries along neutral loci
-and an ``ancestry-tracking'' strategy like that we consider here.
-To do this, we assume that each individual must carry along its entire genotype.
-More advanced schemes are used in some simulators,
-but these increase efficiency by utilizing redundancy introduced by shared ancestry,
-which is effectively an intermediate scheme.
-We omit the cost of computing a fitness function.
+Our method stores genealogies, and so records substantially more information 
+than would a method only recording genotypes.
+However, since the simplification algorithm requires some computational effort,
+it is still informative to compare computational complexity of the algorithm
+to one that propagates neutral genotypes.
+A typical individual will differ at $2 N \mu$ sites from the population's consensus sequence,
+so propagating these to offspring by simple copying will take $4 N^2 \mu$ operations per generation.
+On the other hand, we must store $13N$ quantities per generation (two edges and one node per individual).
+The simplification algorithm is linear in the number of edges of the input tree sequence,
+and so multiplies this by a constant factor.
+Concretely, propagating neutral genotypes for $T$ generations has time complexity $O(\mu T N^2)$,
+while our implementation is only $O(T N \log(2N))$.
 
-Both schemes must choose mates and recombination breakpoints,
-and pass on selected genotypes.
-The difference between the two comes from the tradeoff between
-(a) passing on neutral genotypes, and
-(b) recording and simplifying the tree sequence, and adding neutral genotypes afterwards.
-(We assume here that selected genotypes are stored in the same way for both.)
-Passing on neutral genotypes naively records $L$ items per individual each
-generation, discarding the previous generation, giving an overall complexity of
-$O((L + S) NT)$. Tracking the $S$ selected loci and recording a tree sequence
-using Algorithm~\algref{W} requires $O(SNT)$ time and space, since we
-record at most two edges for each individual in each generation.
-However, after simplification the tree sequence contains
-$O(??)$ edges since []. The cost of generating $L$ neutral mutations
-is then $O(L + ??)$. Assuming that $N$, $T$ and $L$ are large, this is
-very much smaller than the straightforward $O((L + S) NT)$ time required
-to simulate all mutations directly.
-
-\jk{Not sure where $\rho$ comes in here now. Thinking about this, shouldn't we
-be able to come up with some expression for the number of edges? Assuming
-the very simple single breakpoint per generation of Alg W, what is the
-expected number of breakpoints? This is a function of $N$ and $T$, right?
-It's not clear to me how many breakpoints this ends up giving you in
-the output tree sequence and how many edges this corresponds to.
-It's probably worthwhile thinking about this a bit.}
-
-% However, after simplification a tree sequence for all $N$ individuals
-% only takes of order $N + \rho \log N$ records.
-% Simplification requires processing each of the initial records -- so, order of $N \times T \times \rho$ operations;
-
-
-% \begin{table}
-% \begin{center}
-%     \begin{tabular}{l||r|r||r|r|}
-%                     & \multicolumn{2}{|c|}{naive} & \multicolumn{2}{|c|}{ancestry-tracking} \\
-%                     & operations  & memory & operations  & memory \\
-%         mate choice & $N$       &   --  &   $N$     & -- \\
-%         recombination & $N\rho$ &   --  &   $N\rho$ & -- \\
-%     \end{tabular}
-% \end{center}
-% \end{table}
 
 \subsection*{Simulation benchmarks}
 
