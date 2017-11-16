@@ -25,7 +25,7 @@
 
 \begin{document}
 
-\title{Efficient forwards-time simulation with tree sequences}
+\title{Efficient pedigree recording for fast population genetics simulation}
 \author{Jerome Kelleher,
         Kevin R. Thornton,
         Jaime Ashander, and
@@ -139,16 +139,33 @@ is known as the \emph{ancestral recombination graph}, or {ARG} \citep{griffiths1
 which has been the subject of substantial study
 under the assumptions of coalescent theory \citep{wiuf1997number,wiuf1999ancestry,marjoram2006coalescent,wilton2015smc}.
 
-\plr{Quick review of simulation software, esp that other one that does the same thing.}
+\plr{this paragraph is supposed to cite the fwds time simulation methods we need to - @molpopgen fix this up?}
+Forwards-time population genetics simulations are growing in importance,
+as the genome-wide impacts of hitchhiking and background selection are more widely appreciated.
+For instance, \citet{harris2016genetic} used SLiM \citep{haller2017flexible} to simulate tens of thousands of human exomes
+to assess the impact of genetic load and Neanderthal introgression on human genetic diversity.
+This is roughly state-of-the-art 
+-- the fastest simulation frameworks such as SLiM and fwdpp \citep{fwdpp}
+can ``only'' simulate tens of megabases of sequence in tens of thousands of individuals
+for tens of thousands of generations --
+but still substantially short of whole genomes for most biological population sizes.
+There has been some progress at parallelization \citep{lawrie2017accelerating},
+which has substantial promise.
+The general idea of storing genealogical information to speed up simulations is not new --
+it was entirely implemented in AnA-FiTS \citep{aberer2013rapid}, for instance --
+but this program did not implement the critical step of discarding irrelevant genealogical information.
+A similar but more limited method for discarding this information does appear in \citet{padhukasahasram2008exploring}.
 
-\plr{Make clear that the main product here is the \msprime{} interface,}
-part of which is the tables schema.
+In this paper we discuss storage methods for genealogies (and hence, genome sequence),
+an algorithm for simplifying these,
+and their use in forwards-time simulation.
+Although we were motivated by a need for more efficient simulations,
+these tools may prove more widely useful.
 
 
 %%%%%%%%%%%%%%%%%%%%%%
 \section*{Results}
 
-\plr{Order is intro-results-discussion-methods.}
 
 Below, we first describe the conceptual and algorithmic foundations for the method:
 (a) the new \emph{tables} format for storing tree sequences;
@@ -497,156 +514,76 @@ The process is depicted in Figure~\ref{fig:simplify_state}.
 
 More concretely,
 the algorithm works by moving back through time,
-processing each edge in the input tree sequence in chronological order.
-The main state of the algorithm at each point in time is a set of ancestral segments:
-each segment $(\ell, r, u)$ represents a tract of ancestral material in which the node $u$ is
-associated with the genomic interval $[\ell, r)$. 
-These segments are stored in a collection of linked lists,
-one list of segments for each ancestral lineage present at that time.
+processing each parent in the input tree sequence in chronological order.
+The main state of the algorithm at each point in time is a set of ancestral lineages,
+and each lineage is a collection of ancestral segments.
+An ancestral segment $(\ell, r, u)$ is found in a lineage
+if the output node $u$ inherits the genomic interval $[\ell, r)$ from that lineage.
+% These segments are stored in a collection of linked lists,
+% one list of segments for each ancestral lineage present at that time.
 (These lineages are the ``colors'' above.)
-The node $u$ in each ancestral sequence
-is the node ID associated with this segment in the output tree sequence.
-We maintain a map $A$ such that $A_j$ is segment chain for node $j$ in
+We also maintain a map $A$ such that $A_j$ is segment chain for node $j$ in
 the input tree sequence.
+Crucially, the time required to run the algorithm is linear in the number of edges of the input tree sequence..
 
-\jk{I'm not sure this is the right level of detail to tackle this description
-at. What's the goal of this algorithm description? Are we trying to
-establish some properties of the algorithm or just give the reader a high-level
-flavour of how it works??}
-
-In this scheme, at any point in the simulation genealogical history is recorded
+\paragraph{Sequential simplification}
+At any point the simulation scheme above, genealogical history is recorded
 in a tree sequence. This has two additional advantages. First, simplification
 can be run periodically through the simulation, taking the set of samples to be
 the entire currently alive population. This is important as it keeps memory
 usage from growing linearly (and quickly) with time. Second, the simulation can
 be \emph{begun} with a tree sequence produced by some other method -- for
-instance, by a coalescent simulation with \msprime. This allows for
-incorporation of deep-time history beyond the reach of individual-based
-simulations. Since geographic structure from times longer ago than the mixing
-time of migration across the range has limited effect on modern genealogies
-\citep{wilkins_separation} (other than possibly changing effective population
-size \citet{durretspatial}), this may not negatively affect realism.
+instance, by a coalescent simulation with \msprime. 
 
-\paragraph{Sequential simplification}
-Even without storing genomes,
-a forwards-time simulation algorithm can rapidly fill a large amount of memory.
-Since much of this is redundant, the \emph{simplify} algorithm can be periodically applied
-to the tree sequence accumulated so far,
-pruning out unnecessary history and greatly reducing the required amount of memory.
-To do this, 
-\emph{simplify} treats the entire current generation as the ``samples'';
-and since node IDs change,
-the simulation procedure must maintain a mapping between the individual IDs 
-used by the simulation and the node IDs in the tree sequence.
-Examples of this procedure are implmemented in our simulation methods (below).
-
-
-%%%%%%
-\subsection*{Overview of the API}
-
-The \msprime\ Python API provides a powerful platform for working with
-tree topology and mutation data. We refer to the part of \msprime\
-that is dedicated to tree sequence input and output as the `Tables API',
-as the API is organised around simple tables of data. There are four key
-tables: nodes, edges, sites and mutations. Briefly, nodes and edges define
-the topology of a tree sequence (as defined above) and the sites and mutations
-define mutational processes on this topology.
-Figure~\ref{fig:example_tree_sequence} gives an informal depiction of this
-encoding in terms of these tables.
-
-The tables API is primarily designed to facilitate efficient interchange of
-data between programs or between different modules of the same program.
-Following the current best-practises [citations: apache arrow, etc] data is stored
-in a columnar format. There are many advantages to this approach, but the
-principle advantage for our purposes is that it allows for very efficient
-interchange of large amounts of numerical data. In principle, this enables
-zero-copy semantics, where a data consumer can read the information directly
-from the memory of a producer without incurring the overhead of a copy
-[citation?] Our implementation uses the numpy C API [citation] to efficiently copy
-data from Python into the low-level C library used to manipulate
-tree sequences.
-
-The tables API provides basic input and output operations via the numpy
-array interface, which provides a great deal of flexibility as well
-as efficiently. This makes transferring data from various sources
-such as HDF5 [citation], Dask, Zarr etc, straightforward. (For small
-scale data and debugging purposes, a simple text format is also supported.)
-Along with
-these operations we also provide a function to sort a set of tables
-to ensure that the records are in the form required to input
-into an \msprime\ tree sequence object. The \texttt{simplify\_tables}
-function implements tree sequence simplification, as described in the
-previous subsection.
-
-This interchange API is very efficient. [Describe a quick example where we generate
-a many-gigabyte tree sequence using fwdpp, and the time required
-to copy the node and edge data into the tables]. By using a simple numerical
-encoding of tree topologies and contiguous arrays of data to store this
-encoding, we can achieve data transfer rates that would be impossible under
-any text-based approach while retaining excellent portability.
-
-% Outline:
-% 1. estimates and analytical results
-% 2. in practice: measurements from simulations
+%%%%%%%%%%%%
 \subsection*{Estimates of run-time complexity}
 
-For simple WF alg with exactly one recomb per gen, should be 2Nt edges; post-simplification should be 2N log N * rho edges
-because each tree change is the start of a new edge;
-since 2N log N is also the number of segregating sites, this same thing gives us the computation for mutations
+Consider a simulation of a Wright-Fisher population of $2N$ haploid individuals 
+using Algorithm~\algref{W}
+for $T$ generations,
+with the probability of death, $\delta$, set to 1 for simplicity.
+Since there is exactly one crossing over every generation,
+this produces tables of 
+$2NT$ nodes and
+$4NT$ edges.
+Suppose that $T$ is large enough that all samples coalesce within the simulation with high probability,
+so that $T \sim 20N$, say.
+After simplification, we are left with the tree sequence describing the history
+of only the current generation of $2N$ individuals.
+This tree sequence has $4N-2$ edges to describe the leftmost tree;
+and each time the marginal tree changes along the sequence,
+three edges end and three new edges begin (except for changes affecting the root; see \citet{kelleher2016efficient}).
+Coalescent theory tells us that 
+the expected total length of edges in a marginal tree is approximately $4N\log(2N)$,
+which is also equal to the mean number of ancestral recombination events that occur on a branch of the marginal tree,
+since we have taken one crossover per generation.
+Not all such recombinations actually change the tree topology,
+and three times this gives us an upper bound on the expected number of edges.
+Similarly, not every new edge derives from a never-before-seen node,
+but the number of nodes is at most equal to the number of edges plus the sample size.
+With $T=20N$, this reduces the initial storage of $160 N^2$ items to $6N(4\log(2N) + 3)$;
+at $N=10^4$, a factor of 3,000.
 
+If we were to add mutations in forwards time 
+under the infinite-sites model with total mutation rate per generation $\mu$,
+there would also be around $\mu 2NT$ mutations (and the same number of sites).
+Since mutations fall as recombinations do on the marginal trees,
+adding them after simplification results in only around $\mu 4 N \log(2N)$ mutations.
+This furthermore avoids the computational burden of propagating mutations forwards through the generations.
 
+Our method stores genealogies, and so records substantially more information 
+than would a method only recording genotypes.
+However, since the simplification algorithm requires some computational effort,
+it is still informative to compare computational complexity of the algorithm
+to one that propagates neutral genotypes.
+A typical individual will differ at $2 N \mu$ sites from the population's consensus sequence,
+so propagating these to offspring by simple copying will take $4 N^2 \mu$ operations per generation.
+On the other hand, we must store $13N$ quantities per generation (two edges and one node per individual).
+The simplification algorithm is linear in the number of edges of the input tree sequence,
+and so multiplies this by a constant factor.
+Concretely, propagating neutral genotypes for $T$ generations has time complexity $O(\mu T N^2)$,
+while our implementation is only $O(T N \log(2N))$.
 
-Suppose that we wish to run a forwards-time simulation of $N$ individuals for $T$ generations,
-in which there are $S$ selected loci and $L$ neutral loci using a similar
-method to Algorithm~\algref{W}.
-We will estimate run-time complexity and memory usage for both a ``naive'' strategy that carries along neutral loci
-and an ``ancestry-tracking'' strategy like that we consider here.
-To do this, we assume that each individual must carry along its entire genotype.
-More advanced schemes are used in some simulators,
-but these increase efficiency by utilizing redundancy introduced by shared ancestry,
-which is effectively an intermediate scheme.
-We omit the cost of computing a fitness function.
-
-Both schemes must choose mates and recombination breakpoints,
-and pass on selected genotypes.
-The difference between the two comes from the tradeoff between
-(a) passing on neutral genotypes, and
-(b) recording and simplifying the tree sequence, and adding neutral genotypes afterwards.
-(We assume here that selected genotypes are stored in the same way for both.)
-Passing on neutral genotypes naively records $L$ items per individual each
-generation, discarding the previous generation, giving an overall complexity of
-$O((L + S) NT)$. Tracking the $S$ selected loci and recording a tree sequence
-using Algorithm~\algref{W} requires $O(SNT)$ time and space, since we
-record at most two edges for each individual in each generation.
-However, after simplification the tree sequence contains
-$O(??)$ edges since []. The cost of generating $L$ neutral mutations
-is then $O(L + ??)$. Assuming that $N$, $T$ and $L$ are large, this is
-very much smaller than the straightforward $O((L + S) NT)$ time required
-to simulate all mutations directly.
-
-\jk{Not sure where $\rho$ comes in here now. Thinking about this, shouldn't we
-be able to come up with some expression for the number of edges? Assuming
-the very simple single breakpoint per generation of Alg W, what is the
-expected number of breakpoints? This is a function of $N$ and $T$, right?
-It's not clear to me how many breakpoints this ends up giving you in
-the output tree sequence and how many edges this corresponds to.
-It's probably worthwhile thinking about this a bit.}
-
-% However, after simplification a tree sequence for all $N$ individuals
-% only takes of order $N + \rho \log N$ records.
-% Simplification requires processing each of the initial records -- so, order of $N \times T \times \rho$ operations;
-
-
-% \begin{table}
-% \begin{center}
-%     \begin{tabular}{l||r|r||r|r|}
-%                     & \multicolumn{2}{|c|}{naive} & \multicolumn{2}{|c|}{ancestry-tracking} \\
-%                     & operations  & memory & operations  & memory \\
-%         mate choice & $N$       &   --  &   $N$     & -- \\
-%         recombination & $N\rho$ &   --  &   $N\rho$ & -- \\
-%     \end{tabular}
-% \end{center}
-% \end{table}
 
 \subsection*{Simulation benchmarks}
 
@@ -659,43 +596,51 @@ in a day.
 
 
 %%%%%%%%%%%%%%%%%%%%%%
-\section*{Conclusion}
+\section*{Discussion}
 
+In this paper, we have shown that storing pedigrees
+and associated recombination events
+in a forwards-time simulation
+not only results in having available a great deal more information about the simulation,
+but also can speed up the simulation by orders of magnitude.
+To make this feasible, 
+we have described how to efficiently store this information in tables,
+and have described a fundamental algorithm for simplificication of tree sequences.
+Conceptually, recording of genealogical and recombination events
+can happen independently of the details of simulation;
+for this reason, we provide a well-defined and well-tested API in C and in python
+for use in other code bases.
 
-This works great and very fast.
-
-Having results in a tree sequence is really good downstream too:
-The tree sequence encoding is compact but it is also efficient to process.
-Many algorithms to compute statistics of interest for population genetics
-are naturally expressed in terms of tree topologies. For example, the
-pairwise nucleotide diversity $\pi$, is defined as the average number of
-differences between sequences in the sample. Computing $\pi$ directly
-from observed sequence data requires $O(n^2 m)$ time, since we must
-compare all pairs of samples at every site. However, given the topology of
-the trees at every site and the locations of mutations much better algorithms
-are possible. Using the fact that we can count the number of samples below
-a given node efficiently using previously described tree sequence
-algorithms~\citep{kelleher2016efficient}, the time required to compute $\pi$
-becomes roughly $O(n \log n + m)$.
+The tree sequences produced by default by this method
+are very compact, storing genotype \emph{and} genealogical information
+in a small fraction of the space taken by a compressed VCF file.
+The format is also highly efficient to process,
+leading to advantages for downstream analysis as well.
+This is because many algorithms to compute statistics of interest for population genetics
+are naturally expressed in terms of tree topologies,
+and so can be quickly computed from the trees underlying the tree sequence format. 
+For example, pairwise nucleotide diversity $\pi$, is the average density of
+differences between sequences in the sample. 
+To compute this directly from sequence data at $m$ sites in $n$ samples
+requires computing allele frequencies, taking $O(nm)$ operations.
+By using the locations of the mutations on the marginal trees,
+and the fact that these are correlated, 
+dynamic programming algorithms similar to those in~\citep{kelleher2016efficient}
+can do this in roughly $O(n + m \log n)$ operations.
 The \msprime\ API provides a method to compute $\pi$ among arbitrary subsets of the
-samples in a tree sequence, and calculating $\pi$ over all 500K samples
-in the example above required about 1.2 seconds.
-\jk{I haven't checked the analysis of computing $\pi$ here and not thought about
-it too deeply. I guess we should also compare this with something else in order to
-show that this time is pretty good. We could get a subset of the sites and push
-the data into pylibseq maybe, or scikit-allel??}
+samples in a tree sequence, which took about 1.2 seconds
+applied to the example tree sequence above with 1.1 million mutations 
+in 200 megabases for 500,000 samples.
 
-This is a general-purpose strategy that can be applied to other methods.
+Another attractive feature of this set of tools
+is that it makes it easy to incorporate \emph{prior history},
+simply by seeding the simulation with a (relatively inexpensive) coalescent simulation.
+This allows for incorporation of deep-time history beyond the reach of individual-based simulations. 
+Since geographic structure from times longer ago than the mixing
+time of migration across the range has limited effect on modern genealogies
+\citep{wilkins2004separation} (other than possibly changing effective population
+size \citet{barton2002neutral,cox2002stepping}), this may not negatively affect realism.
 
-A hybrid approach, in which the recent history of a large sample of
-individuals is simulated under a detailed forwards-in-time model and the deep history
-under the coalescent, is an attractive prospect.
-\jk{Not sure where this should go; perhaps in the discussion? We can make the point that
-by keeping track of the genealogies forwards in time we can easily combine these with the
-deep history simulated by msprime}
-
-Parallelization will be important;
-this requires only one-way communication.
 
 A final note:
 in preparing this manuscript, 
@@ -722,26 +667,114 @@ it's the sort of thing they want here.}
 
 Jaime and Kevin to describe simulation methods here (separately).
 
+%%%%%%
+\subsection*{Overview of the API}
+
+The \msprime{} Python API provides a powerful platform for working with tree topology and mutation data. 
+The new portions of \msprime{} that we cover here
+are dedicated to tree sequence input and output using simple tables of data,
+so we refer to this as the `Tables API'.
+The four key tables: nodes, edges, sites and mutations, are described above.
+
+The tables API is primarily designed to facilitate efficient interchange of
+data between programs or between different modules of the same program.
+Following the current best-practises [citations: apache arrow, etc] data is stored
+in a columnar format.
+The principal advantage of this for our purposes is that it allows for very efficient
+interchange of large amounts of numerical data. In principle, this enables
+zero-copy semantics, where a data consumer can read the information directly
+from the memory of a producer without incurring the overhead of a copy
+[citation?] Our implementation uses the numpy C API [citation] to efficiently copy
+data from Python into the low-level C library used to manipulate
+tree sequences.
+\plr{@molpopgen: note on how this works with fwdpp?}
+
+The tables API provides basic input and output operations via the numpy
+array interface, which provides a great deal of flexibility as well
+as efficiency, and makes it straightforward to transfer data from sources
+such as HDF5 [citation], Dask, or Zarr. 
+(For small scale data and debugging purposes, a simple text format is also supported.)
+Along with these operations we also provide a function to sort a set of tables
+to ensure that the records are in the form required to input
+into an \msprime{} tree sequence object. (Simplification may also be required.)
+
+\plr{Maybe we don't need this paragraph? Already said it, more or less, above, esp if we insert something about how fwdpp works.}
+This interchange API is very efficient. [Describe a quick example where we generate
+a many-gigabyte tree sequence using fwdpp, and the time required
+to copy the node and edge data into the tables]. By using a simple numerical
+encoding of tree topologies and contiguous arrays of data to store this
+encoding, we can achieve data transfer rates that would be impossible under
+any text-based approach while retaining excellent portability.
+
+
+%%%%%%%%%%%%%%
+\subsection*{The table format}
+
+Given a set of node and edge tables as described above,
+there are a small set of requirements that ensure the tables
+describe a valid tree sequence.
+(There are essentially no such requirements on the site and mutation tables.)
+These are:
+\begin{enumerate}
+    \item Offspring must be born after their parents (and hence, no loops).
+    \item The set of intervals on which each individual is a child must be disjoint.
+\end{enumerate}
+A pair of node and edge tables that satisfy these two requirements
+is guarenteed to uniquely describe at each point on the genome
+a collection of directed, acyclic graphs -- in other words, a forest of trees.
+For some applications it is necessary to check that at every point
+there is only a \emph{single} tree.  
+Checking this is more difficult, but is implemented in \msprime{}'s API.
+
+For efficiency, \msprime{} makes several other sortedness requirements on the tables,
+that are not necessarily satisfied by tabled emitted by a forwards-time simulation.
+These can be rectified by first sorting (using \texttt{sort\_tables})
+and then using \texttt{simplify}, which works on sorted tables
+and is guarenteed to produce a valid, \msprime{}-ready tree sequence.
+
+Note that since each node time is equal to the amount of time since the \emph{birth} of the
+corresponding parent, time is measured in clock time, not in meioses.
+
 
 %%%%%%%%%%%%%%
 \subsection*{Simplification}
 
 Here we describe the simplification algorithm.
-\plr{I am trying it out to see what it looks like.}
+The flow is close to our implementation,
+but the description below uses set operations,
+while in the implementation,
+all ancestors are maintained as linked lists of segments
+ordered by left endpoint.
 
 \begin{taocpalg}{S}{Simplify a tree sequence}
-{Simplifies the input tree sequence.
+{Simplifies the input tree sequence:
+    input consists of 
+    a list of sample IDs, $S$, of length $n$,
+    a list of edges, $\mathcal{E_I}$,
+    and a list of nodes $\mathcal{N_I}$.
+    The genome length is $L$.
+    The output will be stored in a list of edges $\mathcal{E_O}$ 
+    and nodes $\mathcal{N}_O$.
+    This also maintains the list $N$ that gives the mapping 
+    from $\mathcal{N_I}$ to $\mathcal{N_O}$,
+    so that if $M[p] = u$ then the $p^\text{th}$ ancestor in $N_I$
+    is the same as the $u^\text{th}$ ancestor in $N_0$.
+    The internal state is $\mathcal{A}$, the list of ancestors
+    (which are collections of ancestral segments).
 }
 
-
 \algstep{S0.}{Initialize.}{
-    Set the samples.
+    Set $\mathcal{A}[j] \leftarrow (0, L, j)$ 
+    and $\mathcal{N}_O[j] \leftarrow \mathcal{N}_I[S[j]]$ for $0 \le j < N$.
+    Set $Q \leftarrow \emptyset$,
+    and $M[p] \leftarrow -1$ for $0 \le p < \text{length}(N_I)$.
 }
 
 \algstep{S1.}{Input parent loop.}{Loop over parents, chronologically.
 }
 
-\algstep{S2.}{Process parent edges.}{Loop over edges associated with this parent, removing ancestry from each child.
+\algstep{S2.}{Remove ancestry.}{Call Algorithm \algref{R} 
+    on each edge corresponding to the current parent.
 }
 
 \algstep{S3.}{Merge ancestors.}{Merge the resulting segments into a new ancestor for this parent.
@@ -749,234 +782,86 @@ Here we describe the simplification algorithm.
 
 \end{taocpalg}
 
-This uses
+The first step is, for each edge $(\ell, r, p, c)$,
+simply to replace any ancestry segment $[a, b)$ held by ancestor $c$
+with $[a,b) \setdiff [\ell, r)$ 
+(deleting the segment or splitting in two if necessary),
+and adding the removed segment $[a,b) \cap [\ell, r)$ to the merge queue $Q$:
 \begin{taocpalg}{R}{Remove ancestry}
-    {Remove ancestry on a segment from an ancestor.}
-
-
-\end{taocpalg}
-and
-\begin{taocpalg}{M}{Merge ancestors}
-    {Merge a collection of segments and create a new ancestor.}
-
-
-\end{taocpalg}
-
-
-%%%%%%%%%%%%%%
-\subsection*{Data structures:}
-\jk{Moved from above.}
-
-First we describe the data structures we use for recording genealogical history,
-as implemented in \msprime.
-These derive from those described by \citet{kelleher2016efficient},
-but have been generalised and modified to remove redundancy.
-The tables below give the example tree sequence of Figure \ref{fig:ex_tree_seq}.
-
-\begin{figure}
-    \begin{center}
-        \includegraphics[width=0.6\textwidth]{example_tree_seq}
-    \end{center}
-    \caption{
-        A pictorial representation of a tree sequence
-        relating three samples to each other
-        over a chromosome of length 1.0.
-        Mutations shown in the example tables of the text
-        are marked with red stars.
-        \label{fig:ex_tree_seq}
+    {Given an edge $(\ell, r, p, c)$,
+    and a list $\mathcal{A}[c]$ of the $m$ ancestral segments corresponding to $c$,
+    remove segments overlapping $[\ell, r)$ from $\mathcal{A}[c]$,
+    and add those overlapping segments to $Q$.
     }
-\end{figure}
 
-To clarify terminology,
-below a \emph{tree} refers to
-a genealogical tree describing how a collection of individuals are related to each other.
-A \emph{tree sequence} contains information sufficient to reconstruct the genealogical
-tree relating all samples to each other at any point along the genome.
-In the context of a tree sequence, \emph{nodes} refer to distinct ancestors,
-and correspond to the vertices in the trees of a tree sequence.
-Since each node represents a certain ancestor, it has a unique ``time'', thought of as her birth time,
-which determines the height of any branching points she is associated with.  A given node will be
-associated with branching points of all trees across a region if that node
-is the most recent common ancestor to the subtending tips across that region.
-This information is stored in the columns of a \textbf{Node Table}:
-\begin{center}
-\begin{tabular}{cccc}
-    id   &  is\_sample &  population &  time \\
-    0    &  1          & 0           & 0 \\
-    1    &  1          & 0           & 0 \\
-    2    &  1          & 0           & 0 \\
-    3    &  0          & 0           & 0.3 \\
-    4    &  0          & 0           & 0.5 \\
-    5    &  0          & 0           & 0.6 \\
-    6    &  0          & 0           & 0.7 \\
-\end{tabular}
-\end{center}
-where ``flags'' records other information
-(e.g., a binary mask of `1' indicates the node is a sample).
-Importantly, the \textbf{node ID} of a node is given implicitly
-by the (zero-based) index of its corresponding row in the Node Table.
+    \algstep{R1.}{Segment loop.}{Loop over ancestral segments in $\mathcal{A}[c]$:
+    if $j=m$, terminate; else let $(a, b, u) = \mathcal{A}[c][j]$.
+    }
 
-Tree sequences are constructed by specifying over which segments of genome
-which nodes inherit from which other nodes.  This information is stored by
-recording the endpoints of each distinctly inherited ancestral segment,
-the parental node, and a list of children nodes who have inherited that segment.
-As each such record describes a collection of edges across a swatch of trees in the tree sequence,
-we call these \emph{edgesets}
-and store them in the columns of an \textbf{Edgeset Table:}
-\begin{center}
-\begin{tabular}{cccc}
-    left & right & parent & children \\
-    0.2  &  0.8  &  3     & 0,2 \\
-    0.0  &  0.2  &  4     & 1,2 \\
-    0.2  &  0.8  &  4     & 1,3 \\
-    0.8  &  1.0  &  4     & 1,2 \\
-    0.8  &  1.0  &  5     & 0,4 \\
-    0.0  &  0.2  &  6     & 0,4  \\
-\end{tabular}
-\end{center}
+    \algstep{R2.}{Add to merge queue.}{If $[a,b) \cap [\ell,r) \neq \emptyset$,
+    append $(\max(a,\ell), \min(b,r), u)$ to $Q$.
+    }
 
-To record information about genetic variants we need to also record each mutation
-and which nodes have inherited that mutation.
-The tree structure takes care of inheritance -- all we need to do
-is to record the highest node in the tree at the mutated site
-that inherited that mutation.
-As more than one mtuation may occur at a given site,
-we separate this information into two tables,
-first, the \textbf{Site Table} records for each variant site
-\begin{center}
-\begin{tabular}{ccc}
-    id  &   position  & ancestral\_state \\
-    0   &  0.1        & 0 \\
-    1   &  0.5        & 0 \\
-\end{tabular}
-\end{center}
-Here ``position'' is a (floating point) position along the chromosome,
-and ``ancestral state'' is the genotype of the root of the tree at that site.
-As for nodes, \textbf{site IDs} are given implicitly
-by the (zero-based) index of the rows.
-Then, we record in a \textbf{Mutation Table}
-\begin{center}
-\begin{tabular}{ccc}
-    site  & node  & derived\_state \\
-    0	  & 4	  & 1 \\
-    1	  & 3	  & 1 \\
-    1	  & 2	  & 0 \\
-\end{tabular}
-\end{center}
-in which ``site'' is the ID of the site at wihch this mutation occurred,
-``node'' is the ID of the highest node that has inherited this mutation,
-and ``derived state'' is the genotype at this site of any individuals inheriting this mutation,
-unless another mutation occurs.
-% \plr{Omit migrations?}
+    \algstep{R3.}{Remove ancestry.}{If $[a,b) \cap [\ell,r) != \emptyset$,
+    delete $\mathcal{A}[c][j]$ and insert in its place
+    $(\min(a,\ell), \max(a,\ell), u)$ (if $a<\ell$) 
+    and/or $(\min(b,r), \max(b,r), u)$ (if $r<b$).
+    }
 
-\paragraph{Definition of valid tables}
-Here are the formal requirements for a set of nodes and edgesets to make sense,
-and to allow ``msprime``'s algorithms to work properly.
+\end{taocpalg}
 
-To disallow time travel and multiple inheritance:
-\begin{enumerate}
-    \item Offspring must be born after their parents (and hence, no loops).
-    \item The set of intervals on which each individual is a child must be disjoint.
-\end{enumerate}
-For algorithmic reasons, we also require:
-\begin{enumerate} \setcounter{enumi}{2}
-    \item The leftmost endpoint of each chromosome is 0.0.
-    \item Node times must be strictly greater than zero.
-    \item The list of offspring in an edgeset must be sorted.
-    \item Edgesets must be sorted in nondecreasing time order.
-    \item The set of intervals on which each individual is a parent must be disjoint.
-    \item Each edgeset must contain at least two children.
-\end{enumerate}
-Note that since each node time is equal to the amount of time since the \emph{birth} of the
-corresponding parent, time is measured in clock time, not in meioses.
+Next we must merge these ancestry segments,
+creating the new ancestor $p$,
+outputting edges and a node if coalescence has occurred.
+\begin{taocpalg}{M}{Merge ancestors}
+    {Merge a collection of segments and create a new ancestor.
+    This operates on the merge queue $Q$ above,
+    which is a list of ancestral segments,
+    and creates the new ancestor $\mathcal{A}[p]$.}
 
-A forwards-time simulation does \textbf{not} naturally emit genealogical information
-satisfying requirements 5--8.
-However, \msprime{} implements two algorithms that will take a set of tables
-satisfying only 1--4 and produce tables satisfying all requirements.
-Trivially, \texttt{sort\_tables} enforces requirements 5 and 6 and does not renumber nodes;
-then, \texttt{simplify} enforces requirements 7 and 8 (and does much more; see below).
+    \algstep{M1.}{Segment loop.}{While $\mathrm{length}(Q)>0$:}
+
+    \algstep{M2.}{Find next segment overlap boundaries}{
+    Let $\ell \leftarrow \min\{x.\ell : x \in Q\}$
+    and $H \leftarrow \{x \in Q : x.\ell = \ell\}$.
+    Also let $\ell_+ \leftarrow \min\{x.\ell : x \in Q \setdiff H\}$
+    and $r = \min(\ell_+, \min\{x.r : x \in H\})$.
+    }
+
+    \algstep{M3.}{Copy single segment.}{If $\mathrm{length}(H) == 1$,
+    set $\alpha \leftarrow (\ell, r, H[0].n)$.
+    If also $p \in S$, then append $(\alpha.\ell, \alpha.r, N[p], \alpha.c)$ to $\mathcal{E}_O$
+    and then set $\alpha.c \leftarrow M[p]$.
+    Go to \algref{M7}.
+    }
+
+    \algstep{M4.}{Coalescence head.}{If $(h \leftarrow \mathrm{length}(H)) > 1$,
+    if $M[p] == -1$ set $M[p] \leftarrow \text{length}(N_O)$
+    and append $N_I[p]$ to $N_O$.
+    Set $\alpha \leftarrow (\ell, r, M[p])$.
+    }
+
+    \algstep{M6.}{Record edges.}{
+    For each $x \in H$, append $(\ell, r, M[p], x.n)$ to $\mathcal{E}_O$.
+    }
+
+    \algstep{M7.}{Update $Q$.}{
+    Set $Q \leftarrow Q \setdiff \{x \in Q : x.r == r\}$
+    and then set $x.\ell = \ell$ for all remaining $x \in Q$.
+    }
+
+    \algstep{M8.}{Add segment to ancestor.}{
+    Append $\alpha$ to $\mathcal{A}[p]$ and return to \algref{M1}.
+    }
+
+\end{taocpalg}
 
 
-\section{More general method for recording the pedigree}
-
-\plr{moved from above}
-
-Concretely, this is done as follows.
-Suppose that the forwards simulation algorithm labels (haploid) individuals by integers,
-which we call ``input labels'',
-to distinguish them from the ``node IDs'' given to these same individuals in the (output) tree sequence.
-The algorithm maintains at all times a set of tables $(\nodes, \edgesets, \sites, \mutations)$
-that record a relaxed tree sequence,
-and an associative array $L$ that maps input labels to output node IDs, so that if $x$ is an input label,
-then $L[x]$ is the corresponding output node ID.
-We also always maintain $n$ to be the number of rows currently in the node table,
-(so that with zero-indexed IDs, the next to be added will have node ID $n$),
-$T_0$ to be the time of last simplification,
-and $n_0$ the number of rows in the node table at that time.
-
-Initially, we begin with $n$ and $n_0$ equal to the number of rows in the initial node table,
-and $L[j] = i_j$ for each $0 \le j < N$ if the initial input generation is labeled
-$i_0$, \ldots, $i_{N-1}$.
-
-At a reproduction event where haploid parents $x$ and $y$ produce offspring $u$
-at time $t$ in population $p$,
-\begin{enumerate}
-    \item add a
-        $(
-        \text{flags}=0,
-        \text{population}=p,
-        \text{time}=t)$ row to the node table,
-    \item set $L[u] = n$,
-    \item and increment $n\mathrel{+}=1$.
-\end{enumerate}
-Then, for each interval $[\ell,r)$ that $u$ inherits from parent $z$
-(where $z$ is either $x$ or $y$),
-\begin{enumerate}[resume]
-    \item add a
-        $( \text{left}=\ell,
-        \text{right}=r,
-        \text{parent}=z,
-        \text{children}=(u,))$ row to the edgeset table.
-\end{enumerate}
-If furthermore there have been mutations at genomic locations $s_1$, \ldots, $s_k$
-on this interval,
-with derived states $q_1$, \ldots, $q_k$,
-then for each $1 \le j \le k$,
-\begin{enumerate}[resume]
-    \item if $s_j$ is not in the site table, add a row
-        $( \text{position}=s_j,
-        \text{ancestral\_state}=0)$,
-    \item find the site index $i$ whose position is $s_j$,
-    \item and add a row
-        $( \text{site}=i$,
-           \text{node}=u$,
-        \text{derived\_state}=q_j)$ to the mutation table.
-\end{enumerate}
-
-To \textbf{simplify} the tree sequence at time $T$,
-\begin{enumerate}
-    \item add $T-T_0$ to each time in the first $n_0$ rows of the node table,
-        and replace each remaining time $t$ with $T-t$.
-\end{enumerate}
-Then, pass the set of currently alive input IDs,
-$i_0, \ldots, i_{N-1}$ to the simplificaiton algorithm,
-which produces a tree sequence that has node ID $j$ corresponding to input ID $i_j$
-for $0 \le j < N$, and
-\begin{enumerate}[resume]
-    \item empty $L$,
-    \item let $L[j] = i_j$ for $0 \le j < N$,
-    \item set $n$ to be the number of nodes in the new tree sequence and set $n_0 = n$, and finally
-    \item set $T_0 = T$.
-\end{enumerate}
-
-Simplification keeps the tables to a managable size.
-Since the map $L$ is updated to maintain the association between individuals in the simulation
-and nodes in the tree sequence, simplification can be run regularly,
-as the simulation progresses.
 
 %%%%%%%%%%%%%%%%%%%%%%
 \section*{Acknowledgements}
+Thanks to Brad Shaffer and Evan McCartney-Melstad for useful discussions.
+Funding for this project cam from XXX
 
 
 \bibliography{references}
