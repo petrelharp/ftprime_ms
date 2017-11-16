@@ -596,18 +596,19 @@ Suppose that $T$ is large enough that all samples coalesce within the simulation
 so that $T \sim 20N$, say.
 After simplification, we are left with the tree sequence describing the history
 of only the current generation of $2N$ individuals.
-This tree sequence has $4N-2$ edges to describe the leftmost tree,
-and one additional edge each time the marginal tree changes along the sequence.
+This tree sequence has $4N-2$ edges to describe the leftmost tree;
+and each time the marginal tree changes along the sequence,
+three edges end and three new edges begin (except for changes affecting the root; see \citet{kelleher2016efficient}).
 Coalescent theory tells us that 
 the expected total length of edges in a marginal tree is approximately $4N\log(2N)$,
 which is also equal to the mean number of ancestral recombination events that occur on a branch of the marginal tree,
 since we have taken one crossover per generation.
 Not all such recombinations actually change the tree topology,
-and so this gives us an upper bound on the number of edges.
+and three times this gives us an upper bound on the expected number of edges.
 Similarly, not every new edge derives from a never-before-seen node,
 but the number of nodes is at most equal to the number of edges plus the sample size.
-With $T=20N$, this reduces the initial storage of $160 N^2$ items to $2N(4\log(2N) + 3)$;
-at $N=10^4$, a factor of 20,000.
+With $T=20N$, this reduces the initial storage of $160 N^2$ items to $6N(4\log(2N) + 3)$;
+at $N=10^4$, a factor of 3,000.
 
 If we were to add mutations in forwards time 
 under the infinite-sites model with total mutation rate per generation $\mu$,
