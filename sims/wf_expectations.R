@@ -1,6 +1,6 @@
 library(matrixcalc)
 
-N <- 100
+N <- 60
 
 # get the WF transition matrix
 # stirling number of the second kind:
@@ -30,6 +30,22 @@ T0 <- rowSums(sweep(V, 2, 2:N, "*"))
 #  T = (2:N) + P %*% T
 T1 <- forwardsolve(diag(N-1) - P[-1,-1], 2:N)
 
-plot(T1, type='l', ylim=range(0,T1,finite=TRUE))
-lines(T0, col='green')
-lines(2:N, 2 * N * cumsum(1/(2:N-1)), col='red')
+# coal expectation
+Tcoal <- 2 * N * cumsum(1/(2:N-1))
+
+layout(1:2)
+
+plot(2:N, T1, type='l', ylim=range(0,T1,finite=TRUE),
+     xlab='number of initial leaves',
+     ylab='expected total tree length',
+     main=paste("N =", N))
+lines(2:N, T0, col='green')
+lines(2:N, Tcoal, col='red')
+legend("bottomright", lty=c(1, 1, 1), col=c('black', 'green', 'red'),
+       legend=c('WF', 'WF', 'coalescent'))
+
+plot(2:N, T1/Tcoal, type='l',
+     xlab='number of initial leaves',
+     ylab='ratio of total tree length, WF to coal',
+     main=paste("N =", N))
+
