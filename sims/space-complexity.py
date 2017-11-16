@@ -30,7 +30,6 @@ def wright_fisher(N, T, simplify_interval=1):
         nodes.add_row(time=T, flags=1)
     t = T
     S = np.zeros(T, dtype=int)
-    Q = np.zeros(T, dtype=float)
     while t > 0:
         t -= 1
         Pp = [P[j] for j in range(N)]
@@ -49,9 +48,8 @@ def wright_fisher(N, T, simplify_interval=1):
             msprime.simplify_tables(Pp, nodes, edges)
             P = list(range(N))
         S[T - t - 1] = len(edges)
-        Q[T - t - 1] = total_length(nodes, edges)
     # We will always simplify at t = 0, so no need for special case at the end
-    return msprime.load_tables(nodes=nodes, edges=edges), S, Q
+    return msprime.load_tables(nodes=nodes, edges=edges), S
 
 def total_length(nodes, edges):
     ts = msprime.load_tables(nodes=nodes, edges=edges)
@@ -59,6 +57,10 @@ def total_length(nodes, edges):
     for t in ts.trees():
         Q += t.length * t.total_branch_length
     return Q
+
+def ub(T, N):
+    return 2 * (N - 1) + 6 * N * np.log(N/(1+2*N/(T+2)))
+
 
 def verify():
     """
@@ -78,31 +80,22 @@ def verify():
 
 def plot():
     num_reps = 5
-    for n in [10, 40, 100]:
+    for n in [10, 20, 30, 40, 50]:
         T = 10 * n
         A = np.zeros((num_reps, T))
         B = np.zeros((num_reps, T))
+        x = [ub(t,n) for t in range(1,T)]
+        plt.plot(x, ls="dotted", lw=3)
         for j in range(num_reps):
-            _, S, Q = wright_fisher(n, T)
+            _, S = wright_fisher(n, T)
             A[j] = S
-            B[j] = Q
-            plt.subplot(211)
             plt.plot(S, alpha=0.5)
-            plt.subplot(212)
-            plt.plot(Q, alpha=0.5)
             print(n, j, "done")
         mean_S = np.mean(A, axis=0)
-        mean_Q = np.mean(B, axis=0)
-        plt.subplot(211)
         plt.plot(mean_S, color="black", lw=3)
         plt.title("N = {}".format(n))
         plt.xlabel("Generations")
         plt.ylabel("Number of edges")
-        plt.subplot(212)
-        plt.plot(mean_Q, color="black", lw=3)
-        plt.title("N = {}".format(n))
-        plt.xlabel("Generations")
-        plt.ylabel("Total tree length")
         plt.savefig("{}.png".format(n))
         plt.clf()
 
