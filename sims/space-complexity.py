@@ -59,7 +59,10 @@ def total_length(nodes, edges):
     return Q
 
 def ub(T, N):
-    return 2 * (N - 1) + 8 * N * np.log(N/(1+2*N/(T+2)))
+    # 2 N \left( 1 + 4 \log\left( \frac{NT}{T + 2 N} \right)\right) .
+    # return 2 * (N - 1) + 8 * N * np.log(N/(1+2*N/(T+2)))
+    return 2 * N * (1 + 4 * np.log(N * T / (T + 2 * N)))
+
 
 def get_mean_edges_per_transition(ts):
     d = np.zeros(ts.num_trees - 1)
@@ -90,7 +93,7 @@ def plot():
     # for n in [10, 20, 30, 40, 50]:
     # for n in [100, 200]:
     for n in [50]:
-        T = 10 * n
+        T = 15 * n
         A = np.zeros((num_reps, T))
         for j in range(num_reps):
             ts, S = wright_fisher(n, T)
@@ -105,7 +108,7 @@ def plot():
         plt.title("N = {}".format(n))
         plt.xlabel("Generations")
         plt.ylabel("Number of edges")
-        plt.savefig("{}.png".format(n))
+        plt.savefig("num_edges_{}.pdf".format(n), format='pdf')
         plt.clf()
 
 
