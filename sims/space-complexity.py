@@ -30,6 +30,7 @@ def wright_fisher(N, T, simplify_interval=1):
         nodes.add_row(time=T, flags=1)
     t = T
     S = np.zeros(T, dtype=int)
+    L = np.zeros(T, dtype=float)
     while t > 0:
         t -= 1
         Pp = [P[j] for j in range(N)]
@@ -48,9 +49,16 @@ def wright_fisher(N, T, simplify_interval=1):
             msprime.simplify_tables(Pp, nodes, edges)
             P = list(range(N))
         S[T - t - 1] = len(edges)
+        L[T - t - 1] = total_length(nodes, edges)
     # We will always simplify at t = 0, so no need for special case at the end
-    return msprime.load_tables(nodes=nodes, edges=edges), S
+    return msprime.load_tables(nodes=nodes, edges=edges), S, L
 
+def total_length(nodes, edges):
+    ts = msprime.load_tables(nodes=nodes, edges=edges)
+    L = 0.0
+    for t in ts.trees():
+        L += t.length * t.total_branch_length
+    return L
 
 def verify():
     """
@@ -62,9 +70,9 @@ def verify():
             for T in [1, 10, 100]:
                 print("Checking ", n, T, seed)
                 random.seed(seed)
-                ts1, _ = wright_fisher(n, T, T + 1)
+                ts1, _, _ = wright_fisher(n, T, T + 1)
                 random.seed(seed)
-                ts2, _ = wright_fisher(n, T, 1)
+                ts2, _, _ = wright_fisher(n, T, 1)
                 assert ts1.tables.nodes == ts2.tables.nodes
                 assert ts1.tables.edges == ts2.tables.edges
 
@@ -73,16 +81,28 @@ def plot():
     for n in [10, 100, 1000]:
         T = 10 * n
         A = np.zeros((num_reps, T))
+        B = np.zeros((num_reps, T))
         for j in range(num_reps):
-            _, S = wright_fisher(n, T)
+            _, S, L = wright_fisher(n, T)
             A[j] = S
+            B[j] = L
+            plt.subplot(211)
             plt.plot(S, alpha=0.5)
+            plt.subplot(212)
+            plt.plot(L, alpha=0.5)
             print(n, j, "done")
-        mean = np.mean(A, axis=0)
-        plt.plot(mean, color="black", lw=3)
+        mean_S = np.mean(A, axis=0)
+        mean_L = np.mean(B, axis=0)
+        plt.subplot(211)
+        plt.plot(mean_S, color="black", lw=3)
         plt.title("N = {}".format(n))
         plt.xlabel("Generations")
         plt.ylabel("Number of edges")
+        plt.subplot(212)
+        plt.plot(mean_L, color="black", lw=3)
+        plt.title("N = {}".format(n))
+        plt.xlabel("Generations")
+        plt.ylabel("Total tree length")
         plt.savefig("{}.png".format(n))
         plt.clf()
 
