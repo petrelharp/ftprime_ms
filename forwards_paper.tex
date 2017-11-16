@@ -12,6 +12,7 @@
 
 \include{macros}
 
+\newcommand{\fwdpp}{\texttt{fwdpp}}
 \newcommand{\msprime}{\texttt{msprime}}
 \newcommand{\nodes}{\texttt{nodes}}
 \newcommand{\edgesets}{\texttt{edgesets}}
@@ -20,6 +21,7 @@
 \newcommand{\setdiff}{\smallsetminus}
 
 \usepackage{color}
+\newcommand{\krt}[1]{{\em \color{green} #1}}
 \newcommand{\plr}[1]{{\em \color{blue} #1}}
 \newcommand{\jk}[1]{{\em \color{red} #1}}
 
@@ -687,7 +689,21 @@ from the memory of a producer without incurring the overhead of a copy
 [citation?] Our implementation uses the numpy C API [citation] to efficiently copy
 data from Python into the low-level C library used to manipulate
 tree sequences.
+
+The \msprime{} tables API is independent of the details of a particular simulation engine.  In other words, one simply
+needs to fill the relevant columns and send them to \msprime{} at regular intervals for simplification.  For example,
+using the \fwdpp{} C++ API \cite{Thornton2014-hx}, we fill arrays of simple structures representing the node and edge data.
+Doing so requires no modification of the \fwdpp{} code base.  Rather, we simply need to book-keep the parent/offspring
+labels and perform simple processing of the recombination breakpoints from each mating event.  Using \texttt{pybind11}
+(\url{https://github.com/pybind/pybind11/}),
+the node/edge arrays on
+the C++ side are made visible, without copy, to Python as a multi-column numpy array. This array is in turn processed by
+the \msprime{} tables API.  In order to create a standalone user interface, our implementation uses \texttt{pybind11} to
+create a Python package extending \texttt{fwdpy11} (\url{https://github.com/molpopgen/fwdpy11}), which is a Python
+package based on \fwdpp{}.  (A neat aside, that we may wish to skip here, is that it may be possible to use the tables
+API from a command-line C/C++ application via an embedded Python interpreter.)
 \plr{@molpopgen: note on how this works with fwdpp?}
+\krt{@plr: done, but perhaps too verbose?}
 
 The tables API provides basic input and output operations via the numpy
 array interface, which provides a great deal of flexibility as well
