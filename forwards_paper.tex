@@ -535,53 +535,7 @@ usage from growing linearly (and quickly) with time. Second, the simulation can
 be \emph{begun} with a tree sequence produced by some other method -- for
 instance, by a coalescent simulation with \msprime. 
 
-
-%%%%%%
-\subsection*{Overview of the API}
-
-\plr{leaving this alone for the moment: to stay here? move?}
-
-The \msprime\ Python API provides a powerful platform for working with
-tree topology and mutation data. We refer to the part of \msprime\
-that is dedicated to tree sequence input and output as the `Tables API',
-as the API is organised around simple tables of data. There are four key
-tables: nodes, edges, sites and mutations. Briefly, nodes and edges define
-the topology of a tree sequence (as defined above) and the sites and mutations
-define mutational processes on this topology.
-Figure~\ref{fig:example_tree_sequence} gives an informal depiction of this
-encoding in terms of these tables.
-
-The tables API is primarily designed to facilitate efficient interchange of
-data between programs or between different modules of the same program.
-Following the current best-practises [citations: apache arrow, etc] data is stored
-in a columnar format. There are many advantages to this approach, but the
-principle advantage for our purposes is that it allows for very efficient
-interchange of large amounts of numerical data. In principle, this enables
-zero-copy semantics, where a data consumer can read the information directly
-from the memory of a producer without incurring the overhead of a copy
-[citation?] Our implementation uses the numpy C API [citation] to efficiently copy
-data from Python into the low-level C library used to manipulate
-tree sequences.
-
-The tables API provides basic input and output operations via the numpy
-array interface, which provides a great deal of flexibility as well
-as efficiently. This makes transferring data from various sources
-such as HDF5 [citation], Dask, Zarr etc, straightforward. (For small
-scale data and debugging purposes, a simple text format is also supported.)
-Along with
-these operations we also provide a function to sort a set of tables
-to ensure that the records are in the form required to input
-into an \msprime\ tree sequence object. The \texttt{simplify\_tables}
-function implements tree sequence simplification, as described in the
-previous subsection.
-
-This interchange API is very efficient. [Describe a quick example where we generate
-a many-gigabyte tree sequence using fwdpp, and the time required
-to copy the node and edge data into the tables]. By using a simple numerical
-encoding of tree topologies and contiguous arrays of data to store this
-encoding, we can achieve data transfer rates that would be impossible under
-any text-based approach while retaining excellent portability.
-
+%%%%%%%%%%%%
 \subsection*{Estimates of run-time complexity}
 
 Consider a simulation of a Wright-Fisher population of $2N$ haploid individuals 
@@ -713,9 +667,48 @@ it's the sort of thing they want here.}
 
 Jaime and Kevin to describe simulation methods here (separately).
 
+%%%%%%
+\subsection*{Overview of the API}
+
+The \msprime{} Python API provides a powerful platform for working with tree topology and mutation data. 
+The new portions of \msprime{} that we cover here
+are dedicated to tree sequence input and output using simple tables of data,
+so we refer to this as the `Tables API'.
+The four key tables: nodes, edges, sites and mutations, are described above.
+
+The tables API is primarily designed to facilitate efficient interchange of
+data between programs or between different modules of the same program.
+Following the current best-practises [citations: apache arrow, etc] data is stored
+in a columnar format.
+The principal advantage of this for our purposes is that it allows for very efficient
+interchange of large amounts of numerical data. In principle, this enables
+zero-copy semantics, where a data consumer can read the information directly
+from the memory of a producer without incurring the overhead of a copy
+[citation?] Our implementation uses the numpy C API [citation] to efficiently copy
+data from Python into the low-level C library used to manipulate
+tree sequences.
+\plr{@molpopgen: note on how this works with fwdpp?}
+
+The tables API provides basic input and output operations via the numpy
+array interface, which provides a great deal of flexibility as well
+as efficiency, and makes it straightforward to transfer data from sources
+such as HDF5 [citation], Dask, or Zarr. 
+(For small scale data and debugging purposes, a simple text format is also supported.)
+Along with these operations we also provide a function to sort a set of tables
+to ensure that the records are in the form required to input
+into an \msprime{} tree sequence object. (Simplification may also be required.)
+
+\plr{Maybe we don't need this paragraph? Already said it, more or less, above, esp if we insert something about how fwdpp works.}
+This interchange API is very efficient. [Describe a quick example where we generate
+a many-gigabyte tree sequence using fwdpp, and the time required
+to copy the node and edge data into the tables]. By using a simple numerical
+encoding of tree topologies and contiguous arrays of data to store this
+encoding, we can achieve data transfer rates that would be impossible under
+any text-based approach while retaining excellent portability.
+
+
 %%%%%%%%%%%%%%
 \subsection*{Data structures:}
-\jk{Moved from above.}
 
 Here we describe in more detail the data structures underlying a tree sequence in \msprime.
 These derive from those described by \citet{kelleher2016efficient},
