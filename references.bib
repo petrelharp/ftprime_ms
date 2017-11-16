@@ -15,7 +15,7 @@
 }
 
 @article{wiuf1997number,
-  abstract = {If homologous sequences in a population are not subject to recombination, they can all be traced back to one ancestral sequence. However, the rest of our genome is subject to recombination and will be spread out on a series of individuals. The distribution of ancestral material to an extant chromosome is here investigated by the coalescent with recombination, and the results are discussed relative to humans. In an ancestral population of actual size 1.3 million a minority of <6.4% will carry material ancestral to any present human. The estimated actual population size can be even higher, 5 million, reducing the percentage to 1.7%.},
+  abstract = {If homologous sequences in a population are not subject to recombination, they can all be traced back to one ancestral sequence. However, the rest of our genome is subject to recombination and will be spread out on a series of individuals. The distribution of ancestral material to an extant chromosome is here investigated by the coalescent with recombination, and the results are discussed relative to humans. In an ancestral population of actual size 1.3 million a minority of $<$6.4\% will carry material ancestral to any present human. The estimated actual population size can be even higher, 5 million, reducing the percentage to 1.7\%.},
   author = {Wiuf, C and Hein, J},
   interhash = {f6966d1b4bc0dc82652e9605df0d7489},
   intrahash = {ecfb85ab912dc268be2258c1d84a021a},
@@ -219,4 +219,98 @@ the stepping model “effectively panmictic.”
   volume = 61,
   year = 2002
 }
+
+@article{harris2016genetic,
+  abstract = {Approximately 2–4\% of genetic material in human populations outside Africa is derived from Neanderthals who interbred
+with anatomically modern humans. Recent studies have shown that this Neanderthal DNA is depleted around functional genomic
+regions; this has been suggested to be a consequence of harmful epistatic interactions between human and Neanderthal alleles.
+However, using published estimates of Neanderthal inbreeding and the distribution of mutational fitness effects, we infer that
+Neanderthals had at least 40\% lower fitness than humans on average; this increased load predicts the reduction in Neanderthal
+introgression around genes without the need to invoke epistasis. We also predict a residual Neanderthal mutational load in non-
+Africans, leading to a fitness reduction of at least 0.5\%. This effect of Neanderthal admixture has been left out of previous debate on
+mutation load differences between Africans and non-Africans. We also show that if many deleterious mutations are recessive, the
+Neanderthal admixture fraction could increase over time due to the protective effect of Neanderthal haplotypes against deleterious
+alleles that arose recently in the human population. This might partially explain why so many organisms retain gene flow from other
+species and appear to derive adaptive benefits from introgression.},
+  author = {Harris, Kelley and Nielsen, Rasmus},
+  interhash = {933fd0c9cf0ff85544f3ece7cac5d7a6},
+  intrahash = {abbb31e35fe783ffb00bc73f733fdd22},
+  journal = {Genetics},
+  month = {June},
+  number = 2,
+  pages = {881--891},
+  title = {The Genetic Cost of {Neanderthal} Introgression},
+  url = {http://www.genetics.org/content/203/2/881},
+  volume = 203,
+  year = 2016
+}
+
+@article{lawrie2017accelerating,
+  abstract = {Forward Wright–Fisher simulations are powerful in their ability to model complex demography and selection scenarios, but suffer from slow execution on the Central Processor Unit (CPU), thus limiting their usefulness. However, the single-locus Wright–Fisher forward algorithm is exceedingly parallelizable, with many steps that are so-called “embarrassingly parallel,” consisting of a vast number of individual computations that are all independent of each other and thus capable of being performed concurrently. The rise of modern Graphics Processing Units (GPUs) and programming languages designed to leverage the inherent parallel nature of these processors have allowed researchers to dramatically speed up many programs that have such high arithmetic intensity and intrinsic concurrency. The presented GPU Optimized Wright–Fisher simulation, or “GO Fish” for short, can be used to simulate arbitrary selection and demographic scenarios while running over 250-fold faster than its serial counterpart on the CPU. Even modest GPU hardware can achieve an impressive speedup of over two orders of magnitude. With simulations so accelerated, one can not only do quick parametric bootstrapping of previously estimated parameters, but also use simulated results to calculate the likelihoods and summary statistics of demographic and selection models against real polymorphism data, all without restricting the demographic and selection scenarios that can be modeled or requiring approximations to the single-locus forward algorithm for efficiency. Further, as many of the parallel programming techniques used in this simulation can be applied to other computationally intensive algorithms important in population genetics, GO Fish serves as an exciting template for future research into accelerating computation in evolution. GO Fish is part of the Parallel PopGen Package available at: http://dl42.github.io/ParallelPopGen/.},
+  author = {Lawrie, David S.},
+  doi = {10.1534/g3.117.300103},
+  interhash = {872a330c7dbd3fbaca22b5d992c729f1},
+  intrahash = {20d63e4c783ed39aef8a5a2c527f9fe1},
+  journal = {G3: Genes|Genomes|Genetics},
+  month = aug,
+  number = 9,
+  pages = {3229--3236},
+  publisher = {Genetics Society of America},
+  title = {Accelerating {Wright}--{Fisher} Forward Simulations on the Graphics Processing Unit},
+  url = {https://doi.org/10.1534%2Fg3.117.300103},
+  volume = 7,
+  year = 2017
+}
+
+
+@article{haller2017flexible,
+  abstract = {Modern population genomic datasets hold immense promise for revealing the evolutionary processes operating in natural populations, but a crucial prerequisite for this goal is the ability to model realistic evolutionary scenarios and predict their expected patterns in genomic data. To that end, we present SLiM 2: an evolutionary simulation framework that combines a powerful, fast engine for forward population genetic simulations with the capability of modeling a wide variety of complex evolutionary scenarios. SLiM achieves this flexibility through scriptability, which provides control over most aspects of the simulated evolutionary scenarios with a simple R-like scripting language called Eidos. An example SLiM simulation is presented to illustrate the power of this approach. SLiM 2 also includes a graphical user interface for simulation construction, interactive runtime control, and dynamic visualization of simulation output, facilitating easy and fast model development with quick prototyping and visual debugging. We conclude with a performance comparison between SLiM and two other popular forward genetic simulation packages.},
+  author = {Haller, Benjamin C. and Messer, Philipp W.},
+  doi = {10.1093/molbev/msw211},
+  interhash = {28118a3e484b93a0c71432fc04a614f8},
+  intrahash = {2e14b7b2ff6427c63e86a242ca9daf4a},
+  journal = {Molecular Biology and Evolution},
+  number = 1,
+  pages = {230-240},
+  title = {{SLiM} 2: Flexible, Interactive Forward Genetic Simulations},
+  url = {/brokenurl# + http://dx.doi.org/10.1093/molbev/msw211},
+  volume = 34,
+  year = 2017
+}
+
+@article{aberer2013rapid,
+  abstract = {In population genetics, simulation is a fundamental tool for analyzing how basic evolutionary forces such as natural selection, recombination, and mutation shape the genetic landscape of a population. Forward simulation represents the most powerful, but, at the same time, most compute-intensive approach for simulating the genetic material of a population.},
+  author = {Aberer, Andre J. and Stamatakis, Alexandros},
+  day = 09,
+  doi = {10.1186/1471-2105-14-216},
+  interhash = {1327542c5240624523418edb9d3fee76},
+  intrahash = {4363a8cb148c08f90138d80d399f5ce8},
+  issn = {1471-2105},
+  journal = {BMC Bioinformatics},
+  month = jul,
+  number = 1,
+  pages = 216,
+  title = {Rapid forward-in-time simulation at the chromosome and genome level},
+  url = {https://doi.org/10.1186/1471-2105-14-216},
+  volume = 14,
+  year = 2013
+}
+
+@article{padhukasahasram2008exploring,
+  abstract = {We present an exact forward-in-time algorithm that can efficiently simulate the evolution of a finite population under the Wright–Fisher model. We used simulations based on this algorithm to verify the accuracy of the ancestral recombination graph approximation by comparing it to the exact Wright–Fisher scenario. We find that the recombination graph is generally a very good approximation for models with complete outcrossing, whereas, for models with self-fertilization, the approximation becomes slightly inexact for some combinations of selfing and recombination parameters.},
+  author = {Padhukasahasram, B. and Marjoram, P. and Wall, J. D. and Bustamante, C. D. and Nordborg, M.},
+  doi = {10.1534/genetics.107.085332},
+  interhash = {6afbf53c43c9b6cfc5c4c9c768082593},
+  intrahash = {f02f0c26be9b641f49248b7d07ff69d6},
+  journal = {Genetics},
+  month = apr,
+  number = 4,
+  pages = {2417--2427},
+  publisher = {Genetics Society of America},
+  title = {Exploring Population Genetic Models With Recombination Using Efficient Forward-Time Simulations},
+  url = {https://doi.org/10.1534%2Fgenetics.107.085332},
+  volume = 178,
+  year = 2008
+}
+
 

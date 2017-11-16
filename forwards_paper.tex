@@ -139,10 +139,28 @@ is known as the \emph{ancestral recombination graph}, or {ARG} \citep{griffiths1
 which has been the subject of substantial study
 under the assumptions of coalescent theory \citep{wiuf1997number,wiuf1999ancestry,marjoram2006coalescent,wilton2015smc}.
 
-\plr{Quick review of simulation software, esp that other one that does the same thing.}
+\plr{this paragraph is supposed to cite the fwds time simulation methods we need to}
+Forwards-time population genetics simulations are growing in importance,
+as the genome-wide impacts of hitchhiking and background selection are more widely appreciated.
+For instance, \citet{harris2016genetic} used SLiM \citep{haller2017flexible} to simulate tens of thousands of human exomes
+to assess the impact of genetic load and Neanderthal introgression on human genetic diversity.
+This is roughly state-of-the-art 
+-- the fastest simulation frameworks such as SLiM and fwdpp \citep{fwdpp}
+can ``only'' simulate tens of megabases of sequence in tens of thousands of individuals
+for tens of thousands of generations --
+but still substantially short of whole genomes for most biological population sizes.
+There has been some progress at parallelization \citep{lawrie2017accelerating},
+which has substantial promise.
+The general idea of storing genealogical information to speed up simulations is not new --
+it was entirely implemented in AnA-FiTS \citep{aberer2013rapid}, for instance --
+but this program did not implement the critical step of discarding irrelevant genealogical information.
+A similar but more limited method for discarding this information does appear in \citet{padhukasahasram2008exploring}.
 
-\plr{Make clear that the main product here is the \msprime{} interface,}
-part of which is the tables schema.
+In this paper we discuss storage methods for genealogies (and hence, genome sequence),
+an algorithm for simplifying these,
+and their use in forwards-time simulation.
+Although we were motivated by a need for more efficient simulations,
+these tools may prove more widely useful.
 
 
 %%%%%%%%%%%%%%%%%%%%%%
