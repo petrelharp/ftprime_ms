@@ -166,7 +166,6 @@ these tools may prove more widely useful.
 %%%%%%%%%%%%%%%%%%%%%%
 \section*{Results}
 
-\plr{Order is intro-results-discussion-methods.}
 
 Below, we first describe the conceptual and algorithmic foundations for the method:
 (a) the new \emph{tables} format for storing tree sequences;
@@ -713,6 +712,88 @@ it's the sort of thing they want here.}
 
 Jaime and Kevin to describe simulation methods here (separately).
 
+%%%%%%%%%%%%%%
+\subsection*{Data structures:}
+\jk{Moved from above.}
+
+Here we describe in more detail the data structures underlying a tree sequence in \msprime.
+These derive from those described by \citet{kelleher2016efficient},
+but have been generalised and modified to remove redundancy.
+
+To clarify terminology,
+below a \emph{tree} refers to
+a genealogical tree describing how a collection of individuals are related to each other.
+A \emph{tree sequence} contains information sufficient to reconstruct the genealogical
+tree relating all samples to each other at any point along the genome.
+In the context of a tree sequence, \emph{nodes} refer to distinct ancestors,
+and correspond to the vertices in the trees of a tree sequence.
+Since each node represents a certain ancestor, it has a unique ``time'', thought of as her birth time,
+which determines the height of any branching points she is associated with.  A given node will be
+associated with branching points of all trees across a region if that node
+is the most recent common ancestor to the subtending tips across that region.
+This information is stored in the columns of a \textbf{Node Table},
+having columns \emph{time}, \emph{population}, and \emph{flags}.
+The column ``flags'' records other information
+(e.g., a binary mask of `1' indicates the node is a sample).
+Importantly, the \textbf{node ID} of a node is given implicitly
+by the (zero-based) index of its corresponding row in the Node Table.
+
+Tree sequences are constructed by specifying over which segments of genome
+which nodes inherit from which other nodes.  This information is stored by
+recording the endpoints of each distinctly inherited ancestral segment,
+the parental node, and the child node who inherited that segment.
+As each such record describes particular edge across a swatch of trees in the tree sequence,
+we call these \emph{edges}
+and store them in the columns of an \textbf{Edge Table},
+having columns \emph{left}, \emph{right}, \emph{parent}, and \emph{child}.
+
+To record information about genetic variants we need to also record each mutation
+and which nodes have inherited that mutation.
+The tree structure takes care of inheritance -- all we need to do
+is to record the highest node in the tree at the mutated site
+that inherited that mutation.
+As more than one mtuation may occur at a given site,
+we separate this information into two tables,
+first, the \textbf{Site Table} records for each variant site its \emph{position} and \emph{ancestral state}.
+Here \emph{position} is a (floating point) position along the chromosome,
+and \emph{ancestral state} is the genotype of the root of the tree at that site.
+As for nodes, \textbf{site IDs} are given implicitly
+by the (zero-based) index of the rows.
+Then, we record in a \textbf{Mutation Table} the \emph{site}, \emph{node}, and \emph{derived state}
+for each mutation.
+Here ``site'' is the ID of the site at wihch this mutation occurred,
+``node'' is the ID of the highest node that has inherited this mutation,
+and ``derived state'' is the genotype at this site of any individuals inheriting this mutation,
+unless another mutation occurs.
+% \plr{Omit migrations?}
+
+\paragraph{Definition of valid tables}
+Here are the formal requirements for a set of nodes and edges to make sense,
+and to allow ``msprime``'s algorithms to work properly.
+
+To disallow time travel and multiple inheritance:
+\begin{enumerate}
+    \item Offspring must be born after their parents (and hence, no loops).
+    \item The set of intervals on which each individual is a child must be disjoint.
+\end{enumerate}
+For algorithmic reasons, we also require:
+\begin{enumerate} \setcounter{enumi}{2}
+    \item The leftmost endpoint of each chromosome is 0.0.
+    \item Node times must be strictly greater than zero.
+    \item Edges must be sorted in nondecreasing time order.
+\end{enumerate}
+Note that since each node time is equal to the amount of time since the \emph{birth} of the
+corresponding parent, time is measured in clock time, not in meioses.
+
+A forwards-time simulation does \textbf{not} naturally emit genealogical information
+satisfying all these requirements.
+However, \msprime{} implements two algorithms that will take a set of tables
+satisfying only 1--4 and produce tables satisfying all requirements.
+These are \texttt{sort\_tables}, to enforce sortedness requirements (without renumbering nodes),
+and \texttt{simplify}, which works on sorted tables
+and is guarenteed to produce a valid, \msprime{}-ready tree sequence.
+
+
 
 %%%%%%%%%%%%%%
 \subsection*{Simplification}
@@ -835,220 +916,11 @@ outputting edges and a node if coalescence has occurred.
 \end{taocpalg}
 
 
-%%%%%%%%%%%%%%
-\subsection*{Data structures:}
-\jk{Moved from above.}
-
-First we describe the data structures we use for recording genealogical history,
-as implemented in \msprime.
-These derive from those described by \citet{kelleher2016efficient},
-but have been generalised and modified to remove redundancy.
-The tables below give the example tree sequence of Figure \ref{fig:ex_tree_seq}.
-
-\begin{figure}
-    \begin{center}
-        \includegraphics[width=0.6\textwidth]{example_tree_seq}
-    \end{center}
-    \caption{
-        A pictorial representation of a tree sequence
-        relating three samples to each other
-        over a chromosome of length 1.0.
-        Mutations shown in the example tables of the text
-        are marked with red stars.
-        \label{fig:ex_tree_seq}
-    }
-\end{figure}
-
-To clarify terminology,
-below a \emph{tree} refers to
-a genealogical tree describing how a collection of individuals are related to each other.
-A \emph{tree sequence} contains information sufficient to reconstruct the genealogical
-tree relating all samples to each other at any point along the genome.
-In the context of a tree sequence, \emph{nodes} refer to distinct ancestors,
-and correspond to the vertices in the trees of a tree sequence.
-Since each node represents a certain ancestor, it has a unique ``time'', thought of as her birth time,
-which determines the height of any branching points she is associated with.  A given node will be
-associated with branching points of all trees across a region if that node
-is the most recent common ancestor to the subtending tips across that region.
-This information is stored in the columns of a \textbf{Node Table}:
-\begin{center}
-\begin{tabular}{cccc}
-    id   &  is\_sample &  population &  time \\
-    0    &  1          & 0           & 0 \\
-    1    &  1          & 0           & 0 \\
-    2    &  1          & 0           & 0 \\
-    3    &  0          & 0           & 0.3 \\
-    4    &  0          & 0           & 0.5 \\
-    5    &  0          & 0           & 0.6 \\
-    6    &  0          & 0           & 0.7 \\
-\end{tabular}
-\end{center}
-where ``flags'' records other information
-(e.g., a binary mask of `1' indicates the node is a sample).
-Importantly, the \textbf{node ID} of a node is given implicitly
-by the (zero-based) index of its corresponding row in the Node Table.
-
-Tree sequences are constructed by specifying over which segments of genome
-which nodes inherit from which other nodes.  This information is stored by
-recording the endpoints of each distinctly inherited ancestral segment,
-the parental node, and a list of children nodes who have inherited that segment.
-As each such record describes a collection of edges across a swatch of trees in the tree sequence,
-we call these \emph{edgesets}
-and store them in the columns of an \textbf{Edgeset Table:}
-\begin{center}
-\begin{tabular}{cccc}
-    left & right & parent & children \\
-    0.2  &  0.8  &  3     & 0,2 \\
-    0.0  &  0.2  &  4     & 1,2 \\
-    0.2  &  0.8  &  4     & 1,3 \\
-    0.8  &  1.0  &  4     & 1,2 \\
-    0.8  &  1.0  &  5     & 0,4 \\
-    0.0  &  0.2  &  6     & 0,4  \\
-\end{tabular}
-\end{center}
-
-To record information about genetic variants we need to also record each mutation
-and which nodes have inherited that mutation.
-The tree structure takes care of inheritance -- all we need to do
-is to record the highest node in the tree at the mutated site
-that inherited that mutation.
-As more than one mtuation may occur at a given site,
-we separate this information into two tables,
-first, the \textbf{Site Table} records for each variant site
-\begin{center}
-\begin{tabular}{ccc}
-    id  &   position  & ancestral\_state \\
-    0   &  0.1        & 0 \\
-    1   &  0.5        & 0 \\
-\end{tabular}
-\end{center}
-Here ``position'' is a (floating point) position along the chromosome,
-and ``ancestral state'' is the genotype of the root of the tree at that site.
-As for nodes, \textbf{site IDs} are given implicitly
-by the (zero-based) index of the rows.
-Then, we record in a \textbf{Mutation Table}
-\begin{center}
-\begin{tabular}{ccc}
-    site  & node  & derived\_state \\
-    0	  & 4	  & 1 \\
-    1	  & 3	  & 1 \\
-    1	  & 2	  & 0 \\
-\end{tabular}
-\end{center}
-in which ``site'' is the ID of the site at wihch this mutation occurred,
-``node'' is the ID of the highest node that has inherited this mutation,
-and ``derived state'' is the genotype at this site of any individuals inheriting this mutation,
-unless another mutation occurs.
-% \plr{Omit migrations?}
-
-\paragraph{Definition of valid tables}
-Here are the formal requirements for a set of nodes and edgesets to make sense,
-and to allow ``msprime``'s algorithms to work properly.
-
-To disallow time travel and multiple inheritance:
-\begin{enumerate}
-    \item Offspring must be born after their parents (and hence, no loops).
-    \item The set of intervals on which each individual is a child must be disjoint.
-\end{enumerate}
-For algorithmic reasons, we also require:
-\begin{enumerate} \setcounter{enumi}{2}
-    \item The leftmost endpoint of each chromosome is 0.0.
-    \item Node times must be strictly greater than zero.
-    \item The list of offspring in an edgeset must be sorted.
-    \item Edgesets must be sorted in nondecreasing time order.
-    \item The set of intervals on which each individual is a parent must be disjoint.
-    \item Each edgeset must contain at least two children.
-\end{enumerate}
-Note that since each node time is equal to the amount of time since the \emph{birth} of the
-corresponding parent, time is measured in clock time, not in meioses.
-
-A forwards-time simulation does \textbf{not} naturally emit genealogical information
-satisfying requirements 5--8.
-However, \msprime{} implements two algorithms that will take a set of tables
-satisfying only 1--4 and produce tables satisfying all requirements.
-Trivially, \texttt{sort\_tables} enforces requirements 5 and 6 and does not renumber nodes;
-then, \texttt{simplify} enforces requirements 7 and 8 (and does much more; see below).
-
-
-\section{More general method for recording the pedigree}
-
-\plr{moved from above}
-
-Concretely, this is done as follows.
-Suppose that the forwards simulation algorithm labels (haploid) individuals by integers,
-which we call ``input labels'',
-to distinguish them from the ``node IDs'' given to these same individuals in the (output) tree sequence.
-The algorithm maintains at all times a set of tables $(\nodes, \edgesets, \sites, \mutations)$
-that record a relaxed tree sequence,
-and an associative array $L$ that maps input labels to output node IDs, so that if $x$ is an input label,
-then $L[x]$ is the corresponding output node ID.
-We also always maintain $n$ to be the number of rows currently in the node table,
-(so that with zero-indexed IDs, the next to be added will have node ID $n$),
-$T_0$ to be the time of last simplification,
-and $n_0$ the number of rows in the node table at that time.
-
-Initially, we begin with $n$ and $n_0$ equal to the number of rows in the initial node table,
-and $L[j] = i_j$ for each $0 \le j < N$ if the initial input generation is labeled
-$i_0$, \ldots, $i_{N-1}$.
-
-At a reproduction event where haploid parents $x$ and $y$ produce offspring $u$
-at time $t$ in population $p$,
-\begin{enumerate}
-    \item add a
-        $(
-        \text{flags}=0,
-        \text{population}=p,
-        \text{time}=t)$ row to the node table,
-    \item set $L[u] = n$,
-    \item and increment $n\mathrel{+}=1$.
-\end{enumerate}
-Then, for each interval $[\ell,r)$ that $u$ inherits from parent $z$
-(where $z$ is either $x$ or $y$),
-\begin{enumerate}[resume]
-    \item add a
-        $( \text{left}=\ell,
-        \text{right}=r,
-        \text{parent}=z,
-        \text{children}=(u,))$ row to the edgeset table.
-\end{enumerate}
-If furthermore there have been mutations at genomic locations $s_1$, \ldots, $s_k$
-on this interval,
-with derived states $q_1$, \ldots, $q_k$,
-then for each $1 \le j \le k$,
-\begin{enumerate}[resume]
-    \item if $s_j$ is not in the site table, add a row
-        $( \text{position}=s_j,
-        \text{ancestral\_state}=0)$,
-    \item find the site index $i$ whose position is $s_j$,
-    \item and add a row
-        $( \text{site}=i$,
-           \text{node}=u$,
-        \text{derived\_state}=q_j)$ to the mutation table.
-\end{enumerate}
-
-To \textbf{simplify} the tree sequence at time $T$,
-\begin{enumerate}
-    \item add $T-T_0$ to each time in the first $n_0$ rows of the node table,
-        and replace each remaining time $t$ with $T-t$.
-\end{enumerate}
-Then, pass the set of currently alive input IDs,
-$i_0, \ldots, i_{N-1}$ to the simplificaiton algorithm,
-which produces a tree sequence that has node ID $j$ corresponding to input ID $i_j$
-for $0 \le j < N$, and
-\begin{enumerate}[resume]
-    \item empty $L$,
-    \item let $L[j] = i_j$ for $0 \le j < N$,
-    \item set $n$ to be the number of nodes in the new tree sequence and set $n_0 = n$, and finally
-    \item set $T_0 = T$.
-\end{enumerate}
-
-Simplification keeps the tables to a managable size.
-Since the map $L$ is updated to maintain the association between individuals in the simulation
-and nodes in the tree sequence, simplification can be run regularly,
-as the simulation progresses.
 
 %%%%%%%%%%%%%%%%%%%%%%
 \section*{Acknowledgements}
+Thanks to Brad Shaffer and Evan McCartney-Melstad for useful discussions.
+Funding for this project cam from XXX
 
 
 \bibliography{references}
