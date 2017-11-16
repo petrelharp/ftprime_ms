@@ -9,6 +9,21 @@ import numpy as np
 
 import msprime
 
+# TODO:
+if False:
+    # compare speed of pi calc to this:
+
+    ts = msprime.simulate(100)
+    G = ts.genotype_matrix()
+
+    def np_pi(ts, G):
+      n = ts.num_samples
+      m = np.sum(G, 1)
+      return sum(2 * m * (n - m) / (n * (n - 1))) / ts.sequence_length
+
+    np.pi(ts, G)
+
+
 
 def run_simulation(args):
     before = time.process_time()
