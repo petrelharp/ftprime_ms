@@ -58,8 +58,15 @@ def total_length(nodes, edges):
         Q += t.length * t.total_branch_length
     return Q
 
-def ub(T, N):
-    return 2 * (N - 1) + 6 * N * np.log(N/(1+2*N/(T+2)))
+def ub(T, N, num_edges=3):
+    return 2 * (N - 1) + 2 * num_edges * N * np.log(N/(1+2*N/(T+2)))
+
+def get_mean_edges_per_transition(ts):
+    d = np.zeros(ts.num_trees - 1)
+    for j, (_, edges_out, edges_in) in enumerate(ts.edge_diffs()):
+        if len(edges_out) > 0:
+            d[j - 1] = len(edges_in)
+    return np.mean(d)
 
 
 def verify():
@@ -79,18 +86,25 @@ def verify():
                 assert ts1.tables.edges == ts2.tables.edges
 
 def plot():
-    num_reps = 5
-    for n in [10, 20, 30, 40, 50]:
+    num_reps = 20
+    # for n in [10, 20, 30, 40, 50]:
+    for n in [100, 200]:
         T = 10 * n
         A = np.zeros((num_reps, T))
-        B = np.zeros((num_reps, T))
-        x = [ub(t,n) for t in range(1,T)]
-        plt.plot(x, ls="dotted", lw=3)
+        E = np.zeros((num_reps, T))
         for j in range(num_reps):
-            _, S = wright_fisher(n, T)
+            ts, S = wright_fisher(n, T)
             A[j] = S
+            E[j] = get_mean_edges_per_transition(ts)
             plt.plot(S, alpha=0.5)
             print(n, j, "done")
+
+        x = [ub(t,n) for t in range(1,T)]
+        plt.plot(x, ls="dotted", color="blue", lw=3)
+
+        x = [ub(t,n, np.mean(E)) for t in range(1,T)]
+        plt.plot(x, ls="dashed", color="red", lw=3)
+
         mean_S = np.mean(A, axis=0)
         plt.plot(mean_S, color="black", lw=3)
         plt.title("N = {}".format(n))
@@ -104,4 +118,5 @@ def plot():
 if __name__ == "__main__":
     # verify()
     plot()
+
 
