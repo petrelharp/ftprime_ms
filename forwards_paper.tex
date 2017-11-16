@@ -516,12 +516,7 @@ can be run periodically through the simulation, taking the set of samples to be
 the entire currently alive population. This is important as it keeps memory
 usage from growing linearly (and quickly) with time. Second, the simulation can
 be \emph{begun} with a tree sequence produced by some other method -- for
-instance, by a coalescent simulation with \msprime. This allows for
-incorporation of deep-time history beyond the reach of individual-based
-simulations. Since geographic structure from times longer ago than the mixing
-time of migration across the range has limited effect on modern genealogies
-\citep{wilkins_separation} (other than possibly changing effective population
-size \citet{durretspatial}), this may not negatively affect realism.
+instance, by a coalescent simulation with \msprime. 
 
 
 %%%%%%
@@ -597,8 +592,6 @@ but the number of nodes is at most equal to the number of edges plus the sample 
 With $T=20N$, this reduces the initial storage of $160 N^2$ items to $2N(4\log(2N) + 3)$;
 at $N=10^4$, a factor of 20,000.
 
-\plr{We could compute the recursions for these quantities explicitly for this simple WF case...}
-
 If we were to add mutations in forwards time 
 under the infinite-sites model with total mutation rate per generation $\mu$,
 there would also be around $\mu 2NT$ mutations (and the same number of sites).
@@ -631,43 +624,51 @@ in a day.
 
 
 %%%%%%%%%%%%%%%%%%%%%%
-\section*{Conclusion}
+\section*{Discussion}
 
+In this paper, we have shown that storing pedigrees
+and associated recombination events
+in a forwards-time simulation
+not only results in having available a great deal more information about the simulation,
+but also can speed up the simulation by orders of magnitude.
+To make this feasible, 
+we have described how to efficiently store this information in tables,
+and have described a fundamental algorithm for simplificication of tree sequences.
+Conceptually, recording of genealogical and recombination events
+can happen independently of the details of simulation;
+for this reason, we provide a well-defined and well-tested API in C and in python
+for use in other code bases.
 
-This works great and very fast.
-
-Having results in a tree sequence is really good downstream too:
-The tree sequence encoding is compact but it is also efficient to process.
-Many algorithms to compute statistics of interest for population genetics
-are naturally expressed in terms of tree topologies. For example, the
-pairwise nucleotide diversity $\pi$, is defined as the average number of
-differences between sequences in the sample. Computing $\pi$ directly
-from observed sequence data requires $O(n^2 m)$ time, since we must
-compare all pairs of samples at every site. However, given the topology of
-the trees at every site and the locations of mutations much better algorithms
-are possible. Using the fact that we can count the number of samples below
-a given node efficiently using previously described tree sequence
-algorithms~\citep{kelleher2016efficient}, the time required to compute $\pi$
-becomes roughly $O(n \log n + m)$.
+The tree sequences produced by default by this method
+are very compact, storing genotype \emph{and} genealogical information
+in a small fraction of the space taken by a compressed VCF file.
+The format is also highly efficient to process,
+leading to advantages for downstream analysis as well.
+This is because many algorithms to compute statistics of interest for population genetics
+are naturally expressed in terms of tree topologies,
+and so can be quickly computed from the trees underlying the tree sequence format. 
+For example, pairwise nucleotide diversity $\pi$, is the average density of
+differences between sequences in the sample. 
+To compute this directly from sequence data at $m$ sites in $n$ samples
+requires computing allele frequencies, taking $O(nm)$ operations.
+By using the locations of the mutations on the marginal trees,
+and the fact that these are correlated, 
+dynamic programming algorithms similar to those in~\citep{kelleher2016efficient}
+can do this in roughly $O(n + m \log n)$ operations.
 The \msprime\ API provides a method to compute $\pi$ among arbitrary subsets of the
-samples in a tree sequence, and calculating $\pi$ over all 500K samples
-in the example above required about 1.2 seconds.
-\jk{I haven't checked the analysis of computing $\pi$ here and not thought about
-it too deeply. I guess we should also compare this with something else in order to
-show that this time is pretty good. We could get a subset of the sites and push
-the data into pylibseq maybe, or scikit-allel??}
+samples in a tree sequence, which took about 1.2 seconds
+applied to the example tree sequence above with 1.1 million mutations 
+in 200 megabases for 500,000 samples.
 
-This is a general-purpose strategy that can be applied to other methods.
+Another attractive feature of this set of tools
+is that it makes it easy to incorporate \emph{prior history},
+simply by seeding the simulation with a (relatively inexpensive) coalescent simulation.
+This allows for incorporation of deep-time history beyond the reach of individual-based simulations. 
+Since geographic structure from times longer ago than the mixing
+time of migration across the range has limited effect on modern genealogies
+\citep{wilkins2004separation} (other than possibly changing effective population
+size \citet{barton2002neutral,cox2002stepping}), this may not negatively affect realism.
 
-A hybrid approach, in which the recent history of a large sample of
-individuals is simulated under a detailed forwards-in-time model and the deep history
-under the coalescent, is an attractive prospect.
-\jk{Not sure where this should go; perhaps in the discussion? We can make the point that
-by keeping track of the genealogies forwards in time we can easily combine these with the
-deep history simulated by msprime}
-
-Parallelization will be important;
-this requires only one-way communication.
 
 A final note:
 in preparing this manuscript, 
