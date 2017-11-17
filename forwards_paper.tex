@@ -790,6 +790,11 @@ from the memory of a producer without incurring the overhead of a copy
 [citation?] Our implementation uses the numpy C API [citation] to efficiently copy
 data from Python into the low-level C library used to manipulate
 tree sequences.
+Thus, by using a simple numerical
+encoding of tree topologies and contiguous arrays of data to store this
+encoding, we can achieve data transfer rates that would be impossible under
+any text-based approach while retaining excellent portability.
+
 
 The \msprime{} tables API is independent of the details of a particular simulation engine.  In other words, one simply
 needs to fill the relevant columns and send them to \msprime{} at regular intervals for simplification.  For example,
@@ -816,13 +821,10 @@ to ensure that the records are in the form required to input
 into an \msprime{} tree sequence object. (Simplification may also be required.)
 
 \plr{Maybe we don't need this paragraph? Already said it, more or less, above, esp if we insert something about how fwdpp works.}
+\jda{agree re the next two lines. propose moving the other above}
 This interchange API is very efficient. [Describe a quick example where we generate
 a many-gigabyte tree sequence using fwdpp, and the time required
-to copy the node and edge data into the tables]. By using a simple numerical
-encoding of tree topologies and contiguous arrays of data to store this
-encoding, we can achieve data transfer rates that would be impossible under
-any text-based approach while retaining excellent portability.
-
+to copy the node and edge data into the tables].
 
 %%%%%%%%%%%%%%
 \subsection*{The table format}
