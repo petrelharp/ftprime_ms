@@ -144,23 +144,33 @@ def run_simplify_benchmark(args):
 
 
 def run_benchmark_pi(args):
+    before = time.process_time()
     ts = msprime.simulate(
         sample_size=args.sample_size, length=args.length * 10**6, Ne=10**4,
         recombination_rate=1e-8, mutation_rate=1e-8, random_seed=10)
     duration = time.process_time() - before
     print("Ran simulation in {} seconds".format(duration))
+    print("sample size = ", ts.sample_size)
+    print("num_sites = ", ts.num_sites)
 
     G = ts.genotype_matrix()
+    print("Genotype matrix = ", G.nbytes / 1024**3, "GB")
 
     def np_pi(G):
         n = ts.num_samples
         m = np.sum(G, 1)
-        return sum(2 * m * (n - m) / (n * (n - 1))) / ts.sequence_length
+        return sum(2 * m * (n - m) / (n * (n - 1)))
 
+    before = time.process_time()
     pi1 = np_pi(G)
-    pi2 = ts.get_pairwise_diversity()
+    np_time = time.process_time() - before
+    print("np time = ", np_time)
 
-    print(pi1, pi2)
+    before = time.process_time()
+    pi2 = ts.get_pairwise_diversity()
+    msp_time = time.process_time() - before
+    print("msp time = ", msp_time)
+    # print("pi values = ", pi1, pi2)
 
 
 if __name__ == "__main__":
@@ -198,7 +208,7 @@ if __name__ == "__main__":
     subparser.set_defaults(func=run_simplify_benchmark)
 
     subparser = subparsers.add_parser('benchmark-pi')
-    subparser.add_argument("--sample-size", "-s", type=int, default=10**4)
+    subparser.add_argument("--sample-size", "-s", type=int, default=100**4)
     subparser.add_argument("--length", "-l", type=int, default=100)
     subparser.set_defaults(func=run_benchmark_pi)
 
