@@ -7,6 +7,13 @@ import os.path
 import io
 import numpy as np
 
+import matplotlib
+# Force matplotlib to not use any Xwindows backend.
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+
 import msprime
 
 # TODO:
@@ -14,15 +21,6 @@ if False:
     # compare speed of pi calc to this:
 
     ts = msprime.simulate(100)
-    G = ts.genotype_matrix()
-
-    def np_pi(ts, G):
-      n = ts.num_samples
-      m = np.sum(G, 1)
-      return sum(2 * m * (n - m) / (n * (n - 1))) / ts.sequence_length
-
-    np.pi(ts, G)
-
 
 
 def run_simulation(args):
@@ -105,6 +103,7 @@ def run_stats(args):
     print("length     \t {} MB".format(ts.sequence_length / 10**6))
     print("num_sites\t", ts.num_sites)
     print("num_trees\t", ts.num_trees)
+    print("variant matrix size\t", ts.num_sites * ts.num_samples / (1024**3), "GiB")
     before = time.process_time()
     num_trees = 0
     for tree in ts.trees():
@@ -115,37 +114,93 @@ def run_stats(args):
     assert num_trees == ts.num_trees
 
 
+def run_simplify_benchmark(args):
+    ts = msprime.load(args.file)
+    np.random.seed(1)
+    print("Running simplify benchmarks")
+    N = 20
+    num_replicates = 5
+    subsample_size = np.logspace(1, 5, N).astype(int)
+    print(subsample_size)
+    T = np.zeros(N)
+    for j in range(N):
+        X = np.zeros(num_replicates)
+        for k in range(num_replicates):
+            sample = np.random.choice(
+                ts.num_samples, subsample_size[j], replace=False).astype(np.int32)
+            before = time.process_time()
+            sub_ts = ts.simplify(sample)
+            X[k] = time.process_time() - before
+        T[j] = np.mean(X)
+        print(subsample_size[j], T[j])
+
+    df = pd.DataFrame({"subsample_size": subsample_size, "time": T})
+    df.to_csv("data/simplify_subsample.dat")
+
+    plt.semilogx(subsample_size, T, marker="o")
+    plt.xlabel("Subsample size")
+    plt.ylabel("Time to simplify (s)")
+    plt.savefig("simplify_subsample_perf.pdf", format='pdf')
+
+
+def run_benchmark_pi(args):
+    ts = msprime.simulate(
+        sample_size=args.sample_size, length=args.length * 10**6, Ne=10**4,
+        recombination_rate=1e-8, mutation_rate=1e-8, random_seed=10)
+    duration = time.process_time() - before
+    print("Ran simulation in {} seconds".format(duration))
+
+    G = ts.genotype_matrix()
+
+    def np_pi(G):
+        n = ts.num_samples
+        m = np.sum(G, 1)
+        return sum(2 * m * (n - m) / (n * (n - 1))) / ts.sequence_length
+
+    pi1 = np_pi(G)
+    pi2 = ts.get_pairwise_diversity()
+
+    print(pi1, pi2)
+
+
 if __name__ == "__main__":
-    # ts_file = "benchmark_ts.hdf5"
-    # run_simulation(ts_file)
 
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="subcommand")
     subparsers.required = True
 
-    sim_parser= subparsers.add_parser('simulate')
-    sim_parser.add_argument("file")
-    sim_parser.add_argument("--sample-size", "-s", type=int, default=500*10**6)
-    sim_parser.add_argument("--length", "-l", type=int, default=500)
-    sim_parser.set_defaults(func=run_simulation)
+    subparser = subparsers.add_parser('simulate')
+    subparser.add_argument("file")
+    subparser.add_argument("--sample-size", "-s", type=int, default=500*10**6)
+    subparser.add_argument("--length", "-l", type=int, default=500)
+    subparser.set_defaults(func=run_simulation)
 
-    stats_parser = subparsers.add_parser('stats')
-    stats_parser.add_argument("file")
-    stats_parser.set_defaults(func=run_stats)
+    subparser = subparsers.add_parser('stats')
+    subparser.add_argument("file")
+    subparser.set_defaults(func=run_stats)
 
-    newick_parser = subparsers.add_parser('newick')
-    newick_parser.add_argument("file")
-    newick_parser.set_defaults(func=run_newick)
+    subparser = subparsers.add_parser('newick')
+    subparser.add_argument("file")
+    subparser.set_defaults(func=run_newick)
 
-    vcf_parser = subparsers.add_parser('vcf')
-    vcf_parser.add_argument("file")
-    vcf_parser.add_argument("--num-sites", "-s", type=int, default=1000)
-    vcf_parser.set_defaults(func=run_vcf)
+    subparser = subparsers.add_parser('vcf')
+    subparser.add_argument("file")
+    subparser.add_argument("--num-sites", "-s", type=int, default=1000)
+    subparser.set_defaults(func=run_vcf)
 
-    pi_parser = subparsers.add_parser('pi')
-    pi_parser.add_argument("file")
-    pi_parser.add_argument("--num-sites", "-s", type=int, default=1000)
-    pi_parser.set_defaults(func=run_pi)
+    subparser = subparsers.add_parser('pi')
+    subparser.add_argument("file")
+    subparser.add_argument("--num-sites", "-s", type=int, default=1000)
+    subparser.set_defaults(func=run_pi)
+
+    subparser = subparsers.add_parser('simplify')
+    subparser.add_argument("file")
+    subparser.set_defaults(func=run_simplify_benchmark)
+
+    subparser = subparsers.add_parser('benchmark-pi')
+    subparser.add_argument("--sample-size", "-s", type=int, default=10**4)
+    subparser.add_argument("--length", "-l", type=int, default=100)
+    subparser.set_defaults(func=run_benchmark_pi)
 
     args = parser.parse_args()
     args.func(args)
