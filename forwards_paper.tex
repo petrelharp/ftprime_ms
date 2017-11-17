@@ -11,7 +11,7 @@
 % \usepackage[T1]{fontenc}
 
 \include{macros}
-
+\newcommand{\simupop}{\texttt{simuPOP}}
 \newcommand{\fwdpp}{\texttt{fwdpp}}
 \newcommand{\msprime}{\texttt{msprime}}
 \newcommand{\nodes}{\texttt{nodes}}
@@ -24,6 +24,7 @@
 \newcommand{\krt}[1]{{\em \color{green} #1}}
 \newcommand{\plr}[1]{{\em \color{blue} #1}}
 \newcommand{\jk}[1]{{\em \color{red} #1}}
+\newcommand{\jda}[1]{{\em \color{cyan} #1}}
 
 \begin{document}
 
@@ -44,7 +45,7 @@
     (b) efficiently record the entire history of the population.
     We do this by simulating only those loci that may affect reproduction (those having non-neutral variants),
     and recording the entire history of genetic inheritance in an efficient representation of the ancestral recombination graph,
-    on which neutral mutations can be quickly placed afterwards --
+    on which neutral mutations can be quickly placed afterwards ---
     the \emph{tree sequence} introduced in the software package \msprime.
     We implement the method in two popular fowards-time simulation frameworks,
     and show it leads to order-of-magnitude speedups.
@@ -115,11 +116,11 @@ However, it is thought that most genetic variation is selectively neutral (or ne
 By definition, the alleles carried by individuals in a population at neutral sites
 do not affect the population process.
 For this reason, if one records the entire genealogical history of a population over the course of a simulation,
-one can lay down neutral mutations on top of that history afterwards,
-without loss of generality.
+one can lay down neutral mutations on top of that history afterwards.
+\jda{WLOG seems unclear/ not needed}
 Precisely, we would need to know the genealogical tree relating all sampled individuals
 at each position along the genome.
-In this paper, we show how to use algorithmic tools and data structures developed for the 
+In this paper, describe algorithmic tools and data structures developed for the 
 coalescent simulator \msprime{}
 to efficiently record, and later process, this history.
 
@@ -137,10 +138,15 @@ so we discard all information irrelevant to the genetic history
 of the \emph{sampled} individuals,
 which results in considerable savings.
 Another way of representing this same information
-is known as the \emph{ancestral recombination graph}, or {ARG} \citep{griffiths1997ancestral},
+is known as the \emph{ancestral recombination graph} ---
+the {ARG} \citep{griffiths1997ancestral},
+where nodes are common ancestor or recombination events ---
 which has been the subject of substantial study
 under the assumptions of coalescent theory \citep{wiuf1997number,wiuf1999ancestry,marjoram2006coalescent,wilton2015smc}.
+\jda{would be nice to say, concisely the difference}
 
+\jda{Is this the right place for this paragraph? should it maybe be integrated
+	with graf beginning 'Modern computing' above?}
 \plr{this paragraph is supposed to cite the fwds time simulation methods we need to - @molpopgen fix this up?}
 Forwards-time population genetics simulations are growing in importance,
 as the genome-wide impacts of hitchhiking and background selection are more widely appreciated.
@@ -153,6 +159,7 @@ for tens of thousands of generations --
 but still substantially short of whole genomes for most biological population sizes.
 There has been some progress at parallelization \citep{lawrie2017accelerating},
 which has substantial promise.
+\jda{this is vague, promise for what?}
 The general idea of storing genealogical information to speed up simulations is not new --
 it was entirely implemented in AnA-FiTS \citep{aberer2013rapid}, for instance --
 but this program did not implement the critical step of discarding irrelevant genealogical information.
@@ -170,16 +177,19 @@ these tools may prove more widely useful.
 
 
 Below, we first describe the conceptual and algorithmic foundations for the method:
-(a) the new \emph{tables} format for storing tree sequences;
-(b) an algorithm to output tree sequence information on the fly
+(a) a format, implemented in the \msprime{} Python API,
+for storing tree sequences in several \emph{tables};
+(b) an algorithm, \algref{W}, to record tree sequence information into these tables on the fly
     from a forwards-time simulation;
 and (c) a method to \emph{simplify} a tree sequence, i.e., remove redundant information.
-This is followed by benchmarking comparisons
-with real, forwards-time simulations.
+We then describe a method that combines (b) and (d) to allows efficiently record simplified a tree sequence,
+and present analyses of its run time complexity.
+This is followed by benchmarking comparisons between two implementations of our method,
+each using previously published forwards-time simulation libraries.
 
 
 %%%%%%
-\subsection*{Recording a tree sequence}
+\subsection*{Storing a tree sequence}
 
 A \emph{tree sequence} is an encoding for the sequence of correlated trees,
 such as those that describe the history of a sexual population.
@@ -297,17 +307,20 @@ we need to record two things for each new chromosome:
 the birth time, and the endpoints and parental IDs of each distinctly inherited segment,
 which are naturally stored as the \emph{nodes} and \emph{edges} of a tree sequence.
 For concreteness, here we write out in pseudocode how to run a neutral Wright--Fisher simulation
-with overlapping generations that records genealogical history in this way.
+(but with overlapping generations) that records genealogical history in this way.
 The simulation will run for $T$ generations,
 and has $N$ haploid individuals, each carrying a single chromosome of length L.
 For simplicity we sample exactly one crossover per generation.
 The probability of death per individual each generation is $\delta$.
+\jda{In the below we are using the integer vector encoding of a tree as in
+	\msprime{} should say so and reference it as the role of node ids is
+	otherwise more confusing than it need be}
 We will use
 $\randomuniform(A)$ to denote an element of the set $A$ chosen uniformly at random 
 (and each such instance represents and independent draw).
 
 \begin{taocpalg}{W}{Forwards-time tree sequence}
-{Simulates a randomly mating population of $N$ haploid individuals,
+{Simulates a randomly mating population $P$ of $N$ haploid individuals,
 with a probability of death per generation $\delta$ and a chromosome of length
 $L$ for $T$ generations. On termination, there will be $n$ nodes with times recorded
 in the vector $\tau$, and $E$ will contain a set of $(\ell, r, p, c)$ tuples
@@ -332,12 +345,16 @@ Set $P' \leftarrow P$ and then set $t \leftarrow t - 1$ and $j \leftarrow 0$.
 \algstep{W5.}{New node.}{Set $P'_j \leftarrow n$ and $\tau_n \leftarrow t$.
 }
 
-\algstep{W6.}{Choose parents.}{Set $a \leftarrow \randomuniform(\{0, \dots, N - 1\})$,
-    $b \leftarrow \randomuniform(\{0, \dots, N - 1\})$ and $x \leftarrow \randomuniform([0, L))$.
+\algstep{W6.}{Choose parents.}{Set $a \leftarrow \randomuniform(\{0, \dots, n - 1\})$,
+    $b \leftarrow \randomuniform(\{0, \dots, n - 1\})$ and $x \leftarrow \randomuniform([0, L))$.
 }
 
-\algstep{W7.}{Record edges}{Set $E \leftarrow E \cup \left\{ (0, x, P_a, n), (x, L, P_b, n) \right\}$
-    and $n \leftarrow n + 1$.
+\algstep{W7.}{Record edges}{Set $E \leftarrow E \cup \left\{ (0, x, P_a, n), (x,
+		L, P_b, n) \right\}$.
+}
+
+\algstep{W8.}{Increment the current node.}{
+$n \leftarrow n + 1$.
 }
 
 \algstep{W8.}{Loop tail}{Set $j \leftarrow j + 1$ and go to \algref{W3}.
@@ -447,12 +464,13 @@ c)$ and $(x, r, p, c)$ which can be represented with a single edge
 $(\ell, r, p, c)$.
 \end{enumerate}
 
+
 \begin{figure}
     \begin{center}
         \includegraphics{method_diagram}
     \end{center}
     \caption{
-        A simple example of the method.
+        A simple example of the simplify method.
         \textbf{Top:} the diagram on the left relates ten haploid individuals to each other.
         It has 10 node records (one for each individual)
         and 14 edge records (one for each distinctly inherited segment).
@@ -472,7 +490,7 @@ $(\ell, r, p, c)$.
     }
 \end{figure}
 
-The tree sequences produced by forwards simulations, 
+The tree sequences produced by forwards simulations 
 record all of history for everyone alive at any time through the simulation.
 This is much more than we need to reconstruct the genealogies and sequences
 of the current population.
@@ -501,6 +519,7 @@ for instance, we must ensure that all coalescing segments in a given individual
 are assigned the \emph{same} new color --
 but is reasonably close.
 The process is depicted in Figure~\ref{fig:simplify_state}.
+\jda{Need refs to Figure~\ref{fig:method_diagram} in the text}
 
 \begin{figure}
     \begin{center}
@@ -526,20 +545,62 @@ if the output node $u$ inherits the genomic interval $[\ell, r)$ from that linea
 (These lineages are the ``colors'' above.)
 We also maintain a map $A$ such that $A_j$ is segment chain for node $j$ in
 the input tree sequence.
-Crucially, the time required to run the algorithm is linear in the number of edges of the input tree sequence..
+Crucially, the time required to run the algorithm is linear in the number of edges of the input tree sequence.
 
-\paragraph{Sequential simplification}
-At any point the simulation scheme above, genealogical history is recorded
-in a tree sequence. This has two additional advantages. First, simplification
+\subsection*{Forward simulation and sequential simplification to record simplifed tree sequences}
+
+At any point in Algorithm~\algref{W}, genealogical history is recorded
+in an unsimplified tree sequence. This has two additional advantages. First, simplification
 can be run periodically through the simulation, taking the set of samples to be
 the entire currently alive population. This is important as it keeps memory
 usage from growing linearly (and quickly) with time. Second, the simulation can
 be \emph{begun} with a tree sequence produced by some other method -- for
 instance, by a coalescent simulation with \msprime. 
+This process of forward simulation coupled with sequential simplification is our
+method
+
+\jda{I didn't write down the full thing, but mightn't things be clearer if we
+	have a statement of the combined method?}
+\begin{taocpalg}{F}{Forwards-time simplifed tree sequence}{
+Simulates a population starting with $N$ diploid individuals on a chromosome of length $L$ for $T$
+generations.
+}
+
+\algstep{F0.}{Initialize nodes.}{
+Generate initial haploid nodes $\mathcal N$:
+1.) using coalsecent simulation with \msprime{} for $2N$ initial haploid samples $S$ on
+a chromosome of length $L$ and taking $\mathcal N = \{\texttt{id}(u) : u \in S \}$; or
+2.) simply defining $\mathcal N = \{1\dots 2N\}$ as the node ids.
+Define a mapping from  $\mathcal M: \{1\dots 2N\} \to \mathcal N$. In the second
+case $\mathcal M$ is the identity.
+}
+
+\algstep{F1.}{Initialize edges.}{
+Define the initial edges $E_0$: 1) either from the coalescent simulation's final
+state, or 2) as \dots
+}
+
+\algstep{F2.}{Record trees till time $T - \delta$.}{ 
+Simulate, using Algorithm~\algref{W} or another algorithm, $2N$ haploid
+individuals using $\mathcal M$ to renumber the nodes, producing nodes $n$ and
+edgesets $E$.
+}
+
+\algstep{F3.}{Simplification over $\delta$.}{
+Select final samples $S'$ and using the simplification Algorithm~\algref{S},
+simplify $n$ and $E$ to produce a simplified tree sequence.
+}
+
+\algstep{F4.}{Continue?}{
+	Stop if $T - \delta  = 0$, else continue.
+}
+\end{taocpalg}
+
 
 %%%%%%%%%%%%
-\subsection*{Estimates of run-time complexity}
+\subsubsection*{Estimates of run-time complexity}
 
+\jda{I'd like to outline what we're doing here with reference to alg F}
 Consider a simulation of a Wright-Fisher population of $2N$ haploid individuals 
 using Algorithm~\algref{W}
 for $T$ generations,
@@ -629,7 +690,7 @@ while our implementation is only $O(T N \log(2N))$.
 
 \subsection*{Simulation benchmarks}
 
-Comparison of simulation with/without msprime, using simuPOP
+Comparison of simulation with/without msprime, using \simupop{}
 or maybe just a simple haploid simulation with 1000 QTL and stabilizing selection on a trait (say).
 
 Maybe an estimate of how long \emph{just} the ARG recording and simplification takes,
@@ -693,7 +754,7 @@ Current etymologica consensus \citep{liberman2014little} has
 (whose branching pattern resembes the bifurcation of a single parent-offspring relationship).
 An analogous term for the embellished pedigree might be \emph{nedigree},
 from ``nid de grue'',
-as the nest of a crange is a large jumble of (forking) branches.
+as the nest of a crane is a large jumble of (forking) branches.
 We thought it unwise to use this term throughout the manuscript,
 but perhaps it will prove useful elsewhere.
 
