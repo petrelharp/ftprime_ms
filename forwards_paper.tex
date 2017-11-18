@@ -264,7 +264,7 @@ and add those new edges whose intervals do.
 Incidentally, this property that edges naturally encode \emph{differences}
 between nearby trees (e.g., as ``subtree prune and regraft'' moves)
 allows for efficient algorithms that take advantage
-of the highly correlated nature of nearby trees.
+of the highly correlated nature of nearby trees~\citep{kelleher2016efficient}.
 
 Given the topology defined by the nodes and edges, \emph{sites} and \emph{mutations}
 encode the sequence information for each sample in an efficient way. Each site
@@ -782,8 +782,9 @@ are dedicated to tree sequence input and output using simple tables of data,
 so we refer to this as the `Tables API'.
 The four key tables: nodes, edges, sites and mutations, are described above.
 
-The tables API is primarily designed to facilitate efficient interchange of
+The Tables API is primarily designed to facilitate efficient interchange of
 data between programs or between different modules of the same program.
+\jda{should capitalize Tables, or not, as above}
 Following the current best-practises [citations: apache arrow, etc] data is stored
 in a columnar format.
 The principal advantage of this for our purposes is that it allows for very efficient
