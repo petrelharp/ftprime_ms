@@ -116,13 +116,13 @@ However, it is thought that most genetic variation is selectively neutral (or ne
 By definition, the alleles carried by individuals in a population at neutral sites
 do not affect the population process.
 For this reason, if one records the entire genealogical history of a population over the course of a simulation,
-one can lay down neutral mutations on top of that history afterwards.
-\jda{WLOG seems unclear/ not needed}
+simply laying down neutral mutations on top of that history afterwards
+is equivalent to having generated them during the simulation.
 Precisely, we would need to know the genealogical tree relating all sampled individuals
 at each position along the genome.
-In this paper, describe algorithmic tools and data structures developed for the 
+In this paper, we describe how algorithmic tools and data structures developed for the 
 coalescent simulator \msprime{}
-to efficiently record, and later process, this history.
+can be used to efficiently record, and later process, this history.
 
 In so doing we record the \emph{population pedigree} --
 the entire history of parent-offspring relationships of an entire population going back to a remote time --
@@ -155,14 +155,11 @@ to assess the impact of genetic load and Neanderthal introgression on human gene
 This is roughly state-of-the-art 
 -- the fastest simulation frameworks such as SLiM and fwdpp \citep{fwdpp}
 can ``only'' simulate tens of megabases of sequence in tens of thousands of individuals
-for tens of thousands of generations --
-but still substantially short of whole genomes for most biological population sizes.
-\jda{I'd find this more compelling with something added like: "e.g., Xs of
-	gigabases for Ys of individuals, implying 10Ys of generations needed to
-	equilibrate}
-There has been some progress at parallelization \citep{lawrie2017accelerating},
-which has substantial promise.
-\jda{this is vague, promise for what?}
+for tens of thousands of generations.
+This is still substantially short of whole genomes (hundreds to thousands of megabases)
+for many biological population sizes of interest 
+(e.g., millions for a restricted population of mosquitos).
+Achieving these sizes will likely require parallelization \citep{lawrie2017accelerating}.
 The general idea of storing genealogical information to speed up simulations is not new --
 it was entirely implemented in AnA-FiTS \citep{aberer2013rapid}, for instance --
 but this program did not implement the critical step of discarding irrelevant genealogical information.
@@ -181,18 +178,22 @@ these tools may prove more widely useful.
 
 Below, we first describe the conceptual and algorithmic foundations for the method:
 (a) a format, implemented in the \msprime{} Python API,
-for storing tree sequences in several \emph{tables};
+for recording tree sequences in several \emph{tables};
 (b) an algorithm, \algref{W}, to record tree sequence information into these tables on the fly
     from a forwards-time simulation;
-and (c) a method to \emph{simplify} a tree sequence, i.e., remove redundant information.
-We then describe a method that combines (b) and (d) to allows efficiently record simplified a tree sequence,
-and present analyses of its run time complexity.
-This is followed by benchmarking comparisons between two implementations of our method,
-each using previously published forwards-time simulation libraries.
+and (c) an algorithm to \emph{simplify} a tree sequence, i.e., remove redundant information.
+We then describe a general-purpose method that uses these tools
+(as implemented in \msprime{}) 
+to efficiently record simplified a tree sequence,
+and analyze of its run time complexity.
+This is followed by benchmarking the performance improvement achieved by connecting
+two previously published forwards-time simulation libraries,
+\simupop{} \citep{simupop} and \fwdpp{} \citep{fwdpp}
+to the tools in \msprime{}.
 
 
 %%%%%%
-\subsection*{Storing a tree sequence}
+\subsection*{Recording a tree sequence}
 
 A \emph{tree sequence} is an encoding for the sequence of correlated trees,
 such as those that describe the history of a sexual population.
@@ -315,12 +316,27 @@ The simulation will run for $T$ generations,
 and has $N$ haploid individuals, each carrying a single chromosome of length L.
 For simplicity we sample exactly one crossover per generation.
 The probability of death per individual each generation is $\delta$.
-\jda{In the below we are using the integer vector encoding of a tree as in
-	\msprime{} should say so and reference it as the role of node ids is
-	otherwise more confusing than it need be}
 We will use
 $\randomuniform(A)$ to denote an element of the set $A$ chosen uniformly at random 
 (and each such instance represents and independent draw).
+
+We begin in~\algref{W1} by allocating our initial population $P$
+(a vector of $N$ node IDs),
+and creating $N$ nodes with birth time $T$ generations ago, recorded in the
+vector $\tau$. The set $E$ is used to store the edges that we output during the
+simulation, and $n$ is the number of nodes created so far (and so, the ID of
+the next node we create). Steps~\algref{W2} and~\algref{W3} simply loop over
+the generation clock $t$ and individual index $j$. In~\algref{W4} we check if
+an individual $P_j$ has died in this generation. If it has, we replace it in
+steps \algref{W5}--\algref{W7}; if not, we proceed immediately to the next
+individual. When an individual in the population dies, we first allocate
+a new node with ID $n$ in~\algref{W5} and record its birth time. Then,
+in step~\algref{W6} we choose two indexes $a$ and $b$ uniformly (giving us
+parental IDs $P_a$ and $P_b$) and choose a breakpoint $x$. We record the effects of this
+event by storing two new edges: one recording that the parent of node $n$
+from $0$ to $x$ is $P_a$, and another recording that the parent of $n$
+from $x$ to $L$ is $P_b$. We then complete the replacement event by incrementing
+$n$, ready to represent the next new node.
 
 \begin{taocpalg}{W}{Forwards-time tree sequence}
 {Simulates a randomly mating population $P$ of $N$ haploid individuals,
@@ -342,47 +358,28 @@ Set $P' \leftarrow P$ and then set $t \leftarrow t - 1$ and $j \leftarrow 0$.
 \algstep{W3.}{Individual loop.}{ If $j = N$ set $P \leftarrow P'$ and go to \algref{W2}.
 }
 
-\algstep{W4.}{Mortality.}{ If $\randomuniform([0, 1)) \geq \delta$ go to \algref{W8}.
+\algstep{W4.}{Mortality.}{ If $\randomuniform([0, 1)) \geq \delta$ go to \algref{W9}.
 }
 
 \algstep{W5.}{New node.}{Set $P'_j \leftarrow n$ and $\tau_n \leftarrow t$.
 }
 
-\algstep{W6.}{Choose parents.}{Set $a \leftarrow \randomuniform(\{0, \dots, n - 1\})$,
-    $b \leftarrow \randomuniform(\{0, \dots, n - 1\})$ and $x \leftarrow \randomuniform([0, L))$.
+\algstep{W6.}{Choose parents.}{Set $a \leftarrow \randomuniform(\{0, \dots, N - 1\})$,
+    $b \leftarrow \randomuniform(\{0, \dots, N - 1\})$ and $x \leftarrow \randomuniform([0, L))$.
 }
 
-\algstep{W7.}{Record edges}{Set $E \leftarrow E \cup \left\{ (0, x, P_a, n), (x,
-		L, P_b, n) \right\}$.
+\algstep{W7.}{Record edges}{Set 
+    $E \leftarrow E \cup \left\{ (0, x, P_a, n), (x, L, P_b, n) \right\}$.
 }
 
 \algstep{W8.}{Increment the current node.}{
 $n \leftarrow n + 1$.
 }
 
-\algstep{W8.}{Loop tail}{Set $j \leftarrow j + 1$ and go to \algref{W3}.
+\algstep{W9.}{Loop tail}{Set $j \leftarrow j + 1$ and go to \algref{W3}.
 }
 
 \end{taocpalg}
-
-Algorithm~\algref{W} is a very simple implementation of a Wright--Fisher model
-intended to illustrate how we can record the nodes and edges of a tree sequence
-forwards in time. We begin in~\algref{W1} by allocating our initial population $P$
-and creating $N$ nodes with birth time $T$ generations ago, recorded in the
-vector $\tau$. The set $E$ is used to store the edges that we output during the
-simulation, and $n$ is the number of nodes created so far (and so, the ID of
-the next node we create). Steps~\algref{W2} and~\algref{W3} simply loop over
-the generation clock $t$ and individual index $j$. In~\algref{W4} we check if
-an individual $P_j$ has died in this generation. If it has, we replace it in
-steps \algref{W5}--\algref{W7}; if not, we proceed immediately to the next
-individual. When an individual in the population dies, we first allocate
-a new node with ID $n$ in~\algref{W5} and record its birth time. Then,
-in step~\algref{W6} we choose two indexes $a$ and $b$ uniformly (giving us
-parents $P_a$ and $P_b$) and choose a breakpoint $x$. We record the effects of this
-event by storing two new edges: one recording that the parent of node $n$
-from $0$ to $x$ is $P_a$, and another recording that the parent of $n$
-from $x$ to $L$ is $P_b$. We then complete the replacement event by incrementing
-$n$, ready to represent the next new node.
 
 This algorithm records only the topological information resulting from the
 forwards in time Wright-Fisher process, but it is straightforward to add
@@ -521,8 +518,7 @@ This ``paint pot'' description misses some details --
 for instance, we must ensure that all coalescing segments in a given individual
 are assigned the \emph{same} new color --
 but is reasonably close.
-The process is depicted in Figure~\ref{fig:simplify_state}.
-\jda{Need refs to Figure~\ref{fig:method_diagram} in the text}
+The process is depicted in Figures~\ref{fig:method_diagram} and \ref{fig:simplify_state}.
 
 \begin{figure}
     \begin{center}
@@ -550,10 +546,10 @@ We also maintain a map $A$ such that $A_j$ is segment chain for node $j$ in
 the input tree sequence.
 Crucially, the time required to run the algorithm is linear in the number of edges of the input tree sequence.
 
-\subsection*{Forward simulation and sequential simplification to record simplifed tree sequences}
+\subsection*{Forward simulation and sequential simplification}
 
-At any point in Algorithm~\algref{W}, genealogical history is recorded
-in an unsimplified tree sequence. This has two additional advantages. First, simplification
+At any point in a simulation scheme like Algorithm~\algref{W}, genealogical history is recorded
+in a tree sequence. This has two additional advantages. First, simplification
 can be run periodically through the simulation, taking the set of samples to be
 the entire currently alive population. This is important as it keeps memory
 usage from growing linearly (and quickly) with time. Second, the simulation can
@@ -852,7 +848,7 @@ Checking this is more difficult, but is implemented in \msprime{}'s API.
 
 For efficiency, \msprime{} makes several other sortedness requirements on the tables,
 that are not necessarily satisfied by tables emitted by a forwards-time simulation.
-Fortunately, \msprime{}'s API includes tools to rectify this by first sorting (using \texttt{sort\_tables})
+\msprime{}'s API includes tools to rectify this by first sorting (using \texttt{sort\_tables})
 and then using \texttt{simplify}, which works on sorted tables
 and is guarenteed to produce a valid, \msprime{}-ready tree sequence.
 
