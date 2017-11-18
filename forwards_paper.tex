@@ -848,15 +848,17 @@ a collection of directed, acyclic graphs -- in other words, a forest of trees.
 For some applications it is necessary to check that at every point
 there is only a \emph{single} tree.  
 Checking this is more difficult, but is implemented in \msprime{}'s API.
+\jda{TODO add function name}
 
 For efficiency, \msprime{} makes several other sortedness requirements on the tables,
-that are not necessarily satisfied by tabled emitted by a forwards-time simulation.
-These can be rectified by first sorting (using \texttt{sort\_tables})
+that are not necessarily satisfied by tables emitted by a forwards-time simulation.
+Fortunately, \msprime{}'s API includes tools to rectify this by first sorting (using \texttt{sort\_tables})
 and then using \texttt{simplify}, which works on sorted tables
 and is guarenteed to produce a valid, \msprime{}-ready tree sequence.
 
 Note that since each node time is equal to the amount of time since the \emph{birth} of the
 corresponding parent, time is measured in clock time, not in meioses.
+\jda{is this the right place? I'd put it in discussion of Figure~\ref{fig:example_tree_sequence}}
 
 
 %%%%%%%%%%%%%%
