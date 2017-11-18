@@ -143,7 +143,6 @@ the {ARG} \citep{griffiths1997ancestral},
 where nodes are common ancestor or recombination events ---
 which has been the subject of substantial study
 under the assumptions of coalescent theory \citep{wiuf1997number,wiuf1999ancestry,marjoram2006coalescent,wilton2015smc}.
-\jda{would be nice to say, concisely the difference}
 
 \jda{Is this the right place for this paragraph? should it maybe be integrated
 	with graf beginning 'Modern computing' above?}
@@ -579,13 +578,13 @@ Define the initial edges $E_0$: 1) either from the coalescent simulation's final
 state, or 2) as \dots
 }
 
-\algstep{F2.}{Record trees till time $T - \delta$.}{ 
+\algstep{F2.}{Record trees till time $T - \Delta$.}{ 
 Simulate, using Algorithm~\algref{W} or another algorithm, $2N$ haploid
 individuals using $\mathcal M$ to renumber the nodes, producing nodes $n$ and
 edgesets $E$.
 }
 
-\algstep{F3.}{Simplification over $\delta$.}{
+\algstep{F3.}{Simplification over $\Delta$.}{
 Select final samples $S'$ and using the simplification Algorithm~\algref{S},
 simplify $n$ and $E$ to produce a simplified tree sequence.
 }
