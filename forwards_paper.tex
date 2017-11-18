@@ -340,14 +340,14 @@ $n$, ready to represent the next new node.
 \begin{taocpalg}{W}{Forwards-time tree sequence}
 {Simulates a randomly mating population $P$ of $N$ haploid individuals,
 with a probability of death per generation $\delta$ and a chromosome of length
-$L$ for $T$ generations. On termination, there will be $n$ nodes with times recorded
-in the vector $\tau$, and $E$ will contain a set of $(\ell, r, p, c)$ tuples
-describing the recorded edges.
+$L$ for $T$ generations. Events are recorded in a node table $\mathcal{N}$
+and edge table $\mathcal{E}$. Simplify is run every $s$ generations.
 }
 
 \algstep{W1.}{Initialisation.}{
- For $0 \leq j < N$, set $P_j \leftarrow j$ and $\tau_j \leftarrow T$.
-Set $E\leftarrow \emptyset$, $t \leftarrow T$ and $n \leftarrow N$.
+Set $\mathcal{N} \leftarrow \mbox{NodeTable}()$ and $\mathcal{E}
+\leftarrow \mbox{EdgeTable}()$ and $t \leftarrow T$.
+ For $0 \leq j < N$, set $P_j \leftarrow \mbox{add}(\mathcal{N}, T)$.
 }
 
 \algstep{W2.}{Generation loop.}{ If $t = 0$ terminate.
@@ -357,26 +357,26 @@ Set $P' \leftarrow P$ and then set $t \leftarrow t - 1$ and $j \leftarrow 0$.
 \algstep{W3.}{Individual loop.}{ If $j = N$ set $P \leftarrow P'$ and go to \algref{W2}.
 }
 
-\algstep{W4.}{Mortality.}{ If $\randomuniform([0, 1)) \geq \delta$ go to \algref{W9}.
+\algstep{W4.}{Mortality.}{ If $\randomuniform([0, 1)) \geq \delta$ go to \algref{W8}.
 }
 
-\algstep{W5.}{New node.}{Set $P'_j \leftarrow n$ and $\tau_n \leftarrow t$.
+\algstep{W5.}{New node.}{Set $u \leftarrow \mbox{add}(\mathcal{N}, t)$ and $P'_j \leftarrow u$.
 }
 
 \algstep{W6.}{Choose parents.}{Set $a \leftarrow \randomuniform(\{0, \dots, N - 1\})$,
     $b \leftarrow \randomuniform(\{0, \dots, N - 1\})$ and $x \leftarrow \randomuniform([0, L))$.
 }
 
-\algstep{W7.}{Record edges}{Set 
-    $E \leftarrow E \cup \left\{ (0, x, P_a, n), (x, L, P_b, n) \right\}$.
+\algstep{W7.}{Record edges}{
+Call $\mbox{add}(\mathcal{E}, (0, x, P_a, u))$ and $\mbox{add}(\mathcal{E}, (x,
+L, P_b, u))$.
 }
 
-\algstep{W8.}{Increment the current node.}{
-$n \leftarrow n + 1$.
+\algstep{W8.}{Loop tail}{Set $j \leftarrow j + 1$ and go to \algref{W3}.
 }
 
-\algstep{W9.}{Loop tail}{Set $j \leftarrow j + 1$ and go to \algref{W3}.
-}
+\algstep{W9.}{Simplify}{TODO}
+
 
 \end{taocpalg}
 
