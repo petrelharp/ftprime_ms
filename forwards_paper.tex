@@ -49,7 +49,7 @@
 
 
 \begin{abstract}
-    The computational burden of tracking individual genomes 
+    The computational burden of tracking individual genomes
     in a population genetics simulation can be substantial.
     In this note we describe how to both (a) dramatically reduce this burden and
     (b) efficiently record the entire history of the population.
@@ -91,13 +91,13 @@ and finally, providing a computationally feasible method to produce computer sim
 However, these powerful advances came with substantial caveats:
 the backwards-in-time processes that are described by coalescent theory
 are only \emph{Markovian}, and thus feasible to work with,
-thanks to the important assumptions of 
-(a) random mating, 
+thanks to the important assumptions of
+(a) random mating,
 (b) neutrality,
 and (c) small sample size relative to the population size.
-The first two assumptions can be side-stepped to a limited extent, 
+The first two assumptions can be side-stepped to a limited extent,
 but it remains a challenge to map results of coalescent models
-onto species that are distributed across continuous geographical space 
+onto species that are distributed across continuous geographical space
 and/or have large numbers of loci under various sorts of selection.
 Furthermore, the relationship between the life history of a species --
 fecundity and mortality schedules, allee effects, and demographic fluctuations --
@@ -105,7 +105,7 @@ are all absorbed into a single compound parameter, the coalescence rate.
 The third assumption is no longer safe, either --
 for example, a recent study~\citep{martin2017human}
 simulated 600,000 samples of human chromosome 20
-% to assess the impact of European biased reference panels in genome wide association studies. 
+% to assess the impact of European biased reference panels in genome wide association studies.
 Several studies have now shown that in samples of size approaching that of the population,
 genealogical properties may be distorted relative to the coalescent expectation
 \citep{wakeley2003gene,maruvka2011recovering,bhaskar2014distortion}.
@@ -119,7 +119,7 @@ However, if our interest lies in the resulting genetic patterns of variation
 -- and often, the point of such simulations is to compare to real data --
 then such simulations must somehow produce at the end data for each individual on a genomic scale.
 As samples of most species genomes harbor tens or hundreds of millions of variant sites,
-naively carrying full genotypes for even modest numbers of individuals through a simulation 
+naively carrying full genotypes for even modest numbers of individuals through a simulation
 becomes quickly prohibitive.
 
 However, it is thought that most genetic variation is selectively neutral (or nearly so).
@@ -130,7 +130,7 @@ simply laying down neutral mutations on top of that history afterwards
 is equivalent to having generated them during the simulation.
 Precisely, we would need to know the genealogical tree relating all sampled individuals
 at each position along the genome.
-In this paper, we describe how algorithmic tools and data structures developed for the 
+In this paper, we describe how algorithmic tools and data structures developed for the
 coalescent simulator \msprime{}
 can be used to efficiently record, and later process, this history.
 
@@ -161,12 +161,12 @@ Forwards-time population genetics simulations are growing in importance,
 as the genome-wide impacts of hitchhiking and background selection are more widely appreciated.
 For instance, \citet{harris2016genetic} used SLiM \citep{haller2017flexible} to simulate tens of thousands of human exomes
 to assess the impact of genetic load and Neanderthal introgression on human genetic diversity.
-This is roughly state-of-the-art 
+This is roughly state-of-the-art
 -- the fastest simulation frameworks such as SLiM and fwdpp \citep{fwdpp}
 can ``only'' simulate tens of megabases of sequence in tens of thousands of individuals
 for tens of thousands of generations.
 This is still substantially short of whole genomes (hundreds to thousands of megabases)
-for many biological population sizes of interest 
+for many biological population sizes of interest
 (e.g., millions for a restricted population of mosquitos).
 Achieving these sizes will likely require parallelization \citep{lawrie2017accelerating}.
 The general idea of storing genealogical information to speed up simulations is not new --
@@ -192,7 +192,7 @@ for recording tree sequences in several \emph{tables};
     from a forwards-time simulation;
 and (c) an algorithm to \emph{simplify} a tree sequence, i.e., remove redundant information.
 We then describe a general-purpose method that uses these tools
-(as implemented in \msprime{}) 
+(as implemented in \msprime{})
 to efficiently record simplified a tree sequence,
 and analyze of its run time complexity.
 This is followed by benchmarking the performance improvement achieved by connecting
@@ -206,7 +206,7 @@ to the tools in \msprime{}.
 
 A \emph{tree sequence} is an encoding for the sequence of correlated trees,
 such as those that describe the history of a sexual population.
-It is efficient because branches that are shared by adjacent trees are stored once, 
+It is efficient because branches that are shared by adjacent trees are stored once,
 rather than repeatedly for each tree.
 The topology of a tree sequence is defined via its \emph{nodes} and \emph{edges},
 while information about variants are recorded as \emph{sites} and \emph{mutations}.
@@ -214,12 +214,12 @@ The format for these four tables is given in more detail in the Methods;
 here we explain conceptually,
 using the example of Figure~\ref{fig:example_tree_sequence}.
 
-The \emph{nodes} of a tree sequence 
+The \emph{nodes} of a tree sequence
 correspond to the vertices in the individual genealogies along the sequence,
 and each node refers to a distinct ancestor.
 Since each node represents a specific ancestor, it has a unique ``time'',
 thought of as her birth time, which determines the height of any vertices
-she is associated with. 
+she is associated with.
 The example of Figure~\ref{fig:example_tree_sequence} has five nodes:
 nodes 0, 1 and 2 occur at time 0 and are the \emph{samples},
 while nodes 3 and 4 represent those ancestors necessary to record their genealogy,
@@ -232,38 +232,38 @@ who were born at time 1.5 and 2.5 respectively.
     \caption{
         An example tree sequence with three samples over a chromosome of length 10.
         The left-hand panel shows the tree sequence pictorially in two different ways:
-        (top) as a sequence of tree topologies 
-        and (bottom) the spatial extent of the edges that define these topologies. 
+        (top) as a sequence of tree topologies
+        and (bottom) the spatial extent of the edges that define these topologies.
         The right-hand panels show the specific encoding
-        of this tree sequence in the four tables (nodes, edges, sites and mutations) 
+        of this tree sequence in the four tables (nodes, edges, sites and mutations)
         defined by \msprime.
         \plr{Whoops!  genotype of 1 in the second tree should be `G'!}
         \jk{Some minor alignment issues present here.}
-        \plr{turns out this is no fun to edit in inkscape.  
+        \plr{turns out this is no fun to edit in inkscape.
             I can re-make to match the other figs
             but will leave alone for now: it's good!}
         \label{fig:example_tree_sequence}
     }
 \end{figure}
 
-The \emph{edges} define how nodes relate to each other over specific genomic intervals. 
-Each edge records: 
+The \emph{edges} define how nodes relate to each other over specific genomic intervals.
+Each edge records:
 % is a tuple $(\ell, r, p, c)$, where
 the endpoints $[\ell, r)$ of the half-open genomic interval defining the
-spatial extent of the edge; 
+spatial extent of the edge;
 and the identities $p$ and $c$ of the parent and child nodes
 of a single branch that occurs in all trees covering this interval.
 The spatial extent of the edges defining the topology of Figure~\ref{fig:example_tree_sequence}
-are shown in the bottom left panel. 
+are shown in the bottom left panel.
 For example, the branch joining nodes 1 to 3 appears both trees,
-and so is recorded as a single edge extending over the whole chromosome. 
+and so is recorded as a single edge extending over the whole chromosome.
 It is this method of capturing the shared structure between adjacent trees that makes the
 tree sequence encoding very compact and algorithmically efficient.
 
 Recovering the sequence of trees from this information is straightforward:
 each point along the genome that the tree topology changes
 is accompanied by the end of some \emph{edges} and the beginning of others.
-Since each \emph{edge} records the genomic interval 
+Since each \emph{edge} records the genomic interval
 over which a given node inherits from a particular ancestor,
 to construct the tree at a certain point in the genome
 we need only retrieve all edges overlapping that point
@@ -282,16 +282,16 @@ is associated with a position on the genome and an ancestral state. For example,
 in Figure~\ref{fig:example_tree_sequence} we have two sites, one at position
 2 with ancestral state `A' and the other at position 7 with ancestral state `G'. If
 no mutations occur, all samples inherit the ancestral state at a given site.
-Each mutation occurs above a specific node at a given site, 
-and results in a specific derived state. 
-Thus, all samples below the mutation node in the tree will inherit this state 
-(unless further mutations are encountered). 
-Three mutations are shown in Figure~\ref{fig:example_tree_sequence}, 
-illustrated by red hexagons. 
+Each mutation occurs above a specific node at a given site,
+and results in a specific derived state.
+Thus, all samples below the mutation node in the tree will inherit this state
+(unless further mutations are encountered).
+Three mutations are shown in Figure~\ref{fig:example_tree_sequence},
+illustrated by red hexagons.
 The first mutation occurs at site zero (in the left-hand tree), and is a simple
-mutation resulting in node $2$ inheriting the state 'T'. 
-The second site (in the right hand tree) has two mutations: 
-one occurring over node $3$ changing the state to `C', 
+mutation resulting in node $2$ inheriting the state 'T'.
+The second site (in the right hand tree) has two mutations:
+one occurring over node $3$ changing the state to `C',
 and a back mutation over node $1$ changing the state to `G'.
 
 This encoding of a sequence of trees and accompanying mutational information is
@@ -326,7 +326,7 @@ and has $N$ haploid individuals, each carrying a single chromosome of length L.
 For simplicity we sample exactly one crossover per generation.
 The probability of death per individual each generation is $\delta$.
 We will use
-$\randomuniform(A)$ to denote an element of the set $A$ chosen uniformly at random 
+$\randomuniform(A)$ to denote an element of the set $A$ chosen uniformly at random
 (and each such instance represents and independent draw).
 
 \jda{TODO: rewrite with tables}
@@ -399,13 +399,13 @@ For example, in Algorithm~\algref{W} we would generate mutations after
 we have recorded the edges joining the new node $n$ to its parents
 $P_a$ and $P_b$ in step \algref{W7}.
 For example, if we assume that mutations occur according to the infinite sites model
-at rate $\mu$ per generation per unit length then there are 
+at rate $\mu$ per generation per unit length then there are
 $\mbox{Poisson}\left(\mu (r - \ell)(\tau_p
 - \tau_c)\right)$ mutations on each edge $(\ell, r, p, c)$. Each of these mutations
 will occur on a distinct site $x$ drawn uniformly from $(\ell, r]$ and be associated with node $c$.
 It is straightforward to record this information during the simulation, but it
 is significantly simpler and more efficient to generate these mutations
-after the simulation has completed. 
+after the simulation has completed.
 % In the case of infinite sites mutations
 % there is no difference between generating these mutations during the forwards
 % in time simulation and after it has completed. We are using precisely the same
@@ -424,12 +424,12 @@ after the simulation has completed.
 \end{figure}
 
 Besides the cost of transmitting genotypes,
-generating mutations as a separate process after the topological simulation has completed 
-avoids generating the many mutations that are lost in the population. 
+generating mutations as a separate process after the topological simulation has completed
+avoids generating the many mutations that are lost in the population.
 Figure~\ref{fig:wf-trees} shows
 an example of a marginal genealogy produced by a forwards-time Wright--Fisher
-process like Algorithm~\algref{W}. 
-On the left is the tree showing all the edges output by the simulation, 
+process like Algorithm~\algref{W}.
+On the left is the tree showing all the edges output by the simulation,
 while on the right
 is the minimal tree representing the ancestry of the currently alive
 population. Clearly there is a great deal of redundancy in the topological
@@ -443,7 +443,7 @@ will record the simple passing of genealogical information from parent to child
 and only some small subset will correspond to coalesences within the marginal
 trees. The second source of redundancy in the output of Algorithm~\algref{W}
 is due to the fact that lineages die out: a large number of
-individuals in the simulation leave no descendants in the present day population. 
+individuals in the simulation leave no descendants in the present day population.
 Node 26 in Figure~\ref{fig:wf-trees}a, for example, leaves no
 ancestors in the current population, and so the entire path tracing back to
 the root is redundant.
@@ -500,13 +500,13 @@ $(\ell, r, p, c)$.
     }
 \end{figure}
 
-The tree sequences produced by forwards simulations 
+The tree sequences produced by forwards simulations
 record all of history for everyone alive at any time through the simulation.
 This is much more than we need to reconstruct the genealogies and sequences
 of the current population.
-Simplification is essential to reduce this 
+Simplification is essential to reduce this
 to a manageable quantity that still contains all
-the information that we are interested in. 
+the information that we are interested in.
 Simplification is also useful if we have a
 large tree sequence representing a large dataset and we wish to extract the
 information relevant to a subset of the samples.
@@ -514,13 +514,13 @@ information relevant to a subset of the samples.
 The approach that we take is based on Hudson's algorithm for simulating
 the coalescent with recombination~\citep{hudson1983properties,kelleher2016efficient};
 the implementaiton of simplify parallels the implementation of Hudson's algorithm in \msprime.
-Conceptually, this works by 
+Conceptually, this works by
 (a) beginning by painting the chromosome each sample a distinct color;
-(b) moving back through history, 
+(b) moving back through history,
 copying the colors of each chromosome to the portions of its' parental chromosomes
 from which it was inherited;
 (c) each time we would paint two colors in the same spot (a coalescence),
-record that information as an edge and instead paint a brand-new color; 
+record that information as an edge and instead paint a brand-new color;
 and
 (d) once all colors have coalesced on a given segment,
 stop propagating it.
@@ -567,7 +567,7 @@ can be run periodically through the simulation, taking the set of samples to be
 the entire currently alive population. This is important as it keeps memory
 usage from growing linearly (and quickly) with time. Second, the simulation can
 be \emph{begun} with a tree sequence produced by some other method -- for
-instance, by a coalescent simulation with \msprime. 
+instance, by a coalescent simulation with \msprime.
 We provide results for simulation timing from two specific implementations of this
 method (forward simulation coupled with sequential simplification)
 in the next section, but first we analyze the expected resource use of the
@@ -580,12 +580,12 @@ general Algorithm~\algref{W}.
 
 \jda{It'd be good to outline what readers should expect here.}
 \jda{and note we're doing the space analysis for with reference to alg W with $s=1$}
-Consider a simulation of a Wright-Fisher population of $2N$ haploid individuals 
+Consider a simulation of a Wright-Fisher population of $2N$ haploid individuals
 using Algorithm~\algref{W}
 for $T$ generations,
 with the probability of death, $\delta$, set to 1 for simplicity.
 Since there is exactly one crossing over every generation,
-this produces tables of 
+this produces tables of
 $2NT$ nodes and
 $4NT$ edges.
 Suppose that $T$ is large enough that all samples coalesce within the simulation with high probability,
@@ -595,7 +595,7 @@ of only the current generation of $2N$ individuals.
 This tree sequence has $4N-2$ edges to describe the leftmost tree;
 and each time the marginal tree changes along the sequence,
 three edges end and three new edges begin (except for changes affecting the root; see \citet{kelleher2016efficient}).
-Coalescent theory tells us that 
+Coalescent theory tells us that
 the expected total length of edges in a marginal tree is approximately $4N\log(2N)$,
 which is also equal to the mean number of ancestral recombination events that occur on a branch of the marginal tree,
 since we have taken one crossover per generation.
@@ -611,13 +611,13 @@ suppose instead that we have run a simulation of $2N$ individuals for $T$ genera
 begun with no prior history.
 This produces $4NT$ edges; how many are required after simplification?
 As above, the expected number of edges is bounded by $2N-2$ plus four times the mean marginal tree length.
-Roughly, the length of time for which a marginal tree has k tips is 
+Roughly, the length of time for which a marginal tree has k tips is
 $2N/k(k-1) = 2N(1/(k-1) - 1/k)$,
 and so the time to go from N to n tips is $2N(1/(n-1) - 1/(N-1))$.
-This implies that after running for time $T$ we expect to 
+This implies that after running for time $T$ we expect to
 have around $n(T)$ roots, where $n(T) \approx 1 + 2N/(T+2)$.
-The total tree length over this time is 
-$2 N \sum_{k=n(T)+1}^{N-1} 1/k$, which 
+The total tree length over this time is
+$2 N \sum_{k=n(T)+1}^{N-1} 1/k$, which
 % is approximately
 % \begin{align*}
 %     2 N \log\left( \frac{N}{1 + 2 N/(T+2)} \right) .
@@ -644,16 +644,16 @@ is shown in \ref{fig:num_edges}, compared to this prediction.
         \label{fig:num_edges}
     }
 \end{figure}
- 
 
-If we were to add mutations in forwards time 
+
+If we were to add mutations in forwards time
 under the infinite-sites model with total mutation rate per generation $\mu$,
 there would also be around $\mu 2NT$ mutations (and the same number of sites).
 Since mutations fall as recombinations do on the marginal trees,
 adding them after simplification results in only around $\mu 4 N \log(2N)$ mutations.
 This furthermore avoids the computational burden of propagating mutations forwards through the generations.
 
-Our method stores genealogies, and so records substantially more information 
+Our method stores genealogies, and so records substantially more information
 than would a method only recording genotypes.
 However, since the simplification algorithm requires some computational effort,
 it is still informative to compare computational complexity of the algorithm
@@ -685,7 +685,7 @@ and associated recombination events
 in a forwards-time simulation
 not only results in having available a great deal more information about the simulation,
 but also can speed up the simulation by orders of magnitude.
-To make this feasible, 
+To make this feasible,
 we have described how to efficiently store this information in tables,
 and have described a fundamental algorithm for simplificication of tree sequences.
 Conceptually, recording of genealogical and recombination events
@@ -700,24 +700,24 @@ The format is also highly efficient to process,
 leading to advantages for downstream analysis as well.
 This is because many algorithms to compute statistics of interest for population genetics
 are naturally expressed in terms of tree topologies,
-and so can be quickly computed from the trees underlying the tree sequence format. 
+and so can be quickly computed from the trees underlying the tree sequence format.
 For example, pairwise nucleotide diversity $\pi$, is the average density of
-differences between sequences in the sample. 
+differences between sequences in the sample.
 To compute this directly from sequence data at $m$ sites in $n$ samples
 requires computing allele frequencies, taking $O(nm)$ operations.
 By using the locations of the mutations on the marginal trees,
-and the fact that these are correlated, 
+and the fact that these are correlated,
 dynamic programming algorithms similar to those in~\citep{kelleher2016efficient}
 can do this in roughly $O(n + m \log n)$ operations.
 The \msprime\ API provides a method to compute $\pi$ among arbitrary subsets of the
 samples in a tree sequence, which took about 1.2 seconds
-applied to the example tree sequence above with 1.1 million mutations 
+applied to the example tree sequence above with 1.1 million mutations
 in 200 megabases for 500,000 samples.
 
 Another attractive feature of this set of tools
 is that it makes it easy to incorporate \emph{prior history},
 simply by seeding the simulation with a (relatively inexpensive) coalescent simulation.
-This allows for incorporation of deep-time history beyond the reach of individual-based simulations. 
+This allows for incorporation of deep-time history beyond the reach of individual-based simulations.
 Since geographic structure from times longer ago than the mixing
 time of migration across the range has limited effect on modern genealogies
 \citep{wilkins2004separation} (other than possibly changing effective population
@@ -725,7 +725,7 @@ size \citet{barton2002neutral,cox2002stepping}), this may not negatively affect 
 
 
 A final note:
-in preparing this manuscript, 
+in preparing this manuscript,
 we debated a number of possible terms for the embellished pedigree,
 i.e., the ``pedigree with ancestral recombination information''.
 Current etymologica consensus \citep{liberman2014little} has
@@ -752,7 +752,7 @@ Jaime and Kevin to describe simulation methods here (separately).
 %%%%%%
 \subsection*{Overview of the API}
 
-The \msprime{} Python API provides a powerful platform for working with tree topology and mutation data. 
+The \msprime{} Python API provides a powerful platform for working with tree topology and mutation data.
 The new portions of \msprime{} that we cover here
 are dedicated to tree sequence input and output using simple tables of data,
 so we refer to this as the `Tables API'.
@@ -794,7 +794,7 @@ API from a command-line C/C++ application via an embedded Python interpreter.)
 The tables API provides basic input and output operations via the numpy
 array interface, which provides a great deal of flexibility as well
 as efficiency, and makes it straightforward to transfer data from sources
-such as HDF5 [citation], Dask, or Zarr. 
+such as HDF5 [citation], Dask, or Zarr.
 (For small scale data and debugging purposes, a simple text format is also supported.)
 Along with these operations we also provide a function to sort a set of tables
 to ensure that the records are in the form required to input
@@ -822,7 +822,7 @@ A pair of node and edge tables that satisfy these two requirements
 is guarenteed to uniquely describe at each point on the genome
 a collection of directed, acyclic graphs -- in other words, a forest of trees.
 For some applications it is necessary to check that at every point
-there is only a \emph{single} tree.  
+there is only a \emph{single} tree.
 Checking this is more difficult, but is implemented in \msprime{}'s API.
 \jda{TODO add function name}
 
@@ -846,12 +846,12 @@ but the description below uses set operations,
 while in the implementation,
 all ancestors are maintained as linked lists of segments
 ordered by left endpoint.
-As it goes, the algorithm 
+As it goes, the algorithm
 records a list $M$ that gives the mapping
 from input nodes to output nodes,
 so that if $M[p] = u$ then the $p^\text{th}$ node in the input
 is the same as the $u^\text{th}$ node in the output.
-The current state of the algorithm is recorded in $\Al$, 
+The current state of the algorithm is recorded in $\Al$,
 a list of ancestors
 each of which is a collections of ancestral segments.
 An ancestral segment is a triple $(\ell, r, x)$,
@@ -864,7 +864,7 @@ on the genomic segment $[\ell, r)$.
     a list $\Nt_I$ of nodes (ordered by birth time),
     a list $\Et_I$ of edges,
     and the genome length, $L$.
-    The output is a 
+    The output is a
     nodes $\Nt_O$,
     and list of edges $\Et_O$.
 }
@@ -921,7 +921,7 @@ and adding the removed segment $[u,v) \cap [\ell, r)$ to the merge queue $Q$:
 
     \algstep{R2.}{Add to merge queue.}{If $[u,v) \cap [\ell,r) = \emptyset$,
     skip to \algref{R4}.
-    Otherwise, append $(\max(u,\ell), \min(v,r), x)$ to $Q$. 
+    Otherwise, append $(\max(u,\ell), \min(v,r), x)$ to $Q$.
     }
 
     \algstep{R3.}{Remove ancestry.}{
@@ -947,7 +947,7 @@ and $z.\lid = u$ for the output node ID.
     {Merge the ancestral segments in $Q$,
     and create the new ancestor $\Al[p]$.
     This algorithm also appends to $\Nt_O$ and $\Et_O$,
-    and needs to know about $S$, 
+    and needs to know about $S$,
     to check if input nodes are samples.
     }
 
