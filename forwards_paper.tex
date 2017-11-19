@@ -19,6 +19,16 @@
 \newcommand{\sites}{\texttt{sites}}
 \newcommand{\mutations}{\texttt{mutations}}
 \newcommand{\setdiff}{\smallsetminus}
+\newcommand{\Nt}{\mathcal{N}}  % node table
+\newcommand{\Et}{\mathcal{E}}  % edge table
+\newcommand{\St}{\mathcal{S}}  % site table
+\newcommand{\Mt}{\mathcal{M}}  % mutation table
+\newcommand{\Al}{\mathcal{A}}  % list of ancestors
+\DeclareMathOperator{\len}{length}
+\DeclareMathOperator{\add}{add} % for adding to tables
+\newcommand{\lleft}{\mathrm{left}}  % left label
+\newcommand{\lright}{\mathrm{right}}
+\newcommand{\lid}{\mathrm{id}}
 
 \usepackage{color}
 \newcommand{\krt}[1]{{\em \color{green} #1}}
@@ -836,113 +846,155 @@ but the description below uses set operations,
 while in the implementation,
 all ancestors are maintained as linked lists of segments
 ordered by left endpoint.
+As it goes, the algorithm 
+records a list $M$ that gives the mapping
+from input nodes to output nodes,
+so that if $M[p] = u$ then the $p^\text{th}$ node in the input
+is the same as the $u^\text{th}$ node in the output.
+The current state of the algorithm is recorded in $\Al$, 
+a list of ancestors
+each of which is a collections of ancestral segments.
+An ancestral segment is a triple $(\ell, r, x)$,
+indicating that the output node $x$ inherits from this ancestor
+on the genomic segment $[\ell, r)$.
 
 \begin{taocpalg}{S}{Simplify a tree sequence}
-{Simplifies the input tree sequence:
-    input consists of 
-    a list of sample IDs, $S$, of length $n$,
-    a list of edges, $\mathcal{E_I}$,
-    and a list of nodes $\mathcal{N_I}$.
-    The genome length is $L$.
-    The output will be stored in a list of edges $\mathcal{E_O}$ 
-    and nodes $\mathcal{N}_O$.
-    This also maintains the list $N$ that gives the mapping 
-    from $\mathcal{N_I}$ to $\mathcal{N_O}$,
-    so that if $M[p] = u$ then the $p^\text{th}$ ancestor in $N_I$
-    is the same as the $u^\text{th}$ ancestor in $N_0$.
-    The internal state is $\mathcal{A}$, the list of ancestors
-    (which are collections of ancestral segments).
+{Input consists of
+    a list $S$ of sample IDs,
+    a list $\Nt_I$ of nodes (ordered by birth time),
+    a list $\Et_I$ of edges,
+    and the genome length, $L$.
+    The output is a 
+    nodes $\Nt_O$,
+    and list of edges $\Et_O$.
 }
 
 \algstep{S0.}{Initialize.}{
-    Set $\mathcal{A}[j] \leftarrow (0, L, j)$ 
-    and $\mathcal{N}_O[j] \leftarrow \mathcal{N}_I[S[j]]$ for $0 \le j < N$.
-    Set $Q \leftarrow \emptyset$,
-    and $M[p] \leftarrow -1$ for $0 \le p < \text{length}(N_I)$.
+    Set $\Al[j] \leftarrow (0, L, j)$
+    and $\Nt_O[j] \leftarrow \Nt_I[S[j]]$ for $0 \le j < \len(S)$.
+    Set the current input parent index to $p=0$
+    and $M[u] \leftarrow -1$ for $0 \le u < \len(\Nt_I)$.
 }
 
-\algstep{S1.}{Input parent loop.}{Loop over parents, chronologically.
+\algstep{S1.}{Input parent loop.}{Set $Q \leftarrow \emptyset$.
 }
 
-\algstep{S2.}{Remove ancestry.}{Call Algorithm \algref{R} 
-    on each edge corresponding to the current parent.
+\algstep{S2.}{Remove ancestry.}{Call Algorithm \algref{R} on each edge $(\ell, r, p, c)$ in $\Et_I$
+    corresponding to parent $p$ (which stores the resulting segments in the merge queue $Q$).
 }
 
-\algstep{S3.}{Merge ancestors.}{Merge the resulting segments into a new ancestor for this parent.
+\algstep{S3.}{Merge ancestors.}{Call Algorithm \algref{M} on $Q$
+    (which adds to $\Nt_O$ and $\Et_O$).
+}
+
+\algstep{S4.}{Next parent.}{Set $p \leftarrow p+1$;
+    if $p = \len(\Nt_I)$, terminate and return $\Nt_O$ and $\Et_O$;
+    otherwise, return to \algref{S1}.
 }
 
 \end{taocpalg}
 
-The first step is, for each edge $(\ell, r, p, c)$,
-simply to replace any ancestry segment $[a, b)$ held by ancestor $c$
-with $[a,b) \setdiff [\ell, r)$ 
+The algorithm steps back up through the pedigree,
+since nodes are ordered by time-since-birth.
+First, for each input node $p$, we must find all ancestral segments inheriting from $p$ --
+so, for every edge $(\ell, r, p, c)$,
+Algorithm \algref{R} replaces any ancestry segment $[u, v)$ held by $c$
+with $[u,v) \setdiff [\ell, r)$
 (deleting the segment or splitting in two if necessary),
-and adding the removed segment $[a,b) \cap [\ell, r)$ to the merge queue $Q$:
+and adding the removed segment $[u,v) \cap [\ell, r)$ to the merge queue $Q$:
+
 \begin{taocpalg}{R}{Remove ancestry}
     {Given an edge $(\ell, r, p, c)$,
-    and a list $\mathcal{A}[c]$ of the $m$ ancestral segments corresponding to $c$,
-    remove segments overlapping $[\ell, r)$ from $\mathcal{A}[c]$,
+    and a list $\Al[c]$ of the $m$ ancestral segments corresponding to $c$,
+    remove segments overlapping $[\ell, r)$ from $\Al[c]$,
     and add those overlapping segments to $Q$.
     }
 
-    \algstep{R1.}{Segment loop.}{Loop over ancestral segments in $\mathcal{A}[c]$:
-    if $j=m$, terminate; else let $(a, b, u) = \mathcal{A}[c][j]$.
+    \algstep{R0.}{Initialize.}{
+        Set $j \leftarrow 0$.
     }
 
-    \algstep{R2.}{Add to merge queue.}{If $[a,b) \cap [\ell,r) \neq \emptyset$,
-    append $(\max(a,\ell), \min(b,r), u)$ to $Q$.
+    \algstep{R1.}{Segment loop.}{
+    If $j=m$, terminate; else let $(u, v, x) = \Al[c][j]$.
+    (Here $x$ is the output node that inherits from this segment.)
     }
 
-    \algstep{R3.}{Remove ancestry.}{If $[a,b) \cap [\ell,r) != \emptyset$,
-    delete $\mathcal{A}[c][j]$ and insert in its place
-    $(\min(a,\ell), \max(a,\ell), u)$ (if $a<\ell$) 
-    and/or $(\min(b,r), \max(b,r), u)$ (if $r<b$).
+    \algstep{R2.}{Add to merge queue.}{If $[u,v) \cap [\ell,r) = \emptyset$,
+    skip to \algref{R4}.
+    Otherwise, append $(\max(u,\ell), \min(v,r), x)$ to $Q$. 
+    }
+
+    \algstep{R3.}{Remove ancestry.}{
+    Delete $\Al[c][j]$ and insert in its place
+    $(\min(u,\ell), \max(v,\ell), x)$ (if $u<\ell$)
+    and(/or) $(\min(v,r), \max(v,r), x)$ (if $r<v$).
+    }
+
+    \algstep{R4.}{Iterate.}{Set $j \leftarrow j+1$ and return to \algref{R1}.
     }
 
 \end{taocpalg}
 
-Next we must merge these ancestry segments,
-creating the new ancestor $p$,
-outputting edges and a node if coalescence has occurred.
-\begin{taocpalg}{M}{Merge ancestors}
-    {Merge a collection of segments and create a new ancestor.
-    This operates on the merge queue $Q$ above,
-    which is a list of ancestral segments,
-    and creates the new ancestor $\mathcal{A}[p]$.}
+Next we must merge the ancestry segments in $Q$,
+creating the new ancestor corresponding to input node $p$,
+adding a node and edges to the output if any segments overlap,
+which implies that an output coalescence has occurred.
+Below we index elements of an ancestral segment $z = (\ell, r, u)$
+by writing $z.\lleft = \ell$ and $z.\lright = r$ for the endpoints,
+and $z.\lid = u$ for the output node ID.
 
-    \algstep{M1.}{Segment loop.}{While $\mathrm{length}(Q)>0$:}
+\begin{taocpalg}{M}{Merge ancestors}
+    {Merge the ancestral segments in $Q$,
+    and create the new ancestor $\Al[p]$.
+    This algorithm also appends to $\Nt_O$ and $\Et_O$,
+    and needs to know about $S$, 
+    to check if input nodes are samples.
+    }
+
+    \algstep{M0.}{Initialize.}{
+        Set $z \leftarrow (0, 0, -1)$ and $d = \text{False}$.
+    }
+
+    \algstep{M1.}{Segment loop.}{If $\len(Q) = 0$, go to \algref{M9}.}
 
     \algstep{M2.}{Find next segment overlap boundaries}{
-    Let $\ell \leftarrow \min\{x.\ell : x \in Q\}$
-    and $H \leftarrow \{x \in Q : x.\ell = \ell\}$.
-    Also let $\ell_+ \leftarrow \min\{x.\ell : x \in Q \setdiff H\}$
-    and $r = \min(\ell_+, \min\{x.r : x \in H\})$.
+        Let $\ell_0 \leftarrow \min\{x.\lleft : x \in Q\}$
+        and $H \leftarrow \{x \in Q : x.\lleft = \ell_0\}$.
+        Also let $\ell_+ \leftarrow \min\{x.\lleft : x \in Q \setdiff H\}$
+        and $r = \min(\ell_+, \min\{x.\lright : x \in H\})$.
     }
 
-    \algstep{M3.}{Copy single segment.}{If $\mathrm{length}(H) == 1$,
-    set $\alpha \leftarrow (\ell, r, H[0].n)$.
-    If also $p \in S$, then append $(\alpha.\ell, \alpha.r, N[p], \alpha.c)$ to $\mathcal{E}_O$
-    and then set $\alpha.c \leftarrow M[p]$.
-    Go to \algref{M7}.
+    \algstep{M3.}{Copy single segment.}{
+        If $\len(H) = 1$,
+        set $\alpha \leftarrow (\ell, r, H[0].\lid)$.
+        If also $p \in S$, then
+        set $\alpha.\lid \leftarrow M[p]$ and
+        $\add(\Et_O, (\alpha.\lleft, \alpha.\lright, \Nt[p], \alpha.\lid))$.
+        Go to \algref{M7}.
     }
 
-    \algstep{M4.}{Coalescence head.}{If $(h \leftarrow \mathrm{length}(H)) > 1$,
-    if $M[p] == -1$ set $M[p] \leftarrow \text{length}(N_O)$
-    and append $N_I[p]$ to $N_O$.
-    Set $\alpha \leftarrow (\ell, r, M[p])$.
+    \algstep{M4.}{New output node.}{
+        If $M[p] = -1$ set $M[p] \leftarrow \add(\Nt_O, \Nt_I[p])$
+        Set $\alpha \leftarrow (\ell, r, M[p])$.
     }
 
-    \algstep{M6.}{Record edges.}{
-    For each $x \in H$, append $(\ell, r, M[p], x.n)$ to $\mathcal{E}_O$.
+    \algstep{M6.}{Record edges and update $Q$.}{
+        For each $x \in H$, do $\add(\Et_O, (\ell, r, M[p], x.\lid))$.
     }
 
     \algstep{M7.}{Update $Q$.}{
-    Set $Q \leftarrow Q \setdiff \{x \in Q : x.r == r\}$
-    and then set $x.\ell = \ell$ for all remaining $x \in Q$.
+        Remove from $Q$ any segment $x \in H$ with $x.\lright = r$
+        and then set $x.\lleft = \ell$ for all remaining $x \in H$.
     }
 
     \algstep{M8.}{Add segment to ancestor.}{
-    Append $\alpha$ to $\mathcal{A}[p]$ and return to \algref{M1}.
+        If $z.\lright = \alpha.\lleft$ and $z.\lid = \alpha.\lid$ set $d = \text{True}$.
+        Append $\alpha$ to $\Al[p]$, set $z \leftarrow \alpha$, and return to \algref{M1}.
+    }
+
+    \algstep{M9.}{Defragment.}{
+        If $d$ is True, find and merge any adjacent segments in $\Al[p]$
+        with the same $\lid$.  Terminate.
     }
 
 \end{taocpalg}
