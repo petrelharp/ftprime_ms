@@ -319,6 +319,7 @@ We will use
 $\randomuniform(A)$ to denote an element of the set $A$ chosen uniformly at random 
 (and each such instance represents and independent draw).
 
+\jda{TODO: rewrite with tables}
 We begin in~\algref{W1} by allocating our initial population $P$
 (a vector of $N$ node IDs),
 and creating $N$ nodes with birth time $T$ generations ago, recorded in the
@@ -547,58 +548,28 @@ Crucially, the time required to run the algorithm is linear in the number of edg
 
 \subsection*{Forward simulation and sequential simplification}
 
-At any point in a simulation scheme like Algorithm~\algref{W}, genealogical history is recorded
-in a tree sequence. This has two additional advantages. First, simplification
+At any point in a simulation scheme that, like Algorithm~\algref{W}, records
+data into tables the genealogical history is recorded
+in a tree sequence.
+This has two additional advantages, as seen in Algorithm~\algref{W}.
+First, simplification
 can be run periodically through the simulation, taking the set of samples to be
 the entire currently alive population. This is important as it keeps memory
 usage from growing linearly (and quickly) with time. Second, the simulation can
 be \emph{begun} with a tree sequence produced by some other method -- for
 instance, by a coalescent simulation with \msprime. 
-This process of forward simulation coupled with sequential simplification is our
-method
+We provide results for simulation timing from two specific implementations of this
+method (forward simulation coupled with sequential simplification)
+in the next section, but first we analyze the expected resource use of the
+general Algorithm~\algref{W}.
 
-\jda{I didn't write down the full thing, but mightn't things be clearer if we
-	have a statement of the combined method?}
-\begin{taocpalg}{F}{Forwards-time simplifed tree sequence}{
-Simulates a population starting with $N$ diploid individuals on a chromosome of length $L$ for $T$
-generations.
-}
-
-\algstep{F0.}{Initialize nodes.}{
-Generate initial haploid nodes $\mathcal N$:
-1.) using coalsecent simulation with \msprime{} for $2N$ initial haploid samples $S$ on
-a chromosome of length $L$ and taking $\mathcal N = \{\texttt{id}(u) : u \in S \}$; or
-2.) simply defining $\mathcal N = \{1\dots 2N\}$ as the node ids.
-Define a mapping from  $\mathcal M: \{1\dots 2N\} \to \mathcal N$. In the second
-case $\mathcal M$ is the identity.
-}
-
-\algstep{F1.}{Initialize edges.}{
-Define the initial edges $E_0$: 1) either from the coalescent simulation's final
-state, or 2) as \dots
-}
-
-\algstep{F2.}{Record trees till time $T - \Delta$.}{ 
-Simulate, using Algorithm~\algref{W} or another algorithm, $2N$ haploid
-individuals using $\mathcal M$ to renumber the nodes, producing nodes $n$ and
-edgesets $E$.
-}
-
-\algstep{F3.}{Simplification over $\Delta$.}{
-Select final samples $S'$ and using the simplification Algorithm~\algref{S},
-simplify $n$ and $E$ to produce a simplified tree sequence.
-}
-
-\algstep{F4.}{Continue?}{
-	Stop if $T - \delta  = 0$, else continue.
-}
-\end{taocpalg}
 
 
 %%%%%%%%%%%%
 \subsubsection*{Estimates of run-time complexity}
 
-\jda{I'd like to outline what we're doing here with reference to alg F}
+\jda{It'd be good to outline what readers should expect here.}
+\jda{and note we're doing the space analysis for with reference to alg W with $s=1$}
 Consider a simulation of a Wright-Fisher population of $2N$ haploid individuals 
 using Algorithm~\algref{W}
 for $T$ generations,
