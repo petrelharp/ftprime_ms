@@ -114,7 +114,7 @@ def run_stats(args):
     assert num_trees == ts.num_trees
 
 
-def run_simplify_benchmark(args):
+def run_simplify_subsample_size_benchmark(args):
     ts = msprime.load(args.file)
     np.random.seed(1)
     print("Running simplify benchmarks")
@@ -141,6 +141,56 @@ def run_simplify_benchmark(args):
     plt.xlabel("Subsample size")
     plt.ylabel("Time to simplify (s)")
     plt.savefig("simplify_subsample_perf.pdf", format='pdf')
+
+
+def run_simplify_num_edges_benchmark(args):
+    ts = msprime.load(args.file)
+    np.random.seed(1)
+    print("num_nodes = ", ts.num_nodes)
+    print("num_edges = ", ts.num_edges)
+    num_slices = 20
+    N = 1000
+
+    tables = ts.dump_tables()
+    nodes = tables.nodes
+    edges = tables.edges
+
+    node_time = nodes.time
+    left = edges.left
+    right = edges.right
+    parent = edges.parent
+    child = edges.child
+
+    size = left.nbytes + right.nbytes + parent.nbytes + child.nbytes
+    print("Total edge size = ", size / 1024**3, "GiB")
+
+    num_edges = np.zeros(num_slices)
+    simplify_time = np.zeros(num_slices)
+    slice_size = ts.num_edges // num_slices
+    for j, start in enumerate(range(ts.num_edges - slice_size, 0, -slice_size)):
+        max_node = np.max(child[start:])
+        samples = np.arange(max_node - N, max_node, dtype=np.int32)
+        subset_nodes = msprime.NodeTable()
+        subset_nodes.set_columns(
+            time=node_time[:max_node + 1], flags=np.ones(max_node + 1, dtype=np.uint32))
+        subset_edges = msprime.EdgeTable()
+        subset_edges.set_columns(
+            left=left[start:], right=right[start:], parent=parent[start:],
+            child=child[start:])
+        before = time.process_time()
+        msprime.simplify_tables(samples=samples, nodes=subset_nodes, edges=subset_edges)
+        duration = time.process_time() - before
+        num_edges[j] = ts.num_edges - start
+        simplify_time[j] = duration
+        print(num_edges[j], duration, num_edges[j] / duration, "per second")
+
+    df = pd.DataFrame({"num_edges": num_edges, "time": simplify_time})
+    df.to_csv("data/simplify_num_edges.dat")
+
+    plt.plot(num_edges, simplify_time, marker="o")
+    plt.xlabel("num edges")
+    plt.ylabel("Time to simplify (s)")
+    plt.savefig("simplify_num_edges.png")
 
 
 def run_benchmark_pi(args):
@@ -203,9 +253,13 @@ if __name__ == "__main__":
     subparser.add_argument("--num-sites", "-s", type=int, default=1000)
     subparser.set_defaults(func=run_pi)
 
-    subparser = subparsers.add_parser('simplify')
+    subparser = subparsers.add_parser('simplify-subsample')
     subparser.add_argument("file")
-    subparser.set_defaults(func=run_simplify_benchmark)
+    subparser.set_defaults(func=run_simplify_subsample_size_benchmark)
+
+    subparser = subparsers.add_parser('simplify-num-edges')
+    subparser.add_argument("file")
+    subparser.set_defaults(func=run_simplify_num_edges_benchmark)
 
     subparser = subparsers.add_parser('benchmark-pi')
     subparser.add_argument("--sample-size", "-s", type=int, default=100**4)
