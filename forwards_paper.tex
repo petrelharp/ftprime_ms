@@ -159,7 +159,7 @@ under the assumptions of coalescent theory \citep{wiuf1997number,wiuf1999ancestr
 \plr{this paragraph is supposed to cite the fwds time simulation methods we need to - @molpopgen fix this up?}
 Forwards-time population genetics simulations are growing in importance,
 as the genome-wide impacts of hitchhiking and background selection are more widely appreciated.
-For instance, \citet{harris2016genetic} used SLiM \citep{haller2017flexible} to simulate tens of thousands of human exomes
+For instance, \citet{harris2016genetic} used SLiM \citep{slim`} to simulate tens of thousands of human exomes
 to assess the impact of genetic load and Neanderthal introgression on human genetic diversity.
 This is roughly state-of-the-art
 -- the fastest simulation frameworks such as SLiM and fwdpp \citep{fwdpp}
@@ -778,7 +778,7 @@ any text-based approach while retaining excellent portability.
 
 The \msprime{} tables API is independent of the details of a particular simulation engine.  In other words, one simply
 needs to fill the relevant columns and send them to \msprime{} at regular intervals for simplification.  For example,
-using the \fwdpp{} C++ API \cite{Thornton2014-hx}, we fill arrays of simple structures representing the node and edge data.
+using the \fwdpp{} C++ API \cite{fwdpp}, we fill arrays of simple structures representing the node and edge data.
 Doing so requires no modification of the \fwdpp{} code base.  Rather, we simply need to book-keep the parent/offspring
 labels and perform simple processing of the recombination breakpoints from each mating event.  Using \texttt{pybind11}
 (\url{https://github.com/pybind/pybind11/}),
