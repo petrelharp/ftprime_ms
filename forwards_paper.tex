@@ -159,20 +159,30 @@ under the assumptions of coalescent theory \citep{wiuf1997number,wiuf1999ancestr
 \plr{this paragraph is supposed to cite the fwds time simulation methods we need to - @molpopgen fix this up?}
 Forwards-time population genetics simulations are growing in importance,
 as the genome-wide impacts of hitchhiking and background selection are more widely appreciated.
-For instance, \citet{harris2016genetic} used SLiM \citep{haller2017flexible} to simulate tens of thousands of human exomes
-to assess the impact of genetic load and Neanderthal introgression on human genetic diversity.
-This is roughly state-of-the-art
--- the fastest simulation frameworks such as SLiM and fwdpp \citep{fwdpp}
+For instance, \citet{harris2016genetic} used SLiM \citep{slim} to simulate ten thousand human exomes
+to assess the impact of genetic load and Neanderthal introgression on human genetic diversity. 
+\cite{Sanjak2017-ko} used
+fwdpp \citep{fwdpp} to simulate a series of models of quantiative traits under mutation-selection balance with
+population sizes of $2 times 10^4$ diploids in stable populations and populations growing up to $\approx 5
+\times 10^5$ individuals, using the output to explore the relationship between the genotype/phenotype model and GWAS
+outcomes.  
+
+Due to tracking neutral mutations, the fastest simulation frameworks such as SLiM, SLiM2 \cite{haller2017flexible} and fwdpp \citep{fwdpp}
 can ``only'' simulate tens of megabases of sequence in tens of thousands of individuals
-for tens of thousands of generations.
-This is still substantially short of whole genomes (hundreds to thousands of megabases)
-for many biological population sizes of interest
-(e.g., millions for a restricted population of mosquitos).
-Achieving these sizes will likely require parallelization \citep{lawrie2017accelerating}.
-The general idea of storing genealogical information to speed up simulations is not new --
-it was entirely implemented in AnA-FiTS \citep{aberer2013rapid}, for instance --
-but this program did not implement the critical step of discarding irrelevant genealogical information.
-A similar but more limited method for discarding this information does appear in \citet{padhukasahasram2008exploring}.
+for tens of thousands of generations, and there are still near-order-of-magnitude performance differences between these
+implementations \cite{haller2017flexible}. In practice, current state-of-the-art simulation software may take on the
+order of 
+weeks to simulate models without selection\cite{fwdpp,Hernandez2015-wf}, and different simulation engines differ in how efficiently they
+calculate fitnesses in models with selection \cite{fwdpp}.
+These population and region sizes are still substantially short of whole genomes (hundreds to thousands of megabases)
+for many biological population sizes of interest.
+Simulating very large popluations and entire genomes will likely require parallelization, which \cite{lawrie2017accelerating} used to improve
+performance for the "Poisson Random Field" family of models \cite{Sawyer1992-jw}, in which mutations are unlinked and there is no
+effect of genetic background on fitness.  However, little, and perhaps even no, attention has been paid to
+parallelization of simulations involving linkage.  Here, we show that recording genealogical information instead of
+explicitly tracking neutral mutations results in order-of-magnitude performance improvements to simulations based on
+\fwdpp{}.  The  idea of storing genealogical information to speed up simulations is not new.  AnA-FiTS implemented it
+completely \citep{aberer2013rapid}, but this program did not implement the critical step of discarding irrelevant genealogical information.  A similar but more limited method for discarding this information does appear in \citet{padhukasahasram2008exploring}.
 
 In this paper we discuss storage methods for genealogies (and hence, genome sequence),
 an algorithm for simplifying these,
@@ -778,7 +788,7 @@ any text-based approach while retaining excellent portability.
 
 The \msprime{} tables API is independent of the details of a particular simulation engine.  In other words, one simply
 needs to fill the relevant columns and send them to \msprime{} at regular intervals for simplification.  For example,
-using the \fwdpp{} C++ API \cite{Thornton2014-hx}, we fill arrays of simple structures representing the node and edge data.
+using the \fwdpp{} C++ API \cite{fwdpp}, we fill arrays of simple structures representing the node and edge data.
 Doing so requires no modification of the \fwdpp{} code base.  Rather, we simply need to book-keep the parent/offspring
 labels and perform simple processing of the recombination breakpoints from each mating event.  Using \texttt{pybind11}
 (\url{https://github.com/pybind/pybind11/}),
