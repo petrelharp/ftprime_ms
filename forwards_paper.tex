@@ -51,8 +51,8 @@
 \begin{abstract}
     The computational burden of tracking individual genomes
     in a population genetics simulation can be substantial.
-    In this note we describe how to both (a) dramatically reduce this burden and
-    (b) efficiently record the entire history of the population.
+    In this paper we describe how to dramatically reduce this burden by
+    efficiently recording the entire history of the population.
     We do this by simulating only those loci that may affect reproduction (those having non-neutral variants),
     and recording the entire history of genetic inheritance in an efficient representation of the ancestral recombination graph,
     on which neutral mutations can be quickly placed afterwards ---
@@ -104,12 +104,19 @@ fecundity and mortality schedules, allee effects, and demographic fluctuations -
 are all absorbed into a single compound parameter, the coalescence rate.
 The third assumption is no longer safe, either --
 for example, a recent study~\citep{martin2017human}
-simulated 600,000 samples of human chromosome 20
-% to assess the impact of European biased reference panels in genome wide association studies.
+simulated 600,000 samples of human chromosome 20 to examine biases in GWAS.
 Several studies have now shown that in samples of size approaching that of the population,
 genealogical properties may be distorted relative to the coalescent expectation
 \citep{wakeley2003gene,maruvka2011recovering,bhaskar2014distortion}.
-These considerations, and increasing computational power, have led to a resurgence of interest in forwards-time, individual-based simulations.
+These considerations, and increasing computational power, have led to a resurgence of
+interest in large scale forwards-time, individual-based simulations.
+For instance, \citet{harris2016genetic} used SLiM \citep{slim} to simulate ten thousand human exomes
+to assess the impact of genetic load and Neanderthal introgression on human genetic diversity.
+\cite{Sanjak2017-ko} used
+fwdpp \citep{fwdpp} to simulate a series of models of quantiative traits under mutation-selection balance with
+population sizes of $2 \times 10^4$ diploids in stable populations and populations growing up to $\approx 5
+\times 10^5$ individuals, using the output to explore the relationship between the genotype/phenotype model and GWAS
+outcomes.
 
 Modern computing power easily allows simulations of birth, death and reproduction
 in a population having even hundreds of millions of individuals,
@@ -118,9 +125,21 @@ must be run for many multiples of $N$ generations to produce stable genetic patt
 However, if our interest lies in the resulting genetic patterns of variation
 -- and often, the point of such simulations is to compare to real data --
 then such simulations must somehow produce at the end data for each individual on a genomic scale.
-As samples of most species genomes harbor tens or hundreds of millions of variant sites,
+As samples of most species' genomes harbor tens or hundreds of millions of variant sites,
 naively carrying full genotypes for even modest numbers of individuals through a simulation
 becomes quickly prohibitive.
+Because of this computational burden of neutral mutations, even the fastest simulation frameworks such as SLiM,
+SLiM2~\citep{haller2017flexible} and fwdpp~\citep{fwdpp}
+can ``only'' simulate tens of megabases of sequence in tens of thousands of individuals
+for tens of thousands of generations, and there are still near-order-of-magnitude performance differences between these
+implementations~\citep{haller2017flexible}.
+In practice, current state-of-the-art simulation software may take on the order of
+weeks to simulate models without selection~\citep{fwdpp,Hernandez2015-wf},
+and different simulation engines differ in how efficiently they
+calculate fitnesses in models with selection~\citep{fwdpp}.
+These population and region sizes are still substantially short of whole genomes
+(hundreds to thousands of megabases)
+for many biological population sizes of interest.
 
 However, it is thought that most genetic variation is selectively neutral (or nearly so).
 By definition, the alleles carried by individuals in a population at neutral sites
@@ -133,14 +152,14 @@ at each position along the genome.
 In this paper, we describe how algorithmic tools and data structures developed for the
 coalescent simulator \msprime{}
 can be used to efficiently record, and later process, this history.
-
 In so doing we record the \emph{population pedigree} --
-the entire history of parent-offspring relationships of an entire population going back to a remote time --
-as well as information encoding the genetic outcomes of each ancestral meiosis --
-who inherited which parts of which parental chromosomes.
+the complete history of parent-offspring relationships of an entire population
+going back to a remote time including the genetic outcomes of each ancestral
+meiosis.
 This embellished pedigree contains all the information necessary
 to construct the genealogical tree that relates each individual to each other
-at each position on the genome, i.e., the \emph{tree sequence}.
+at each position on the genome, i.e., the \emph{tree
+sequence}~\citep{kelleher2016efficient}.
 Combined with ancestral genotypes and the origins of new mutations,
 it also completely specifies the genomic sequence of any individual in the population at any time.
 This is much more than we need to know, however,
@@ -152,38 +171,10 @@ is known as the \emph{ancestral recombination graph} ---
 the {ARG} \citep{griffiths1997ancestral},
 where nodes are common ancestor or recombination events ---
 which has been the subject of substantial study
-under the assumptions of coalescent theory \citep{wiuf1997number,wiuf1999ancestry,marjoram2006coalescent,wilton2015smc}.
+under the assumptions of coalescent
+theory~\citep{wiuf1997number,wiuf1999ancestry,marjoram2006coalescent,wilton2015smc}.
 
-\jda{Is this the right place for this paragraph? should it maybe be integrated
-	with graf beginning 'Modern computing' above?}
-\plr{this paragraph is supposed to cite the fwds time simulation methods we need to - @molpopgen fix this up?}
-Forwards-time population genetics simulations are growing in importance,
-as the genome-wide impacts of hitchhiking and background selection are more widely appreciated.
-For instance, \citet{harris2016genetic} used SLiM \citep{slim} to simulate ten thousand human exomes
-to assess the impact of genetic load and Neanderthal introgression on human genetic diversity. 
-\cite{Sanjak2017-ko} used
-fwdpp \citep{fwdpp} to simulate a series of models of quantiative traits under mutation-selection balance with
-population sizes of $2 times 10^4$ diploids in stable populations and populations growing up to $\approx 5
-\times 10^5$ individuals, using the output to explore the relationship between the genotype/phenotype model and GWAS
-outcomes.  
-
-Due to tracking neutral mutations, the fastest simulation frameworks such as SLiM, SLiM2 \cite{haller2017flexible} and fwdpp \citep{fwdpp}
-can ``only'' simulate tens of megabases of sequence in tens of thousands of individuals
-for tens of thousands of generations, and there are still near-order-of-magnitude performance differences between these
-implementations \cite{haller2017flexible}. In practice, current state-of-the-art simulation software may take on the
-order of 
-weeks to simulate models without selection\cite{fwdpp,Hernandez2015-wf}, and different simulation engines differ in how efficiently they
-calculate fitnesses in models with selection \cite{fwdpp}.
-These population and region sizes are still substantially short of whole genomes (hundreds to thousands of megabases)
-for many biological population sizes of interest.
-Simulating very large popluations and entire genomes will likely require parallelization, which \cite{lawrie2017accelerating} used to improve
-performance for the "Poisson Random Field" family of models \cite{Sawyer1992-jw}, in which mutations are unlinked and there is no
-effect of genetic background on fitness.  However, little, and perhaps even no, attention has been paid to
-parallelization of simulations involving linkage.  Here, we show that recording genealogical information instead of
-explicitly tracking neutral mutations results in order-of-magnitude performance improvements to simulations based on
-\fwdpp{}.  The  idea of storing genealogical information to speed up simulations is not new.  AnA-FiTS implemented it
-completely \citep{aberer2013rapid}, but this program did not implement the critical step of discarding irrelevant genealogical information.  A similar but more limited method for discarding this information does appear in \citet{padhukasahasram2008exploring}.
-
+\jk{And finish with a more detailed descrition of what we do in the paper}
 In this paper we discuss storage methods for genealogies (and hence, genome sequence),
 an algorithm for simplifying these,
 and their use in forwards-time simulation.
@@ -733,6 +724,26 @@ time of migration across the range has limited effect on modern genealogies
 \citep{wilkins2004separation} (other than possibly changing effective population
 size \citet{barton2002neutral,cox2002stepping}), this may not negatively affect realism.
 
+\jk{Moved this from the introduction: here seems like the right place to
+discuss the importance of parallisation. We should rework this paragraph to
+discuss say that a nice part of our approach is that we can do the
+simplification in parallel. Also looking forward we need to parallise more
+because the simulations need so much RAM}
+Simulating very large popluations and entire genomes will likely require parallelization,
+which \cite{lawrie2017accelerating} used to improve
+performance for the ``Poisson Random Field'' family of models~\citep{Sawyer1992-jw},
+in which mutations are unlinked and there is no
+effect of genetic background on fitness.  However, little, and perhaps even no, attention has been paid to
+parallelization of simulations involving linkage.  Here, we show that recording genealogical information instead of
+explicitly tracking neutral mutations results in order-of-magnitude performance improvements to simulations based on
+\fwdpp{}.
+
+\jk{Moved this here from intro also. Basically we just need to say that others
+have done something similar. Ours is much better than Ana-Fits because ...}
+The  idea of storing genealogical information to speed up simulations is not new.  AnA-FiTS implemented it
+completely~\citep{aberer2013rapid}, but this program did not implement the critical step of
+discarding irrelevant genealogical information.  A similar but more limited method for
+discarding this information does appear in \citet{padhukasahasram2008exploring}.
 
 A final note:
 in preparing this manuscript,
