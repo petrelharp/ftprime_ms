@@ -205,15 +205,18 @@ to the tools in \msprime{}.
 %%%%%%
 \subsection*{Working with a tree sequence through tables}
 
-A \emph{tree sequence} is an encoding for the sequence of correlated trees,
-such as those that describe the history of a sexual population.
+A \emph{tree sequence} is an encoding for a sequence of correlated trees,
+such as those describing the history of a sexual population.
 It is efficient because branches that are shared by adjacent trees are stored once,
 rather than repeatedly for each tree.
 The topology of a tree sequence is defined via its \emph{nodes} and \emph{edges},
 while information about variants are recorded as \emph{sites} and \emph{mutations}.
 The format for these four tables is given in more detail in the Methods;
 here we explain conceptually,
-using the example of Figure~\ref{fig:example_tree_sequence}.
+using the example of Figure~\ref{fig:example_tree_sequence}. This formulation
+is derived from the ``coalescence records'' encoding of tree
+sequences~\citep{kelleher2016efficient}, normalised to remove redundancy
+and generalised to include a much larger class of tree topology.
 
 The \emph{nodes} of a tree sequence
 correspond to the vertices in the individual genealogies along the sequence,
@@ -224,7 +227,7 @@ she is associated with.
 The example of Figure~\ref{fig:example_tree_sequence} has five nodes:
 nodes 0, 1 and 2 occur at time 0 and are the \emph{samples},
 while nodes 3 and 4 represent those ancestors necessary to record their genealogy,
-who were born at time 1.5 and 2.5 respectively.
+who were born at time 1 and 2 respectively.
 
 \begin{figure}
     \begin{center}
@@ -270,7 +273,7 @@ to construct the tree at a certain point in the genome
 we need only retrieve all edges overlapping that point
 and construct the corresponding tree.
 To modify the tree to reflect the genealogy at a nearby location,
-we need only remove those edges whose intervals do not overlap that location,
+we simply remove those edges whose intervals do not overlap that location,
 and add those new edges whose intervals do.
 Incidentally, this property that edges naturally encode \emph{differences}
 between nearby trees (e.g., as ``subtree prune and regraft'' moves)
@@ -290,13 +293,13 @@ Thus, all samples below the mutation node in the tree will inherit this state
 Three mutations are shown in Figure~\ref{fig:example_tree_sequence},
 illustrated by red hexagons.
 The first mutation occurs at site zero (in the left-hand tree), and is a simple
-mutation resulting in node $2$ inheriting the state 'T'.
+mutation resulting in node $2$ inheriting the state `T'.
 The second site (in the right hand tree) has two mutations:
 one occurring over node $3$ changing the state to `C',
 and a back mutation over node $1$ changing the state to `G'.
 
 This encoding of a sequence of trees and accompanying mutational information is
-very concise. To illustrate this, we ran a simulation of $500,000$ samples of a
+very concise. To illustrate this, we ran a simulation of 500,000 samples of a
 $200$ megabase human-like chromosome ($N_e=10^4$ and per-base mutation and
 recombination rates of $10^{-8}$ per generation) using \msprime. This resulted
 in about 1 million distinct marginal trees and $1.1$ million infinite-sites
@@ -306,12 +309,11 @@ the \msprime\ Python API, the time required to load this file into memory was
 around 1.5 seconds, and the time required to iterate over all 1 million trees
 was 2.7 seconds. In contrast, recording the topological information in Newick
 format would require around 20 TiB and storing the genotype information
-in VCF would require about 1 TiB --
-a compression factor of 144,000.
+in VCF would require about 1 TiB (giving a compression factor of 144,000 in
+this instance).
 Working with either the Newick or VCF encoding
 of this dataset would likely require several
-days of CPU time simply to read the information info memory.
-
+days of CPU time just to read the information into memory.
 
 %%%%%%
 \subsection*{Recording the pedigree in forwards time}
