@@ -236,7 +236,7 @@ haploid_labels = [(k,p) for k in first_gen
 node_ids = {x:j for x, j in zip(haploid_labels, init_ts.samples())}
 rc = RecombCollector(ts=init_ts, node_ids=node_ids,
                      locus_position=locus_position,
-                     benchmark=True)
+                     benchmark=True, mode='binary')
 
 pop.evolve(
     initOps=[
@@ -254,7 +254,8 @@ pop.evolve(
     matingScheme=sim.RandomMating(
         ops=[
             id_tagger,
-            sim.Recombinator(rates=args.recomb_rate, output=rc.collect_recombs,
+            sim.Recombinator(rates=args.recomb_rate,
+                             output=sim.WithMode(rc.collect_recombs, 'b'),
                              infoFields="ind_id"),
         ] ),
     postOps=[
