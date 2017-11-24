@@ -68,18 +68,6 @@
 % NOTE: I tend to use semantic linebreaks.
 % Please excuse the ragged right margins in the source.
 
-previous \textbf{OUTLINE}, possibly out-of-date but left for comparison.
-\begin{enumerate}
-    \item motivate need for whole-genome fwd-time simulations; point out that we only recently have the computing power to do this
-    \item explain ARG: explain that for forwards-time only need selected loci as by defn all others can be put on afterwards
-    \item review something about msprime methods for storing/traversing tree sequence
-    \item describe tables and write out conditions to have valid tables
-    \item write down algorithm used to do simple WF simulation
-    \item describe simplify algorithm
-    \item back-of-the-envelope calculation to compare cost of tracking whole genomes versus putting mutations on ARG
-    \item comparison of speed with simupop, fwdpp
-\end{enumerate}
-
 
 %%%%%%%%%%%%%%%%%%%%%%
 \section*{Introduction}
@@ -189,7 +177,11 @@ these tools may prove more widely useful.
 \section*{Results}
 
 
-Below, we first describe the conceptual and algorithmic foundations for the method:
+We begin by benchmarking the performance improvement achieved by connecting
+two previously published forwards-time simulation libraries,
+\simupop{} \citep{simupop} and \fwdpp{} \citep{fwdpp}
+to the tools we describe here, implemented in \msprime{}.
+Then, we describe the conceptual and algorithmic foundations for the method:
 (a) a format, implemented in the \msprime{} Python API,
 for recording tree sequences in several \emph{tables};
 (b) an algorithm, \algref{W}, to record tree sequence information into these tables on the fly
@@ -199,10 +191,20 @@ We then describe a general-purpose method that uses these tools
 (as implemented in \msprime{})
 to efficiently record simplified a tree sequence,
 and analyze of its run time complexity.
-This is followed by benchmarking the performance improvement achieved by connecting
-two previously published forwards-time simulation libraries,
-\simupop{} \citep{simupop} and \fwdpp{} \citep{fwdpp}
-to the tools in \msprime{}.
+
+
+%%%%%%
+\subsection*{Simulation benchmarks}
+
+\plr{Jaime and Kevin to describe simulation methods here (separately).}
+
+Comparison of simulation with/without msprime, using \simupop{}
+or maybe just a simple haploid simulation with 1000 QTL and stabilizing selection on a trait (say).
+
+Maybe an estimate of how long \emph{just} the ARG recording and simplification takes,
+so that then we can say how fast the simulator would have to be to do $10^6$ whole chromosomes for $10^7$ generations
+in a day.
+
 
 
 %%%%%%
@@ -227,6 +229,8 @@ and each node refers to a distinct ancestor.
 Since each node represents a specific ancestor, it has a unique ``time'',
 thought of as her birth time, which determines the height of any vertices
 she is associated with.
+Note that since each node time is equal to the amount of time since the {birth} of the
+corresponding parent, time is measured in clock time, not in meioses.
 The example of Figure~\ref{fig:example_tree_sequence} has five nodes:
 nodes 0, 1 and 2 occur at time 0 and are the \emph{samples},
 while nodes 3 and 4 represent those ancestors necessary to record their genealogy,
@@ -317,6 +321,30 @@ this instance).
 Working with either the Newick or VCF encoding
 of this dataset would likely require several
 days of CPU time just to read the information into memory.
+
+\paragraph{Validity of a set of tables}
+Given a set of node and edge tables as described above,
+there are a small set of requirements that ensure the tables
+describe a valid tree sequence.
+% (There are essentially no such requirements on the site and mutation tables.)
+These are:
+\begin{enumerate}
+    \item Offspring must be born after their parents (and hence, no loops).
+    \item The set of intervals on which each individual is a child must be disjoint.
+\end{enumerate}
+A pair of node and edge tables that satisfy these two requirements
+is guarenteed to uniquely describe at each point on the genome
+a collection of directed, acyclic graphs -- in other words, a forest of trees.
+For some applications it is necessary to check that at every point
+there is only a \emph{single} tree.
+Checking this is more difficult, but is implemented in \msprime{}'s API.
+\jda{TODO add function name}
+For efficiency, \msprime{} makes several other sortedness requirements on the tables,
+that are not necessarily satisfied by tables emitted by a forwards-time simulation.
+\msprime{}'s API includes tools to rectify this by first sorting (using \texttt{sort\_tables})
+and then using \texttt{simplify}, which works on sorted tables
+and is guarenteed to produce a valid, \msprime{}-ready tree sequence.
+
 
 %%%%%%
 \subsection*{Recording the pedigree in forwards time}
@@ -552,310 +580,8 @@ We also maintain a map $A$ such that $A_j$ is segment chain for node $j$ in
 the input tree sequence.
 Crucially, the time required to run the algorithm is linear in the number of edges of the input tree sequence.
 
-\subsection*{Forward simulation and sequential simplification}
-
-At any point in a simulation scheme that, like Algorithm~\algref{W}, records
-data into tables the genealogical history is recorded
-in a tree sequence.
-This has two additional advantages, as seen in Algorithm~\algref{W}.
-First, simplification
-can be run periodically through the simulation, taking the set of samples to be
-the entire currently alive population. This is important as it keeps memory
-usage from growing linearly (and quickly) with time. Second, the simulation can
-be \emph{begun} with a tree sequence produced by some other method -- for
-instance, by a coalescent simulation with \msprime.
-We provide results for simulation timing from two specific implementations of this
-method (forward simulation coupled with sequential simplification)
-in the next section, but first we analyze the expected resource use of the
-general Algorithm~\algref{W}.
-
-
-
-%%%%%%%%%%%%
-\subsubsection*{Estimates of run-time complexity}
-
-\jda{It'd be good to outline what readers should expect here.}
-\jda{and note we're doing the space analysis for with reference to alg W with $s=1$}
-Consider a simulation of a Wright-Fisher population of $2N$ haploid individuals
-using Algorithm~\algref{W}
-for $T$ generations and simplify interval $s = 1$ so that redundant information
-is removed after every generation.
-Since there is exactly one crossing over every generation,
-this produces tables of
-$2NT$ nodes and
-$4NT$ edges.
-Suppose that $T$ is large enough that all samples coalesce within the simulation with high probability,
-so that $T \sim 20N$, say.
-After simplification, we are left with the tree sequence describing the history
-of only the current generation of $2N$ individuals.
-This tree sequence has $4N-2$ edges to describe the leftmost tree;
-and each time the marginal tree changes along the sequence,
-four edges end and four new edges begin (except for changes affecting the root; see \citet{kelleher2016efficient}).
-Coalescent theory tells us that
-the expected total length of edges in a marginal tree is approximately $4N\log(2N)$,
-which is also equal to the mean number of ancestral recombination events that occur on a branch of the marginal tree,
-since we have taken one crossover per generation.
-Not all such recombinations actually change the tree topology,
-and four times this gives us an upper bound on the expected number of edges.
-Similarly, not every new edge derives from a never-before-seen node,
-but the number of nodes is at most equal to the number of edges plus the sample size.
-With $T=20N$, this reduces the initial storage of $160 N^2$ items to $8N(4\log(2N) + 3)$;
-at $N=10^4$, a factor of 4,700.
-\jk{I haven't checked these numbers, just corrected the obvious threes/fours.}
-
-To get an idea of how required space depends on the length of time,
-suppose instead that we have run a simulation of $2N$ individuals for $T$ generations,
-begun with no prior history.
-This produces $4NT$ edges; how many are required after simplification?
-As above, the expected number of edges is bounded by $2N-2$ plus four times the mean marginal tree length.
-Roughly, the length of time for which a marginal tree has k tips is
-$2N/k(k-1) = 2N(1/(k-1) - 1/k)$,
-and so the time to go from N to n tips is $2N(1/(n-1) - 1/(N-1))$.
-This implies that after running for time $T$ we expect to
-have around $n(T)$ roots, where $n(T) \approx 1 + 2N/(T+2)$.
-The total tree length over this time is
-$2 N \sum_{k=n(T)+1}^{N-1} 1/k$, which
-% is approximately
-% \begin{align*}
-%     2 N \log\left( \frac{N}{1 + 2 N/(T+2)} \right) .
-% \end{align*}
-leads to an upper bound on the number of edges of
-\begin{align*}
-    2 N \left( 1 + 4 \log\left( \frac{NT}{T + 2 N} \right)\right) .
-\end{align*}
-This holds up quite well in practice --
-the number of edges actually required for 50 independent Wright--Fisher simulations,
-as a function of time (obtained by running simplify every generation)
-is shown in Figure~\ref{fig:num_edges}, compared to this prediction.
-
-\begin{figure}
-    \begin{center}
-        \includegraphics{sims/num_edges_50}
-    \end{center}
-    \caption{
-        Number of edges in the simplified tree sequence
-        for 50 Wright-Fisher simulations begun with no prior history
-        as a function of number of generations.
-        Each line is one simulation, the black line gives the average,
-        and the dotted line is the upper bound of the text.
-        \label{fig:num_edges}
-    }
-\end{figure}
-
-
-If we were to add mutations in forwards time
-under the infinite-sites model with total mutation rate per generation $\mu$,
-there would also be around $\mu 2NT$ mutations (and the same number of sites).
-Since mutations fall as recombinations do on the marginal trees,
-adding them after simplification results in only around $\mu 4 N \log(2N)$ mutations.
-This furthermore avoids the computational burden of propagating mutations forwards through the generations.
-
-Our method stores genealogies, and so records substantially more information
-than would a method only recording genotypes.
-However, since the simplification algorithm requires some computational effort,
-it is still informative to compare computational complexity of the algorithm
-to one that propagates neutral genotypes.
-A typical individual will differ at $2 N \mu$ sites from the population's consensus sequence,
-so propagating these to offspring by simple copying will take $4 N^2 \mu$ operations per generation.
-On the other hand, we must store $13N$ quantities per generation (two edges and one node per individual).
-The simplification algorithm is linear in the number of edges of the input tree sequence,
-and so multiplies this by a constant factor.
-Concretely, propagating neutral genotypes for $T$ generations has time complexity $O(\mu T N^2)$,
-while our implementation is only $O(T N \log(2N))$.
-
-
-\subsection*{Simulation benchmarks}
-
-Comparison of simulation with/without msprime, using \simupop{}
-or maybe just a simple haploid simulation with 1000 QTL and stabilizing selection on a trait (say).
-
-Maybe an estimate of how long \emph{just} the ARG recording and simplification takes,
-so that then we can say how fast the simulator would have to be to do $10^6$ whole chromosomes for $10^7$ generations
-in a day.
-
-
-%%%%%%%%%%%%%%%%%%%%%%
-\section*{Discussion}
-
-In this paper, we have shown that storing pedigrees
-and associated recombination events
-in a forwards-time simulation
-not only results in having available a great deal more information about the simulation,
-but also can speed up the simulation by orders of magnitude.
-To make this feasible,
-we have described how to efficiently store this information in numerical tables,
-and have described a fundamental algorithm for simplificication of tree sequences.
-Conceptually, recording of genealogical and recombination events
-can happen independently of the details of simulation;
-for this reason, we provide a well-defined and well-tested API in Python
-for use in other code bases (a C API is also planned).
-
-The tree sequences produced by default by this method
-are very compact, storing genotype \emph{and} genealogical information
-in a small fraction of the space taken by a compressed VCF file.
-The format is also highly efficient to process,
-leading to advantages for downstream analysis as well.
-This is because many algorithms to compute statistics of interest for population genetics
-are naturally expressed in terms of tree topologies,
-and so can be quickly computed from the trees underlying the tree sequence format.
-For example, pairwise nucleotide diversity $\pi$, is the average density of
-differences between sequences in the sample.
-To compute this directly from sequence data at $m$ sites in $n$ samples
-requires computing allele frequencies, taking $O(nm)$ operations.
-By using the locations of the mutations on the marginal trees,
-and the fact that these are correlated,
-sequential tree algorithms similar to those in~\citep{kelleher2016efficient}
-can do this in roughly $O(n + m \log n)$ operations.
-The \msprime\ API provides a method to compute $\pi$ among arbitrary subsets of the
-samples in a tree sequence, which took about 1.2 seconds
-applied to the example tree sequence above with 1.1 million mutations
-in 200 megabases for 500,000 samples.
-
-Another attractive feature of this set of tools
-is that it makes it easy to incorporate \emph{prior history},
-simply by seeding the simulation with a (relatively inexpensive) coalescent simulation.
-This allows for incorporation of deep-time history beyond the reach of individual-based simulations.
-Since geographic structure from times longer ago than the mixing
-time of migration across the range has limited effect on modern genealogies
-\citep{wilkins2004separation} (other than possibly changing effective population
-size \citet{barton2002neutral,cox2002stepping}), this may not negatively affect realism.
-
-\jk{Moved this from the introduction: here seems like the right place to
-discuss the importance of parallisation. We should rework this paragraph to
-discuss say that a nice part of our approach is that we can do the
-simplification in parallel. Also looking forward we need to parallise more
-because the simulations need so much RAM}
-Simulating very large popluations and entire genomes will likely require parallelization,
-which \cite{lawrie2017accelerating} used to improve
-performance for the ``Poisson Random Field'' family of models~\citep{Sawyer1992-jw},
-in which mutations are unlinked and there is no
-effect of genetic background on fitness.  However, little, and perhaps even no, attention has been paid to
-parallelization of simulations involving linkage.  Here, we show that recording genealogical information instead of
-explicitly tracking neutral mutations results in order-of-magnitude performance improvements to simulations based on
-\fwdpp{}.
-
-\jk{Moved this here from intro also. Basically we just need to say that others
-have done something similar. Ours is much better than Ana-Fits because ...}
-The  idea of storing genealogical information to speed up simulations is not new.  AnA-FiTS implemented it
-completely~\citep{aberer2013rapid}, but this program did not implement the critical step of
-discarding irrelevant genealogical information.  A similar but more limited method for
-discarding this information does appear in \citet{padhukasahasram2008exploring}.
-
-A final note:
-in preparing this manuscript,
-we debated a number of possible terms for the embellished pedigree,
-i.e., the ``pedigree with ancestral recombination information''.
-Current etymologica consensus \citep{liberman2014little} has
-``pedigree'' derived from the french ``pied de grue'' for the foot of a crane
-(whose branching pattern resembes the bifurcation of a single parent-offspring relationship).
-An analogous term for the embellished pedigree might be \emph{nedigree},
-from ``nid de grue'',
-as the nest of a crane is a large jumble of (forking) branches.
-We thought it unwise to use this term throughout the manuscript,
-but perhaps it will prove useful elsewhere.
-
-
-%%%%%%%%%%%%%%%%%%%%%%
-\section*{Methods}
-
-\plr{some of this can move back to an appendix, but since they want methods at the end,
-it's the sort of thing they want here.}
-
 %%%%%%%%%%%%%%
-\subsection*{Simuation methods}
-
-Jaime and Kevin to describe simulation methods here (separately).
-
-%%%%%%
-\subsection*{Overview of the API}
-
-The \msprime{} Python API provides a powerful platform for working with tree topology and mutation data.
-The new portions of \msprime{} that we cover here
-are dedicated to tree sequence input and output using simple tables of data,
-so we refer to this as the `Tables API'.
-The four key tables: nodes, edges, sites and mutations, are described above.
-
-The Tables API is primarily designed to facilitate efficient interchange of
-data between programs or between different modules of the same program.
-\jda{should capitalize Tables, or not, as above}
-Following the current best-practises [citations: apache arrow, etc] data is stored
-in a columnar format.
-The principal advantage of this for our purposes is that it allows for very efficient
-interchange of large amounts of numerical data. In principle, this enables
-zero-copy semantics, where a data consumer can read the information directly
-from the memory of a producer without incurring the overhead of a copy
-[citation?] Our implementation uses the numpy C API [citation] to efficiently copy
-data from Python into the low-level C library used to manipulate
-tree sequences.
-Thus, by using a simple numerical
-encoding of tree topologies and contiguous arrays of data to store table
-columns, we can achieve data transfer rates that would be impossible under
-any text-based approach while retaining excellent portability.
-
-
-The \msprime{} tables API is independent of the details of a particular simulation engine.  In other words, one simply
-needs to fill the relevant columns and send them to \msprime{} at regular intervals for simplification.  For example,
-using the \fwdpp{} C++ API \cite{fwdpp}, we fill arrays of simple structures representing the node and edge data.
-Doing so requires no modification of the \fwdpp{} code base.  Rather, we simply need to book-keep the parent/offspring
-labels and perform simple processing of the recombination breakpoints from each mating event.  Using \texttt{pybind11}
-(\url{https://github.com/pybind/pybind11/}),
-the node/edge arrays on
-the C++ side are made visible, without copy, to Python as a multi-column numpy array. This array is in turn processed by
-the \msprime{} tables API.  In order to create a standalone user interface, our implementation uses \texttt{pybind11} to
-create a Python package extending \texttt{fwdpy11} (\url{https://github.com/molpopgen/fwdpy11}), which is a Python
-package based on \fwdpp{}.  (A neat aside, that we may wish to skip here, is that it may be possible to use the tables
-API from a command-line C/C++ application via an embedded Python interpreter.)
-\plr{@molpopgen: note on how this works with fwdpp?}
-\krt{@plr: done, but perhaps too verbose?}
-
-The tables API provides basic input and output operations via the numpy
-array interface, which provides a great deal of flexibility as well
-as efficiency, and makes it straightforward to transfer data from sources
-such as HDF5 [citation], Dask, or Zarr.
-(For small scale data and debugging purposes, a simple text format is also supported.)
-Along with these operations we also provide a function to sort a set of tables
-to ensure that the records are in the form required to input
-into an \msprime{} tree sequence object. (Simplification may also be required.)
-
-\plr{Maybe we don't need this paragraph? Already said it, more or less, above, esp if we insert something about how fwdpp works.}
-\jda{agree re the next two lines. propose moving the other above}
-This interchange API is very efficient. [Describe a quick example where we generate
-a many-gigabyte tree sequence using fwdpp, and the time required
-to copy the node and edge data into the tables].
-
-%%%%%%%%%%%%%%
-\subsection*{The table format}
-
-Given a set of node and edge tables as described above,
-there are a small set of requirements that ensure the tables
-describe a valid tree sequence.
-(There are essentially no such requirements on the site and mutation tables.)
-These are:
-\begin{enumerate}
-    \item Offspring must be born after their parents (and hence, no loops).
-    \item The set of intervals on which each individual is a child must be disjoint.
-\end{enumerate}
-A pair of node and edge tables that satisfy these two requirements
-is guarenteed to uniquely describe at each point on the genome
-a collection of directed, acyclic graphs -- in other words, a forest of trees.
-For some applications it is necessary to check that at every point
-there is only a \emph{single} tree.
-Checking this is more difficult, but is implemented in \msprime{}'s API.
-\jda{TODO add function name}
-
-For efficiency, \msprime{} makes several other sortedness requirements on the tables,
-that are not necessarily satisfied by tables emitted by a forwards-time simulation.
-\msprime{}'s API includes tools to rectify this by first sorting (using \texttt{sort\_tables})
-and then using \texttt{simplify}, which works on sorted tables
-and is guarenteed to produce a valid, \msprime{}-ready tree sequence.
-
-Note that since each node time is equal to the amount of time since the \emph{birth} of the
-corresponding parent, time is measured in clock time, not in meioses.
-\jda{is this the right place? I'd put it in discussion of Figure~\ref{fig:example_tree_sequence}}
-
-
-%%%%%%%%%%%%%%
-\subsection*{Simplification}
+\subsection*{Simplification algorithm}
 
 Here we describe the simplification algorithm.
 The flow is close to our implementation,
@@ -1031,6 +757,262 @@ We also maintain a map $A$ such that $A_j$ is segment chain for node $j$ in
 the input tree sequence.
 Crucially, the time required to run the algorithm is linear in the number of edges of the input tree sequence.
 
+
+%%%%%%%%%%%%%%
+\subsection*{Forward simulation and sequential simplification}
+
+At any point in a simulation scheme that, like Algorithm~\algref{W}, records
+data into tables the genealogical history is recorded
+in a tree sequence.
+This has two additional advantages, as seen in Algorithm~\algref{W}.
+First, simplification
+can be run periodically through the simulation, taking the set of samples to be
+the entire currently alive population. This is important as it keeps memory
+usage from growing linearly (and quickly) with time. Second, the simulation can
+be \emph{begun} with a tree sequence produced by some other method -- for
+instance, by a coalescent simulation with \msprime.
+We provide results for simulation timing from two specific implementations of this
+method (forward simulation coupled with sequential simplification)
+in the next section, but first we analyze the expected resource use of the
+general Algorithm~\algref{W}.
+
+
+
+%%%%%%%%%%%%
+\subsubsection*{Estimates of run-time complexity}
+
+\jda{It'd be good to outline what readers should expect here.}
+\jda{and note we're doing the space analysis for with reference to alg W with $s=1$}
+Consider a simulation of a Wright-Fisher population of $2N$ haploid individuals
+using Algorithm~\algref{W}
+for $T$ generations and simplify interval $s = 1$ so that redundant information
+is removed after every generation.
+Since there is exactly one crossing over every generation,
+this produces tables of
+$2NT$ nodes and
+$4NT$ edges.
+Suppose that $T$ is large enough that all samples coalesce within the simulation with high probability,
+so that $T \sim 20N$, say.
+After simplification, we are left with the tree sequence describing the history
+of only the current generation of $2N$ individuals.
+This tree sequence has $4N-2$ edges to describe the leftmost tree;
+and each time the marginal tree changes along the sequence,
+four edges end and four new edges begin (except for changes affecting the root; see \citet{kelleher2016efficient}).
+Coalescent theory tells us that
+the expected total length of edges in a marginal tree is approximately $4N\log(2N)$,
+which is also equal to the mean number of ancestral recombination events that occur on a branch of the marginal tree,
+since we have taken one crossover per generation.
+Not all such recombinations actually change the tree topology,
+and four times this gives us an upper bound on the expected number of edges.
+Similarly, not every new edge derives from a never-before-seen node,
+but the number of nodes is at most equal to the number of edges plus the sample size.
+With $T=20N$, this reduces the initial storage of $160 N^2$ items to $8N(4\log(2N) + 3)$;
+at $N=10^4$, a factor of 4,700.
+\jk{I haven't checked these numbers, just corrected the obvious threes/fours.}
+
+To get an idea of how required space depends on the length of time,
+suppose instead that we have run a simulation of $2N$ individuals for $T$ generations,
+begun with no prior history.
+This produces $4NT$ edges; how many are required after simplification?
+As above, the expected number of edges is bounded by $2N-2$ plus four times the mean marginal tree length.
+Roughly, the length of time for which a marginal tree has k tips is
+$2N/k(k-1) = 2N(1/(k-1) - 1/k)$,
+and so the time to go from N to n tips is $2N(1/(n-1) - 1/(N-1))$.
+This implies that after running for time $T$ we expect to
+have around $n(T)$ roots, where $n(T) \approx 1 + 2N/(T+2)$.
+The total tree length over this time is
+$2 N \sum_{k=n(T)+1}^{N-1} 1/k$, which
+% is approximately
+% \begin{align*}
+%     2 N \log\left( \frac{N}{1 + 2 N/(T+2)} \right) .
+% \end{align*}
+leads to an upper bound on the number of edges of
+\begin{align*}
+    2 N \left( 1 + 4 \log\left( \frac{NT}{T + 2 N} \right)\right) .
+\end{align*}
+This holds up quite well in practice --
+the number of edges actually required for 50 independent Wright--Fisher simulations,
+as a function of time (obtained by running simplify every generation)
+is shown in Figure~\ref{fig:num_edges}, compared to this prediction.
+
+\begin{figure}
+    \begin{center}
+        \includegraphics{sims/num_edges_50}
+    \end{center}
+    \caption{
+        Number of edges in the simplified tree sequence
+        for 50 Wright-Fisher simulations begun with no prior history
+        as a function of number of generations.
+        Each line is one simulation, the black line gives the average,
+        and the dotted line is the upper bound of the text.
+        \label{fig:num_edges}
+    }
+\end{figure}
+
+
+If we were to add mutations in forwards time
+under the infinite-sites model with total mutation rate per generation $\mu$,
+there would also be around $\mu 2NT$ mutations (and the same number of sites).
+Since mutations fall as recombinations do on the marginal trees,
+adding them after simplification results in only around $\mu 4 N \log(2N)$ mutations.
+This furthermore avoids the computational burden of propagating mutations forwards through the generations.
+
+Our method stores genealogies, and so records substantially more information
+than would a method only recording genotypes.
+However, since the simplification algorithm requires some computational effort,
+it is still informative to compare computational complexity of the algorithm
+to one that propagates neutral genotypes.
+A typical individual will differ at $2 N \mu$ sites from the population's consensus sequence,
+so propagating these to offspring by simple copying will take $4 N^2 \mu$ operations per generation.
+On the other hand, we must store $13N$ quantities per generation (two edges and one node per individual).
+The simplification algorithm is linear in the number of edges of the input tree sequence,
+and so multiplies this by a constant factor.
+Concretely, propagating neutral genotypes for $T$ generations has time complexity $O(\mu T N^2)$,
+while our implementation is only $O(T N \log(2N))$.
+
+
+%%%%%%
+\subsection*{Overview of the API}
+
+The \msprime{} Python API provides a powerful platform for working with tree topology and mutation data.
+The new portions of \msprime{} that we cover here
+are dedicated to tree sequence input and output using simple tables of data,
+so we refer to this as the `Tables API'.
+The four key tables: nodes, edges, sites and mutations, are described above.
+
+The Tables API is primarily designed to facilitate efficient interchange of
+data between programs or between different modules of the same program.
+\jda{should capitalize Tables, or not, as above}
+Following the current best-practises [citations: apache arrow, etc] data is stored
+in a columnar format.
+The principal advantage of this for our purposes is that it allows for very efficient
+interchange of large amounts of numerical data. In principle, this enables
+zero-copy semantics, where a data consumer can read the information directly
+from the memory of a producer without incurring the overhead of a copy
+[citation?] Our implementation uses the numpy C API [citation] to efficiently copy
+data from Python into the low-level C library used to manipulate
+tree sequences.
+Thus, by using a simple numerical
+encoding of tree topologies and contiguous arrays of data to store table
+columns, we can achieve data transfer rates that would be impossible under
+any text-based approach while retaining excellent portability.
+
+
+The \msprime{} tables API is independent of the details of a particular simulation engine.  In other words, one simply
+needs to fill the relevant columns and send them to \msprime{} at regular intervals for simplification.  For example,
+using the \fwdpp{} C++ API \cite{fwdpp}, we fill arrays of simple structures representing the node and edge data.
+Doing so requires no modification of the \fwdpp{} code base.  Rather, we simply need to book-keep the parent/offspring
+labels and perform simple processing of the recombination breakpoints from each mating event.  Using \texttt{pybind11}
+(\url{https://github.com/pybind/pybind11/}),
+the node/edge arrays on
+the C++ side are made visible, without copy, to Python as a multi-column numpy array. This array is in turn processed by
+the \msprime{} tables API.  In order to create a standalone user interface, our implementation uses \texttt{pybind11} to
+create a Python package extending \texttt{fwdpy11} (\url{https://github.com/molpopgen/fwdpy11}), which is a Python
+package based on \fwdpp{}.  (A neat aside, that we may wish to skip here, is that it may be possible to use the tables
+API from a command-line C/C++ application via an embedded Python interpreter.)
+\plr{@molpopgen: note on how this works with fwdpp?}
+\krt{@plr: done, but perhaps too verbose?}
+
+The tables API provides basic input and output operations via the numpy
+array interface, which provides a great deal of flexibility as well
+as efficiency, and makes it straightforward to transfer data from sources
+such as HDF5 [citation], Dask, or Zarr.
+(For small scale data and debugging purposes, a simple text format is also supported.)
+Along with these operations we also provide a function to sort a set of tables
+to ensure that the records are in the form required to input
+into an \msprime{} tree sequence object. (Simplification may also be required.)
+
+\plr{Maybe we don't need this paragraph? Already said it, more or less, above, esp if we insert something about how fwdpp works.}
+\jda{agree re the next two lines. propose moving the other above}
+This interchange API is very efficient. [Describe a quick example where we generate
+a many-gigabyte tree sequence using fwdpp, and the time required
+to copy the node and edge data into the tables].
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%
+\section*{Discussion}
+
+In this paper, we have shown that storing pedigrees
+and associated recombination events
+in a forwards-time simulation
+not only results in having available a great deal more information about the simulation,
+but also can speed up the simulation by orders of magnitude.
+To make this feasible,
+we have described how to efficiently store this information in numerical tables,
+and have described a fundamental algorithm for simplificication of tree sequences.
+Conceptually, recording of genealogical and recombination events
+can happen independently of the details of simulation;
+for this reason, we provide a well-defined and well-tested API in Python
+for use in other code bases (a C API is also planned).
+
+The tree sequences produced by default by this method
+are very compact, storing genotype \emph{and} genealogical information
+in a small fraction of the space taken by a compressed VCF file.
+The format is also highly efficient to process,
+leading to advantages for downstream analysis as well.
+This is because many algorithms to compute statistics of interest for population genetics
+are naturally expressed in terms of tree topologies,
+and so can be quickly computed from the trees underlying the tree sequence format.
+For example, pairwise nucleotide diversity $\pi$, is the average density of
+differences between sequences in the sample.
+To compute this directly from sequence data at $m$ sites in $n$ samples
+requires computing allele frequencies, taking $O(nm)$ operations.
+By using the locations of the mutations on the marginal trees,
+and the fact that these are correlated,
+sequential tree algorithms similar to those in~\citep{kelleher2016efficient}
+can do this in roughly $O(n + m \log n)$ operations.
+The \msprime\ API provides a method to compute $\pi$ among arbitrary subsets of the
+samples in a tree sequence, which took about 1.2 seconds
+applied to the example tree sequence above with 1.1 million mutations
+in 200 megabases for 500,000 samples.
+
+Another attractive feature of this set of tools
+is that it makes it easy to incorporate \emph{prior history},
+simply by seeding the simulation with a (relatively inexpensive) coalescent simulation.
+This allows for incorporation of deep-time history beyond the reach of individual-based simulations.
+Since geographic structure from times longer ago than the mixing
+time of migration across the range has limited effect on modern genealogies
+\citep{wilkins2004separation} (other than possibly changing effective population
+size \citet{barton2002neutral,cox2002stepping}), this may not negatively affect realism.
+
+\jk{Moved this from the introduction: here seems like the right place to
+discuss the importance of parallisation. We should rework this paragraph to
+discuss say that a nice part of our approach is that we can do the
+simplification in parallel. Also looking forward we need to parallise more
+because the simulations need so much RAM}
+Simulating very large popluations and entire genomes will likely require parallelization,
+which \cite{lawrie2017accelerating} used to improve
+performance for the ``Poisson Random Field'' family of models~\citep{Sawyer1992-jw},
+in which mutations are unlinked and there is no
+effect of genetic background on fitness.  However, little, and perhaps even no, attention has been paid to
+parallelization of simulations involving linkage.  Here, we show that recording genealogical information instead of
+explicitly tracking neutral mutations results in order-of-magnitude performance improvements to simulations based on
+\fwdpp{}.
+
+\jk{Moved this here from intro also. Basically we just need to say that others
+have done something similar. Ours is much better than Ana-Fits because ...}
+The  idea of storing genealogical information to speed up simulations is not new.  AnA-FiTS implemented it
+completely~\citep{aberer2013rapid}, but this program did not implement the critical step of
+discarding irrelevant genealogical information.  A similar but more limited method for
+discarding this information does appear in \citet{padhukasahasram2008exploring}.
+
+A final note:
+in preparing this manuscript,
+we debated a number of possible terms for the embellished pedigree,
+i.e., the ``pedigree with ancestral recombination information''.
+Current etymologica consensus \citep{liberman2014little} has
+``pedigree'' derived from the french ``pied de grue'' for the foot of a crane
+(whose branching pattern resembes the bifurcation of a single parent-offspring relationship).
+An analogous term for the embellished pedigree might be \emph{nedigree},
+from ``nid de grue'',
+as the nest of a crane is a large jumble of (forking) branches.
+We thought it unwise to use this term throughout the manuscript,
+but perhaps it will prove useful elsewhere.
+
+
+%%%%%%%%%%%%%%
+% \section*{Methods}
 
 
 %%%%%%%%%%%%%%%%%%%%%%
