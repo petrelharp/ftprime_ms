@@ -209,7 +209,9 @@ combinations.  Deleterious mutations were introduced at rate $\rho/100$ per gene
 coefficients ($2Ns$)
 from a Gamma distribution with a mean of -5 and a shape parameter of 1.  This distribution of fitness effects results in
 thousands of weakly-deleterious mutations segregating in the population, many of which drift to intermediate
-frequencies.
+frequencies.  The case of many mutations with selection is a non-trivial violation of exchangeability assumptions of the
+coalescent \citep{Neuhauser1997-nn}.  Therefore, these selected mutations must be explicitly tracked in our forward simulation
+and the time savings due to ancestry tracking come from not having to record \textit{neutral} mutations.
 
 We ran all benchmarks on an Ubuntu Linux (version 16.04) system with two 2.6 Gigahertz Intel E5-2650 CPU with
 hyperthreading enabled.  We ran one simulation at a time and the machine was under minimal load otherwise.  We used GNU
