@@ -196,14 +196,42 @@ and analyze of its run time complexity.
 %%%%%%
 \subsection*{Simulation benchmarks}
 
-\plr{Jaime and Kevin to describe simulation methods here (separately).}
+To measure the performance gains from ancestry recording, we ran simulations implemented in C++ (see below) with and
+without ancestry tracking.  The simulations without ancestry tracking introduced neutral mutations at a scaled mutation
+rate equal to the scaled recombination rate (\textit{e.g.}, $\theta = 4N\mu = \rho$, where $\rho = 4Nr$, $N$ is the
+diploid population size, $\mu$ is the
+mutation rate to neutral mutations (per gamete, per generation) and $r$ is the recombination rate per diploid per
+generation.  Both $\mu$ and $r$ are the means of a Poisson process and we used the infinitely-many sites mutation model
+\citep{Kimura1969-uc}.
 
-Comparison of simulation with/without msprime, using \simupop{}
-or maybe just a simple haploid simulation with 1000 QTL and stabilizing selection on a trait (say).
+We varied $N \in (1000, 10000, 50000)$, $\rho \in (10^3, 10^4, 10^5)$ and ran a single replicate of all $(N,\rho)$
+combinations.  Deleterious mutations were introduced at rate $\rho/100$ per generation, drawing scaled selection
+coefficients ($2Ns$)
+from a Gamma distribution with a mean of -5 and a shape parameter of 1.  This distribution of fitness effects results in
+thousands of weakly-deleterious mutations segregating in the population, many of which drift to intermediate
+frequencies.  The case of many mutations with selection is a non-trivial violation of exchangeability assumptions of the
+coalescent \citep{Neuhauser1997-nn}.  Therefore, these selected mutations must be explicitly tracked in our forward simulation
+and the time savings due to ancestry tracking come from not having to record \textit{neutral} mutations.
 
-Maybe an estimate of how long \emph{just} the ARG recording and simplification takes,
-so that then we can say how fast the simulator would have to be to do $10^6$ whole chromosomes for $10^7$ generations
-in a day.
+We ran all benchmarks on an Ubuntu Linux (version 16.04) system with two 2.6 Gigahertz Intel E5-2650 CPU with
+hyperthreading enabled.  We ran one simulation at a time and the machine was under minimal load otherwise.  We used GNU
+parallel \citep{Tange2011a} to kill
+any simulation that did not finish within 72 hours.  We used the Linux \texttt{time} command to record run time and peak
+memory usage of each replicate and our simulation scripts separately recorded the time spent in various steps of each
+run.
+
+For efficiency reasons, we only ran \simupop{} with ancestry tracking.
+
+\krt{Jaime--any details here to add re: how simuPOP was tweaked??}
+
+% \plr{Jaime and Kevin to describe simulation methods here (separately).}
+% 
+% Comparison of simulation with/without msprime, using \simupop{}
+% or maybe just a simple haploid simulation with 1000 QTL and stabilizing selection on a trait (say).
+% 
+% Maybe an estimate of how long \emph{just} the ARG recording and simplification takes,
+% so that then we can say how fast the simulator would have to be to do $10^6$ whole chromosomes for $10^7$ generations
+% in a day.
 
 
 
