@@ -95,8 +95,8 @@ parser.add_argument("--nsam","-k", type=int, dest="nsamples",
         help="number of *diploid* samples, total",)
 parser.add_argument("--pdel","-p", type=float, dest="pdel",
         help="Ratio of deleterious mutations to neutral mutations",)
-parser.add_argument("--record-neutral", type=bool, dest="record_neutral",
-                    default=False)
+parser.add_argument("--record-neutral", dest="record_neutral",
+                    action='store_true')
 
 parser.add_argument("--gamma_shape","-a", type=float, dest="gamma_shape",
         help="shape parameter in gamma distributed selection coefficients",
@@ -133,8 +133,6 @@ parser.add_argument("--len-trees", "-l", dest="len_trees", action='store_true',
 
 
 args = parser.parse_args()
-if args.record_neutral:
-    sys.exit(1)
 
 if args.generations is None:
     args.generations = args.popsize * args.multiplier
@@ -173,7 +171,6 @@ args.sel_mut_rate = args.mut_rate * args.pdel
 # hard code defaults for simupop:
 # >The default positions are 1, 2, 3, 4, ... on each
 # >chromosome.
-
 locus_position = list(range(0, args.nloci))
 
 # logfile.write("Locus positions:\n")
@@ -197,7 +194,7 @@ class GammaDistributedFitness:
 
     def __call__(self, loc, alleles):
         # because s is assigned for each locus, we need to make sure the
-        # same s is used for fitness of genotypes 01 (1-s) and 11 (1-2s)
+        # same s is used for fitness of genotypes 01 (1-s/2) and 11 (1-s)
         # at each locus
         if loc in self.coefMap:
             s = self.coefMap[loc]
@@ -237,31 +234,43 @@ node_ids = {x:j for x, j in zip(haploid_labels, init_ts.samples())}
 rc = RecombCollector(ts=init_ts, node_ids=node_ids,
                      locus_position=locus_position,
                      benchmark=True, mode='binary')
+pre_ops = [sim.PyOperator(lambda pop: rc.increment_time() or True)]
+mating_ops = [id_tagger]
 
+logfile.write(time.strftime('%X %x %Z')+"\n")
+logfile.write("Started simulating! Generations:\n")
+post_ops = [sim.PyEval(r'"  %d\n" % (gen)', step=100, output=logfile)]
+
+nselloci = int(args.sel_mut_rate / (args.mut_rate + args.sel_mut_rate))
+selected_loci = random.sample(locus_position, nselloci)
+neutral_loci = list(set(locus_position) - set(selected_loci))
+if args.record_neutral:
+    pre_ops += [sim.SNPMutator(u=args.mut_rate, v=args.mut_rate,
+                               loci=neutral_loci)]
+    mating_ops += [sim.Recombinator(rates=args.recomb_rate,
+                                    infoFields="ind_id")]
+elif not args.record_neutral:
+    mating_ops += [sim.Recombinator(rates=args.recomb_rate,
+                                    output=sim.WithMode(rc.collect_recombs, 'b'),
+                                    infoFields="ind_id")]
+    post_ops += [sim.PyOperator(
+        lambda pop: rc.simplify(pop.indInfo("ind_id")) or True,
+        step=args.simplify_interval)]
 pop.evolve(
     initOps=[
         sim.InitSex(),
     ]+init_geno,
-    preOps=[
-        sim.PyOperator(lambda pop: rc.increment_time() or True),
+    preOps=pre_ops + [
         sim.SNPMutator(u=args.sel_mut_rate, v=args.sel_mut_rate),
+        #                   loci=selected_loci),
         # so that selector returns, for f_i fitness values, \prod_i f_i
         sim.PyMlSelector(GammaDistributedFitness(shape=args.gamma_shape,
                                                  scale=args.gamma_scale,
                                                  popsize=args.popsize),
-                         mode=sim.MULTIPLICATIVE),
+                         mode=sim.MULTIPLICATIVE, loci=selected_loci),
     ],
-    matingScheme=sim.RandomMating(
-        ops=[
-            id_tagger,
-            sim.Recombinator(rates=args.recomb_rate,
-                             output=sim.WithMode(rc.collect_recombs, 'b'),
-                             infoFields="ind_id"),
-        ] ),
-    postOps=[
-        sim.PyOperator(lambda pop: rc.simplify(pop.indInfo("ind_id")) or True,
-                       step=args.simplify_interval),
-    ],
+    matingScheme=sim.RandomMating(ops= mating_ops),
+    postOps=post_ops,
     gen = args.generations
 )
 
@@ -277,7 +286,8 @@ logfile.write("  " + str(args.nsamples) + " of them")
 logfile.write("  " + "ids:" + str(pop.indInfo("ind_id")))
 
 diploid_samples = random.sample(pop.indInfo("ind_id"), args.nsamples)
-rc.simplify(diploid_samples)
+if not args.record_neutral:
+    rc.simplify(diploid_samples)
 
 del pop
 
@@ -286,10 +296,14 @@ logfile.write(str(rc.diploid_samples)+"\n")
 logfile.write("----------\n")
 logfile.flush()
 
-ts = rc.args.tree_sequence()
+if not args.record_neutral:
+    ts = rc.args.tree_sequence()
 
-times = rc.args.timings.times
-args.gc = args.simplify_interval  # so use same name below
+    times = rc.args.timings.times
+    args.gc = args.simplify_interval  # so use same name below
+elif args.record_neutral:
+    times = {}
+    args.gc = None
 
 ## begin block similar to K Thornton's
 # Take times from args before they change.
@@ -301,14 +315,15 @@ times['simplify_interval'] = [args.gc]
 d = pd.DataFrame(times)
 d.to_csv(args.outfile1,sep='\t',index=False,compression='gzip')
 
-del rc
+if not args.record_neutral:
+    del rc
 
 logfile.write("Loaded into tree sequence!\n")
 logfile.write(time.strftime('%X %x %Z')+"\n")
 logfile.write("----------\n")
 logfile.flush()
 
-if args.treefile is not None:
+if args.treefile is not None and not args.record_neutral:
     ts.dump(args.treefile)
 
 logfile.write("Writing out samples.\n")
@@ -321,34 +336,33 @@ logfile.write(time.strftime('%X %x %Z')+"\n")
 logfile.write("Generating mutations with seed "+str(mut_seed)+"\n")
 logfile.flush()
 
-rng = msprime.RandomGenerator(mut_seed)
-nodes = msprime.NodeTable()
-edges = msprime.EdgeTable()
-sites = msprime.SiteTable()
-ts.dump_tables(nodes=nodes, edges=edges)
 if args.record_neutral:
-    mutated_ts = msprime.load_tables(nodes=nodes, edges=edges,
-                                     sites=sites)
+    pass
 elif not args.record_neutral:
+    rng = msprime.RandomGenerator(mut_seed)
+    nodes = msprime.NodeTable()
+    edges = msprime.EdgeTable()
+    sites = msprime.SiteTable()
+    ts.dump_tables(nodes=nodes, edges=edges)
     mutations = msprime.MutationTable()
     mutgen = msprime.MutationGenerator(rng, args.mut_rate)
     mutgen.generate(nodes, edges, sites, mutations)
     mutated_ts = msprime.load_tables(
         nodes=nodes, edges=edges, sites=sites, mutations=mutations)
-if args.num_vars:
-    print(len([i for i in mutated_ts.variants()]))
+    if args.num_vars:
+        print(len([i for i in mutated_ts.variants()]))
 
-if args.len_trees:
-    print([t.total_branch_length for t in ts.trees()])
+    if args.len_trees:
+        print([t.total_branch_length for t in ts.trees()])
 
-del ts
+    del ts
 
-logfile.write("Generated mutations!\n")
-logfile.write(time.strftime('%X %x %Z')+"\n")
-logfile.write("Mean pairwise diversity: {}\n".format(mutated_ts.get_pairwise_diversity()/mutated_ts.get_sequence_length()))
-logfile.write("Sequence length: {}\n".format(mutated_ts.get_sequence_length()))
-logfile.write("Number of trees: {}\n".format(mutated_ts.get_num_trees()))
-logfile.write("Number of mutations: {}\n".format(mutated_ts.get_num_mutations()))
+    logfile.write("Generated mutations!\n")
+    logfile.write(time.strftime('%X %x %Z')+"\n")
+    logfile.write("Mean pairwise diversity: {}\n".format(mutated_ts.get_pairwise_diversity()/mutated_ts.get_sequence_length()))
+    logfile.write("Sequence length: {}\n".format(mutated_ts.get_sequence_length()))
+    logfile.write("Number of trees: {}\n".format(mutated_ts.get_num_trees()))
+    logfile.write("Number of mutations: {}\n".format(mutated_ts.get_num_mutations()))
 
 logfile.write("All done!\n")
 logfile.close()
