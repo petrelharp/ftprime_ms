@@ -1,9 +1,49 @@
 """
 Set-theoretic algorithm implementation of Algorithm S.
 """
-import collections
-import msprime
 import numpy as np
+
+import msprime
+import intervaltree
+
+def simplify(S, Ni, Ei, L):
+    No = msprime.NodeTable()
+    Eo = msprime.EdgeTable()
+    left = Ei.left
+    right = Ei.right
+    child = Ei.child
+    parent = Ei.parent
+    time = Ni.time
+    # TODO Should be an interval tree for each ID.
+    A = {}
+    for input_id in S:
+        # TODO update node table to return ID of new row.
+        output_id = len(No)
+        No.add_row(time=time[input_id], flags=1)
+        A[output_id] = intervaltree.IntervalTree([
+            intervaltree.Interval(0, L, input_id)])
+    print(A)
+
+    for input_parent in range(len(Ni)):
+        index = parent == input_parent
+        output_id = -1
+        S = []
+        for l, r, c in zip(left[index], right[index], child[index]):
+            # TODO Snip out this part of the interval tree for c, and save it in a
+            # list of intervals.
+            if c in A:
+                P = A[c][l: r]
+                print(P)
+
+            # # For each locus, transfer any genetic material to the parent.
+            # P = np.zeros(L, dtype=int) - 1
+            # P[l: r] = A[c, l: r]
+            # A[c, l: r] = -1
+            # # Store the transferred genetic material for all parents in the
+            # # list S so that we can find any coalescences afterwards.
+            # S.append(P)
+
+
 
 
 class Edge(object):
@@ -18,7 +58,7 @@ class Edge(object):
 
 
 
-def simplify(S, Ni, Ei, L):
+def simplify_loci(S, Ni, Ei, L):
     No = msprime.NodeTable()
     Eo = msprime.EdgeTable()
     left = Ei.left.astype(int)
@@ -125,17 +165,17 @@ if __name__ == "__main__":
     nodes= ts.tables.nodes
     edges = ts.tables.edges
 
-    # convert left and right to breakpoints
-    breakpoints = np.unique(np.hstack([edges.left, edges.right]))
-    breakpoint_map = dict(zip(breakpoints, range(breakpoints.shape[0])))
-    # Build a new edge table
-    edges = msprime.EdgeTable()
-    for e in ts.edges():
-        edges.add_row(
-            breakpoint_map[e.left], breakpoint_map[e.right], e.parent, e.child)
+#     # convert left and right to breakpoints
+#     breakpoints = np.unique(np.hstack([edges.left, edges.right]))
+#     breakpoint_map = dict(zip(breakpoints, range(breakpoints.shape[0])))
+#     # Build a new edge table
+#     edges = msprime.EdgeTable()
+#     for e in ts.edges():
+#         edges.add_row(
+#             breakpoint_map[e.left], breakpoint_map[e.right], e.parent, e.child)
 
     sample = [0, 1, 2]
-    ts1 = simplify(sample, nodes, edges, len(breakpoint_map) - 1)
+    ts1 = simplify(sample, nodes, edges, ts.sequence_length)
 
     print(ts1.tables)
 
