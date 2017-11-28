@@ -5,6 +5,19 @@ import collections
 import msprime
 import numpy as np
 
+
+class Edge(object):
+    def __init__(self, left, right, parent, child):
+        self.left = left
+        self.right = right
+        self.parent= parent
+        self.child = child
+
+    def __repr__(self):
+        return repr([self.left, self.right, self.parent, self.child])
+
+
+
 def simplify(S, Ni, Ei, L):
     No = msprime.NodeTable()
     Eo = msprime.EdgeTable()
@@ -13,66 +26,105 @@ def simplify(S, Ni, Ei, L):
     child = Ei.child
     parent = Ei.parent
     time = Ni.time
-    A = collections.defaultdict(set)
-    M = {}
+    A = np.zeros((len(Ni), L), dtype=int) - 1
+    M = np.zeros(len(Ni), dtype=int) - 1
     for input_id in S:
         # TODO update node table to return ID of new row.
         output_id = len(No)
-        No.add_row(time=time[input_id])
-        M[input_id] = output_id
-        # TODO We probably need to make this a set of tuples, otherwise we lose the
-        # ability to track where individual bits have come from.
-        A[output_id] = set(range(L - 1))
-    for k, v in A.items():
-        print(k, "->", v)
+        No.add_row(time=time[input_id], flags=1)
+        A[output_id, :] = input_id
 
-    # This isn't quite right as we've lost the ability to map nodes. Seems like
-    # it's OK otherwise.
+    E = []
 
     for input_parent in range(len(Ni)):
         index = parent == input_parent
-        print("parent = ", input_parent)
+        output_id = -1
         S = []
         for l, r, c in zip(left[index], right[index], child[index]):
-            # Remove ancestry is now trivial; directly expressed as set operations.
-            x = set(range(l, r))
-            S.append(A[c] & x)
-            A[c] -= x
+            # For each locus, transfer any genetic material to the parent.
+            P = np.zeros(L, dtype=int) - 1
+            P[l: r] = A[c, l: r]
+            A[c, l: r] = -1
+            # Store the transferred genetic material for all parents in the
+            # list S so that we can find any coalescences afterwards.
+            S.append(P)
         if len(S) > 0:
-            print("S = ", S)
-            A[input_parent] = S[0].union(*S[1:])
-            for k, v in A.items():
-                if len(v) > 0:
-                    print(k, "->", v)
-            inter = S[0].intersection(*S[1:])
-            if len(inter) > 0:
-                # Allocate a new node
-                output_parent = len(No)
-                No.add_row(time=time[input_parent])
-                M[input_parent] = output_parent
+            S = np.array(S)
+            for k in range(L):
+                # For each locus k, see if we have any ancestral material present.
+                cond = np.where(S[:, k] >= 0)[0]
+                if cond.shape[0] == 1:
+                    # If we have only one edge with ancestral material at this locus
+                    # then we transfer it directly to the parent.
+                    A[input_parent, k] = S[cond[0], k]
+                elif cond.shape[0] > 1:
+                    # If more than one edge has ancestral material at this locus then
+                    # we have a coalescence, which we must record.
+                    if output_id == -1:
+                        output_id = len(No)
+                        No.add_row(time=time[input_parent], flags=0)
+                    A[input_parent, k] = output_id
+                    for c in S[cond, k]:
+                        E.append(Edge(k, k + 1, output_id, c))
 
-                # Figure out which intervals they are children over.
-                for l, r, c in zip(left[index], right[index], child[index]):
-                    x = set(range(l, r))
-                    child_inter = x & inter
-                    if len(child_inter) > 0:
-                        # And we record the outptu edge
-                        print("EDGE {} {} over {}".format(c, input_parent, child_inter))
+    # Sort the output locus-wise edges and compact them as much as possible into
+    # the output table.
+    E.sort(key=lambda e: (e.parent, e.child, e.right, e.left))
+    start = 0
+    for j in range(1, len(E)):
+        condition = (
+            E[j - 1].right != E[j].left or
+            E[j - 1].parent != E[j].parent or
+            E[j - 1].child != E[j].child)
+        if condition:
+            Eo.add_row(E[start].left, E[j - 1].right, E[j - 1].parent, E[j - 1].child)
+            start = j
+    j = len(E)
+    Eo.add_row(E[start].left, E[j - 1].right, E[j - 1].parent, E[j - 1].child)
+    return msprime.load_tables(nodes=No, edges=Eo)
 
 
 
+def verify():
+    for n in [10, 100, 1000]:
+        ts = msprime.simulate(n, recombination_rate=5, random_seed=1)
+        nodes= ts.tables.nodes
+        edges = ts.tables.edges
+        print("simulated for ", n)
 
+        # convert left and right to breakpoints
+        breakpoints = np.unique(np.hstack([edges.left, edges.right]))
+        breakpoint_map = dict(zip(breakpoints, range(breakpoints.shape[0])))
+        # Build a new edge table
+        edges = msprime.EdgeTable()
+        for e in ts.edges():
+            edges.add_row(
+                breakpoint_map[e.left], breakpoint_map[e.right], e.parent, e.child)
 
+        for N in range(2, 10):
+            sample = list(range(N))
 
+            ts1 = simplify(sample, nodes, edges, len(breakpoint_map) - 1)
+            ts2 = ts.simplify(sample)
+
+            n1 = ts1.tables.nodes
+            n2 = ts2.tables.nodes
+            assert np.array_equal(n1.time, n2.time)
+            assert np.array_equal(n1.flags, n2.flags)
+            e1 = ts1.tables.edges
+            e2 = ts2.tables.edges
+            assert np.array_equal(breakpoints[e1.left.astype(int)], e2.left)
+            assert np.array_equal(breakpoints[e1.right.astype(int)], e2.right)
+            assert np.array_equal(e1.parent, e1.parent)
+            assert np.array_equal(e1.child, e1.child)
 
 if __name__ == "__main__":
-    # ts = msprime.simulate(10, recombination_rate=2, random_seed=1)
-    # ts.dump("example.ts")
-    # ts = msprime.simulate(10, recombination_rate=2, random_seed=1)
-    # ts.dump("example.ts")
-    ts = msprime.load("example.ts")
+    # verify()
+
+    ts = msprime.simulate(10, recombination_rate=2, random_seed=1)
     nodes= ts.tables.nodes
     edges = ts.tables.edges
+
     # convert left and right to breakpoints
     breakpoints = np.unique(np.hstack([edges.left, edges.right]))
     breakpoint_map = dict(zip(breakpoints, range(breakpoints.shape[0])))
@@ -82,4 +134,10 @@ if __name__ == "__main__":
         edges.add_row(
             breakpoint_map[e.left], breakpoint_map[e.right], e.parent, e.child)
 
-    ts_new = simplify([0, 1, 2], nodes, edges, len(breakpoint_map))
+    sample = [0, 1, 2]
+    ts1 = simplify(sample, nodes, edges, len(breakpoint_map) - 1)
+
+    print(ts1.tables)
+
+
+
