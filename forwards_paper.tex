@@ -14,6 +14,7 @@
 \newcommand{\simupop}{\texttt{simuPOP}}
 \newcommand{\fwdpp}{\texttt{fwdpp}}
 \newcommand{\msprime}{\texttt{msprime}}
+\newcommand{\ftprime}{\texttt{ftprime}}
 \newcommand{\nodes}{\texttt{nodes}}
 \newcommand{\edgesets}{\texttt{edgesets}}
 \newcommand{\sites}{\texttt{sites}}
@@ -180,38 +181,37 @@ these tools may prove more widely useful.
 We begin by benchmarking the performance improvement achieved by connecting
 two previously published forwards-time simulation libraries,
 \simupop{} \citep{simupop} and \fwdpp{} \citep{fwdpp}
-to the tools we describe here, implemented in \msprime{}.
+to the tools we describe here, implemented in \msprime{}, allowing them to
+efficiently record the population pedigree in a simplified tree sequence.
 Then, we describe the conceptual and algorithmic foundations for the method:
 (a) a format, implemented in the \msprime{} Python API,
 for recording tree sequences in several \emph{tables};
 (b) an algorithm, \algref{W}, to record tree sequence information into these tables on the fly
     from a forwards-time simulation;
 and (c) an algorithm to \emph{simplify} a tree sequence, i.e., remove redundant information.
-We then describe a general-purpose method that uses these tools
-(as implemented in \msprime{})
-to efficiently record simplified a tree sequence,
-and analyze of its run time complexity.
+Finally, we analyze the run time and space complexity of our general-purpose method.
 
 
 %%%%%%
 \subsection*{Simulation benchmarks}
 
-To measure the performance gains from ancestry recording, we ran simulations implemented in C++ (see below) with and
-without ancestry tracking.  The simulations without ancestry tracking introduced neutral mutations at a scaled mutation
-rate equal to the scaled recombination rate (\textit{e.g.}, $\theta = 4N\mu = \rho$, where $\rho = 4Nr$, $N$ is the
-diploid population size, $\mu$ is the
+To measure the performance gains from recording the pedigree we ran simulations with and
+without recording, for both implementations (\simupop{} \citep{simupop}
+and \fwdpp{} \citep{fwdpp}).
+All simulations implemented a discrete-time Wright-Fisher population of diploid
+population size $N$, simulated for $10N$ generations.
+The simulations without pedigree recording introduced neutral mutations at a scaled mutation
+rate equal to the scaled recombination rate (\textit{e.g.}, $\theta = 4N\mu = \rho$, where $\rho = 4Nr$, $\mu$ is the
 mutation rate to neutral mutations (per gamete, per generation) and $r$ is the recombination rate per diploid per
-generation.  Both $\mu$ and $r$ are the means of a Poisson process and we used the infinitely-many sites mutation model
-\citep{Kimura1969-uc}.
-
-We varied $N \in (1000, 10000, 50000)$, $\rho \in (10^3, 10^4, 10^5)$ and ran a single replicate of all $(N,\rho)$
-combinations.  Deleterious mutations were introduced at rate $\rho/100$ per generation, drawing scaled selection
+generation.
+Deleterious mutations were introduced at rate $\rho/100$ per generation, drawing scaled selection
 coefficients ($2Ns$)
 from a Gamma distribution with a mean of -5 and a shape parameter of 1.  This distribution of fitness effects results in
 thousands of weakly-deleterious mutations segregating in the population, many of which drift to intermediate
 frequencies.  The case of many mutations with selection is a non-trivial violation of exchangeability assumptions of the
 coalescent \citep{Neuhauser1997-nn}.  Therefore, these selected mutations must be explicitly tracked in our forward simulation
-and the time savings due to ancestry tracking come from not having to record \textit{neutral} mutations.
+and the time savings due to pedigree recording come from not having to record \textit{neutral} mutations.
+
 
 We ran all benchmarks on an Ubuntu Linux (version 16.04) system with two 2.6 Gigahertz Intel E5-2650 CPU with
 hyperthreading enabled.  We ran one simulation at a time and the machine was under minimal load otherwise.  We used GNU
@@ -219,13 +219,26 @@ parallel \citep{Tange2011a} to kill
 any simulation that did not finish within 72 hours.  We used the Linux \texttt{time} command to record run time and peak
 memory usage of each replicate and our simulation scripts separately recorded the time spent in various steps of each
 run.
+We varied $N$ and $\rho$ and ran a single replicate of all $(N,\rho)$
+combinations (the actual values differed for \simupop{} and \fwdpp{}, see below).
 
-For efficiency reasons, we only ran \simupop{} with ancestry tracking.
+\subsubsection*{The \fwdpp{} implementation}
 
-\krt{Jaime--any details here to add re: how simuPOP was tweaked??}
+We implemented Wright-Fisher simulations in C++ using \fwdpp{} library
+functions and interface code that records data into the \msprime{} Tables API (see below).
+In these simulations, $\mu$ and $r$ are the means of a Poisson process and we used the infinitely-many sites mutation model
+\citep{Kimura1969-uc}.
+We varied $N \in (1000, 10000, 50000)$, $\rho \in (10^3, 10^4, 10^5)$.
 
-% \plr{Jaime and Kevin to describe simulation methods here (separately).}
-% 
+\subsubsection*{The \simupop{} implementation}
+
+We implemented Wright-Fisher simulations in Python using \simupop{} library
+functions (which wrap C++ code) and interface code (\ftprime{}, also in Python) that records data into the \msprime{} Tables API (see below).
+In these simulations, $\mu$ and $r$ define a per-base-pair mutation rate and we
+defined the length of the simulated sequence, in base pairs, as $L = \tfrac{\rho}{4N \mu}$.
+We varied $N \in (1000, 10000)$, $\rho \in (10^3, 10^4)$.
+
+
 % Comparison of simulation with/without msprime, using \simupop{}
 % or maybe just a simple haploid simulation with 1000 QTL and stabilizing selection on a trait (say).
 % 
