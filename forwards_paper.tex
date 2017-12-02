@@ -141,9 +141,14 @@ simply laying down neutral mutations on top of that history afterwards
 is equivalent to having generated them during the simulation.
 Precisely, we would need to know the genealogical tree relating all sampled individuals
 at each position along the genome.
+This basic insight has already led development of specialized forward simulators
+(e.g., ~\citet{forwsim}, ``Ancestry aware forward in time simulator" (anafits))
+that track only recombination and neutral haplotypes.
+
 In this paper, we describe how algorithmic tools and data structures developed for the
 coalescent simulator \msprime{}
-can be used to efficiently record, and later process, this history.
+can be used to efficiently record, and later process, this history with
+\emph{any} forward-time simulator.
 In so doing we record the \emph{population pedigree} --
 the complete history of parent-offspring relationships of an entire population
 going back to a remote time including the genetic outcomes of each ancestral
