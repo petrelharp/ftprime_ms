@@ -213,8 +213,8 @@ before_time = time.process_time()
 init_geno=[sim.InitGenotype(freq=1.0)]
 
 pop = sim.Population(
-        size=[args.popsize]*npops, 
-        loci=[args.nloci], 
+        size=[args.popsize]*npops,
+        loci=[args.nloci],
         lociPos=locus_position,
         infoFields=['ind_id', 'fitness'])
 
@@ -245,8 +245,9 @@ nselloci = int(args.sel_mut_rate / (args.mut_rate + args.sel_mut_rate))
 selected_loci = random.sample(locus_position, nselloci)
 neutral_loci = list(set(locus_position) - set(selected_loci))
 if args.record_neutral:
-    pre_ops += [sim.SNPMutator(u=args.mut_rate, v=args.mut_rate,
-                               loci=neutral_loci)]
+    if args.mut_rate > 0.0:
+        pre_ops += [sim.SNPMutator(u=args.mut_rate, v=args.mut_rate,
+                                   loci=neutral_loci)]
     mating_ops += [sim.Recombinator(rates=args.recomb_rate,
                                     infoFields="ind_id")]
 elif not args.record_neutral:
@@ -256,19 +257,19 @@ elif not args.record_neutral:
     post_ops += [sim.PyOperator(
         lambda pop: rc.simplify(pop.indInfo("ind_id")) or True,
         step=args.simplify_interval)]
+if args.sel_mut_rate > 0.0:
+    pre_ops += [sim.SNPMutator(u=args.sel_mut_rate, v=args.sel_mut_rate),
+                #                   loci=selected_loci),
+                # so that selector returns, for f_i fitness values, \prod_i f_i
+                sim.PyMlSelector(GammaDistributedFitness(shape=args.gamma_shape,
+                                                         scale=args.gamma_scale,
+                                                         popsize=args.popsize),
+                                 mode=sim.MULTIPLICATIVE, loci=selected_loci)]
 pop.evolve(
     initOps=[
         sim.InitSex(),
     ]+init_geno,
-    preOps=pre_ops + [
-        sim.SNPMutator(u=args.sel_mut_rate, v=args.sel_mut_rate),
-        #                   loci=selected_loci),
-        # so that selector returns, for f_i fitness values, \prod_i f_i
-        sim.PyMlSelector(GammaDistributedFitness(shape=args.gamma_shape,
-                                                 scale=args.gamma_scale,
-                                                 popsize=args.popsize),
-                         mode=sim.MULTIPLICATIVE, loci=selected_loci),
-    ],
+    preOps=pre_ops,
     matingScheme=sim.RandomMating(ops= mating_ops),
     postOps=post_ops,
     gen = args.generations
