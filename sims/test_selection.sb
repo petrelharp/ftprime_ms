@@ -1,0 +1,26 @@
+#!/bin/bash
+#
+#SBATCH --job-name=without_neutral
+#SBATCH --output=log_%A_%a.log
+#
+#SBATCH --time=2:00:00
+#SBATCH --nodes=1
+#SBATCH --tasks=1
+#SBATCH --mem-per-cpu=4000
+#SBATCH --mail-type=END         # Type of email notification- BEGIN,END,FAIL,ALL
+#SBATCH --array=0-1
+
+module use /projects/apps/shared/modulefiles
+module load python3 simuPOP2 bright/7.3 hdf5_18 msprime/0.4.1.dev742+gd6ec1e0 ftprime/0.0.6.dev
+
+cd ${SLURM_SUBMIT_DIR}
+
+declare -a PDEL=(0.0 0.01)
+pdel=${PDEL[${SLURM_ARRAY_TASK_ID}]}
+N=1000
+size=1000
+GC=1000
+TIME_MEM_FILE=time_arg.N$N"."size$size"."$pdel".out"
+DETAILED_TIME_FILE=simupop_detailed_time_arg.N$N"."size$size"."$pdel".out.gz"
+LOG_FILE=simupop_log_arg.N$N"."size$size"."${pdel}".log"
+srun /usr/bin/time -f "%e %M" -o $TIME_MEM_FILE python3 benchmark-simuPOP.py --popsize $N --theta $size --rho $size --nsam 100 --pdel $pdel --gc $GC --outfile1 $DETAILED_TIME_FILE --logfile $LOG_FILE --seed 42
