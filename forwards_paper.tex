@@ -194,9 +194,7 @@ Finally, we analyze the run time and space complexity of our general-purpose met
 %%%%%%
 \subsection*{Simulation benchmarks}
 
-To measure the performance gains from recording the pedigree we ran simulations with and
-without recording, for both implementations (\simupop{} \citep{simupop}
-and \fwdpp{} \citep{fwdpp}, as described below).
+To measure the performance gains from recording the pedigree we ran simulations both with and without recording.
 All simulations implemented a discrete-time Wright-Fisher population of diploid
 population size $N$, simulated for $10N$ generations.
 The simulations without pedigree recording introduced neutral mutations at a rate 
@@ -219,6 +217,25 @@ frequencies.  The case of many mutations with selection is a non-trivial violati
 coalescent \citep{Neuhauser1997-nn}.  Therefore, these selected mutations must be explicitly tracked in our forward simulation
 and the time savings due to pedigree recording come from not having to record \textit{neutral} mutations.
 
+To demonstrate the method's flexibility and to test it in different contexts,
+we implemented these simulations separately using two different simulation engines:
+\begin{enumerate}
+
+    \item 
+        In C++, using \fwdpp{} library functions and interface code (details below),
+        using a continuum-sites model for both mutation and recombination.
+        % $\mu$ and $r$ were the means of Poisson processes,
+        % and mutations used the infinite-sites model \citep{Kimura1969-uc}.
+        % We varied $N \in (1000, 10000, 50000)$, $\rho \in (10^3, 10^4, 10^5)$.
+
+    \item 
+        In Python, using the \simupop{} library interfacing with a custom Python library (\ftprime{}),
+        using a discrete but large number of sites.
+        % $\mu$ and $r$ define per-base-pair mutation rate and we
+        % defined the length of the simulated sequence, in base pairs, as $L = \tfrac{\rho}{4N \mu}$.
+        % We varied $N \in (1000, 10000)$, $\rho \in (10^3, 10^4)$.
+
+\end{enumerate}
 
 We ran all benchmarks on an Ubuntu Linux (version 16.04) system with two 2.6 Gigahertz Intel E5-2650 CPU with
 hyperthreading enabled.  
@@ -227,25 +244,8 @@ We used GNU parallel \citep{Tange2011a} to kill any simulation that did not fini
 and the Linux \texttt{time} command to record run time and peak memory usage of each replicate.
 Our simulation scripts separately recorded the time spent in various steps of each run.
 
-\subsubsection*{The \fwdpp{} implementation}
 
-We implemented Wright-Fisher simulations in C++ using \fwdpp{} library
-functions and interface code that records data into the \msprime{} Tables API (see below).
-In these simulations, $\mu$ and $r$ are the means of a Poisson process and we used the infinitely-many sites mutation model
-\citep{Kimura1969-uc}.
-We varied $N \in (1000, 10000, 50000)$, $\rho \in (10^3, 10^4, 10^5)$.
-
-\plr{Perhaps implementations should go below in Methods?}
 \plr{Insert figures/tables of performance here and describe them.}
-
-\subsubsection*{The \simupop{} implementation}
-
-We implemented Wright-Fisher simulations in Python using \simupop{} library
-functions (which wrap C++ code) and interface code (\ftprime{}, also in Python) that records data into the \msprime{} Tables API (see below).
-In these simulations, $\mu$ and $r$ define a per-base-pair mutation rate and we
-defined the length of the simulated sequence, in base pairs, as $L = \tfrac{\rho}{4N \mu}$.
-We varied $N \in (1000, 10000)$, $\rho \in (10^3, 10^4)$.
-
 
 % Comparison of simulation with/without msprime, using \simupop{}
 % or maybe just a simple haploid simulation with 1000 QTL and stabilizing selection on a trait (say).
@@ -299,11 +299,6 @@ who were born one and two units of time in the past, respectively.
         The right-hand panels show the specific encoding
         of this tree sequence in the four tables (nodes, edges, sites and mutations)
         defined by \msprime.
-        \plr{Whoops!  Genotypes in the second tree should be `GGC'}
-        \jk{Some minor alignment issues present here.}
-        \plr{turns out this is no fun to edit in inkscape.
-            I can re-make to match the other figs
-            but will leave alone for now: it's good!}
         \label{fig:example_tree_sequence}
     }
 \end{figure}
@@ -741,7 +736,7 @@ as shown in Figure~\ref{fig:simplify_complexity}.
         as a function of number of generations.
         Each line is one simulation, the black line gives the average,
         and the dotted line is the upper bound of equation \eqref{eqn:edge_bound}.
-        \plr{Propose to add other figures as subfigures here:}
+        \plr{Propose to add other figures as subfigures here; but better than this.}
         \textbf{(B)}
         Time required to simplify the first $k$ edges
         of \plr{what tree sequence?},
@@ -954,7 +949,7 @@ Funding for this project came from XXX
 \section{Simplification algorithm}
 \label{ss:simplify_algorithm}
 
-\plr{Replace this with Jerome's implementation.}
+\plr{Replace this with Jerome's interval-tree implementation?}
 
 Here we describe the simplification algorithm.
 The flow is close to our implementation,
