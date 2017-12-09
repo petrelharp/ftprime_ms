@@ -48,7 +48,6 @@
         Peter L. Ralph}
 \maketitle
 
-\emph{Note:} author order not determined
 
 
 \begin{abstract}
@@ -634,7 +633,7 @@ Crucially, the time required to run the algorithm is
 linear in the number of edges of the input tree sequence.
 
 %%%%%%%%%%%%%%
-\subsection*{Sequential simplification and prior history}
+\subsubsection*{Sequential simplification and prior history}
 
 Any simulation scheme that records data into tables, 
 as does Algorithm~\algref{W},
@@ -657,6 +656,9 @@ to keep memory usage down.
 %%%%%%%%%%%%
 \subsubsection*{Estimates of run-time complexity}
 
+\plr{Refer to simulation results here.}
+
+%% Memory reduction thanks to simplification
 Consider a simulation of a Wright-Fisher population of $2N$ haploid individuals
 using Algorithm~\algref{W} for $T$ generations,
 with simplify interval $s = 1$ so that redundant information is removed after every generation.
@@ -685,6 +687,7 @@ With $T=20N$, this reduces the initial storage of $120 N^2$ items to
 $6N + 32 N \log(2N)$;
 at $N=10^4$, a factor of 3,700.
 
+%% Progressive memory reduction as a function of T
 To get an idea of how required space depends on the length of time between simplification steps,
 suppose instead that we have run a simulation of $2N$ individuals for $T$ generations,
 begun with no prior history.
@@ -707,27 +710,41 @@ leads to an upper bound on the number of edges of
     2 N \left( 1 + 4 \log\left( \frac{NT}{T + 2 N} \right)\right) .
 \end{align}
 This holds up quite well in practice,
-as shown in Figure~\ref{fig:num_edges}.
+as shown in Figure~\ref{fig:simplify_complexity}.
 % by comparison to
 % the number of edges actually required for 50 independent Wright--Fisher simulations,
 % as a function of time (obtained from Algorithm~\algref{W} with $s=1$)
-% is shown in Figure~\ref{fig:num_edges}, compared to this prediction.
+% is shown in Figure~\ref{fig:simplify_complexity}, compared to this prediction.
 
 \begin{figure}
     \begin{center}
         \includegraphics{sims/num_edges_50}
+        \includegraphics{sims/simplify_timings}
     \end{center}
     \caption{
+        \textbf{(A)}
         Number of edges in the simplified tree sequence
         for 50 Wright--Fisher simulations begun with no prior history,
         as a function of number of generations.
         Each line is one simulation, the black line gives the average,
         and the dotted line is the upper bound of equation \eqref{eqn:edge_bound}.
-        \label{fig:num_edges}
+        \plr{Propose to add other figures as subfigures here:}
+        \textbf{(B)}
+        Time required to simplify the first $k$ edges
+        of \plr{what tree sequence?},
+        plotted against $k$.
+        \textbf{(C)}
+        Time required to simplify
+        \plr{what tree sequence?}
+        down to a sample of size $n$,
+        plotted against $n$
+        (note the log scale;
+        the time scales logarithmically with $n$).
+        \label{fig:simplify_complexity}
     }
 \end{figure}
 
-
+%% Above was edges; same holds for memory usage savings due to mutations
 If we were to add mutations in forwards time
 under the infinite-sites model with total mutation rate per generation $\mu$,
 there would also be around $\mu 2NT$ mutations (and the same number of sites).
@@ -736,6 +753,25 @@ adding them after simplification results in only around $\mu 4 N \log(2N)$ mutat
 and the same savings as we obtained from edges above,
 even without considering the 
 computational burden of propagating mutations forwards across generations.
+
+
+%% simplify run time
+Above we have described memory requirements;
+how does the computation time required for simplification scale?
+Simply because it must process each edge,
+the simplification algorithm is linear in the number of edges of the input tree sequence.
+This is seen in Figure~\ref{fig:simplify_complexity}X,
+where we show shows the time required to simplify increasingly large subsets of a large tree sequence.
+When simplifying the result of a forwards-time sequence, the number of edges is the main contributing factor.
+Suppose on the other hand we want to 
+simplify an already-minimal but large tree sequence with $N$ nodes
+to a subsample of size $n$.
+How does the required time scale with $n$?
+In this case, the computation is dominated by the size of the output tree sequence,
+which grows with $\log(n)$.
+this is also seen in Figure~\ref{fig:simplify_complexity}X,
+showing the time required to simplify progressively larger subsets of a single large tree sequence.
+
 
 Our method stores genealogies, and so records substantially more information
 than would a method only recording genotypes.
@@ -746,7 +782,9 @@ A typical individual differs at around $2 N \mu$ sites from the population's con
 so propagating these to offspring by simple copying will take $4 N^2 \mu$ operations per generation.
 On the other hand, 
 in our scheme we must store $13N$ quantities per generation (two edges and one node per individual).
-The simplification algorithm is linear in the number of edges of the input tree sequence,
+\plr{XXX}
+The simplification algorithm is linear in the number of edges of the input tree sequence
+(because it must process each edge),
 and so multiplies this by a constant factor.
 This implies that propagating neutral genotypes for $T$ generations has time complexity $O(\mu T N^2)$,
 while our implementation is only $O(T N \log(2N))$.
@@ -851,6 +889,7 @@ The \msprime{} API provides a method to compute $\pi$ among arbitrary subsets of
 samples in a tree sequence, which took about 1.2 seconds
 applied to the example tree sequence above with 1.1 million mutations
 in 200 megabases for 500,000 samples.
+Calculating $\pi$ from the numeric genotype matrix using numpy took \plr{HOW MANY} seconds.
 
 Another attractive feature of this set of tools
 is that it makes it easy to incorporate \emph{prior history},
