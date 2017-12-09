@@ -28,5 +28,5 @@ clean:
 %.pdf : %.ink.svg
 	inkscape $< --export-pdf=$@
 
-example_tree_sequence.pdf: example_tree_sequence.asy
-	asy -f pdf example_tree_sequence.asy
+%.pdf: %.asy
+	asy -f pdf $<
