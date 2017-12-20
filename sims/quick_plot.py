@@ -16,7 +16,7 @@ for x in sorted(data.N.unique()):
     colors[x] = lcolors[i]
     i = i + 1
 
-groups = data.groupby(['engine', 'arg', 'queue', 'N'])
+groups = data.groupby(['engine', 'arg', 'queue', 'sel', 'N'])
 fig, (ax_fwdpp, ax_fwdpp_arg, ax_simupop) = plt.subplots(
     3, sharex=True, sharey=True)
 # ax.margins(0.05) # Optional, just adds 5% padding to the autoscaling
@@ -44,7 +44,7 @@ ax_fwdpp_arg.set_title("fwdpy11 with ancestry tracking")
 ax_fwdpp_arg.set_ylabel("Run time (hours)")
 ax_simupop.set_title("simuPOP with ancestry tracking")
 ax_simupop.set_xlabel('Scaled recmbination rate (' + r'$\rho = 4Nr$)')
-ax_simupop.set_xticks([1e3,1e4,1e5])
+ax_simupop.set_xticks([1e3, 1e4, 1e5])
 # ax.set_yscale("log")
 # plt.legend(bbox_to_anchor=(1.05, 1), loc=2)
 plt.tight_layout()
@@ -66,7 +66,7 @@ for name, group in groups:
         lstyle = 'dashed'
         mfacecolor = 'none'
     popsize = int(name[3])
-    ax.plot(group.rho, group.mem/(1024.**2.), marker=m,
+    ax.plot(group.rho, group.mem / (1024.**2.), marker=m,
             ms=6, linestyle=lstyle, label=r'$N = {}$'.format(popsize),
             color=colors[name[3]],
             markerfacecolor=mfacecolor)
@@ -77,7 +77,7 @@ ax_fwdpp_arg.set_title("fwdpy11 with ancestry tracking")
 ax_fwdpp_arg.set_ylabel("Peak RAM use (Gigabytes)")
 ax_simupop.set_title("simuPOP with ancestry tracking")
 ax_simupop.set_xlabel('Scaled recmbination rate (' + r'$\rho = 4Nr$)')
-ax_simupop.set_xticks([1e3,1e4,1e5])
+ax_simupop.set_xticks([1e3, 1e4, 1e5])
 # ax.set_yscale("log")
 # plt.legend(bbox_to_anchor=(1.05, 1), loc=2)
 plt.tight_layout()
