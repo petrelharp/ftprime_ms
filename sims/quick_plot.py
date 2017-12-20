@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -9,6 +11,7 @@ fp11['engine'] = ['fwdpy11'] * len(fp11.index)
 
 data = pd.concat([spop, fp11])
 
+print(data.N.unique())
 lcolors = ['black', 'green', 'blue']
 colors = {}
 i = 0
@@ -28,14 +31,14 @@ for name, group in groups:
     m = 'o'
     if name[0] == 'simuPOP':
         ax = ax_simupop
-    mfacecolor = colors[name[3]]
+    mfacecolor = colors[name[4]]
     if name[2] is True:
         lstyle = 'dashed'
         mfacecolor = 'none'
-    popsize = int(name[3])
+    popsize = int(name[4])
     ax.plot(group.rho, group.time / (60.**2.), marker=m,
             ms=6, linestyle=lstyle, label=r'$N = {}$'.format(popsize),
-            color=colors[name[3]],
+            color=colors[name[4]],
             markerfacecolor=mfacecolor)
 
 ax_fwdpp.legend(loc='best')
@@ -61,14 +64,14 @@ for name, group in groups:
     m = 'o'
     if name[0] == 'simuPOP':
         ax = ax_simupop
-    mfacecolor = colors[name[3]]
+    mfacecolor = colors[name[4]]
     if name[2] is True:
         lstyle = 'dashed'
         mfacecolor = 'none'
-    popsize = int(name[3])
+    popsize = int(name[4])
     ax.plot(group.rho, group.mem / (1024.**2.), marker=m,
             ms=6, linestyle=lstyle, label=r'$N = {}$'.format(popsize),
-            color=colors[name[3]],
+            color=colors[name[4]],
             markerfacecolor=mfacecolor)
 
 ax_fwdpp.legend(loc='best')
