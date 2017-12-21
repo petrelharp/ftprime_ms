@@ -59,6 +59,7 @@ ax_simupop.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
 ax_simupop_arg.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
 ax_simupop_arg.set_xticks([1e3, 1e4, 1e5])
 for ax in (ax_simupop, ax_simupop_arg):
+    ax.set_xscale('log')
     for tick in ax.get_xticklabels():
         tick.set_rotation(45)
     # ax.ticklabel_format(style='sci', axis='x', scilimits=(-3,0))
