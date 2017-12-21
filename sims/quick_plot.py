@@ -14,7 +14,7 @@ data = pd.concat([spop, fp11])
 
 cmap = matplotlib.cm.get_cmap('viridis')
 #lcolors = ['black', 'green', 'blue']
-lcolors = [cmap(0.25),cmap(0.5),cmap(0.75)]
+lcolors = [cmap(0.25), cmap(0.5), cmap(0.75)]
 colors = {}
 i = 0
 for x in sorted(data.N.unique()):
@@ -26,7 +26,7 @@ data = data[data['sel'] == True]
 data.sort_values(by='rho', inplace=True)
 groups = data.groupby(['engine', 'arg', 'queue', 'N'])
 fig, ((ax_fwdpp, ax_fwdpp_arg), (ax_simupop, ax_simupop_arg)) = plt.subplots(
-    2,2, sharex=True, sharey=True)
+    2, 2, sharex=True, sharey=True)
 for name, group in groups:
     lstyle = 'solid'
     if name[0] == 'fwdpy11' and name[1] is False:
@@ -65,7 +65,7 @@ for ax in (ax_simupop, ax_simupop_arg):
     # ax.ticklabel_format(style='sci', axis='x', scilimits=(-3,0))
 # ax.set_yscale("log")
 # plt.legend(bbox_to_anchor=(1.05, 1), loc=2)
-#plt.xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
+# plt.xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
 fig.tight_layout()
 # plt.ticklabel_format(style='sci', axis='x', scilimits=(0,2))
 plt.savefig("rawspeed.pdf")
