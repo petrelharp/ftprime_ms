@@ -50,12 +50,12 @@ for name, group in groups:
             markerfacecolor=mfacecolor)
 
 ax_fwdpp.legend(loc='best')
-ax_fwdpp.set_title("fwdpy11 with neutral mutations",fontsize='medium')
-ax_fwdpp_arg.set_title("fwdpy11 with ancestry tracking",fontsize='medium')
+ax_fwdpp.set_title("fwdpy11 with neutral mutations", fontsize='medium')
+ax_fwdpp_arg.set_title("fwdpy11 with ancestry tracking", fontsize='medium')
 ax_simupop.set_ylabel("Run time (hours)")
 ax_fwdpp.set_ylabel("Run time (hours)")
-ax_simupop.set_title("simuPOP with neutral mutations",fontsize='medium')
-ax_simupop_arg.set_title("simuPOP with ancestry tracking",fontsize='medium')
+ax_simupop.set_title("simuPOP with neutral mutations", fontsize='medium')
+ax_simupop_arg.set_title("simuPOP with ancestry tracking", fontsize='medium')
 ax_simupop.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
 ax_simupop_arg.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
 ax_simupop_arg.set_xticks([1e3, 1e4, 1e5])
@@ -98,8 +98,8 @@ for name, group in groups:
 
 for ax in (ax_fwdpp, ax_simupop):
     ax.set_ylabel("Speedup due to\nARG tracking")
-ax_fwdpp.set_title("fwdpy11",fontsize='medium')
-ax_simupop.set_title("simuPOP",fontsize='medium')
+ax_fwdpp.set_title("fwdpy11", fontsize='medium')
+ax_simupop.set_title("simuPOP", fontsize='medium')
 ax_simupop.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
 ax_simupop.set_xscale('log')
 # for tick in ax_simupop.get_xticklabels():
@@ -111,7 +111,7 @@ fig.tight_layout()
 plt.savefig("speedup.pdf")
 
 # Now, plots for sims w/o selection
-data_neut.sort_values(by='rho',inplace=True)
+data_neut.sort_values(by='rho', inplace=True)
 groups = data_neut.groupby(['engine', 'arg', 'queue', 'N'])
 fig, ((ax_fwdpp, ax_fwdpp_arg), (ax_simupop, ax_simupop_arg)) = plt.subplots(
     2, 2, sharex=True, sharey=True)
@@ -138,12 +138,12 @@ for name, group in groups:
             markerfacecolor=mfacecolor)
 
 ax_fwdpp.legend(loc='upper left')
-ax_fwdpp.set_title("fwdpy11 with neutral mutations",fontsize='medium')
-ax_fwdpp_arg.set_title("fwdpy11 with ancestry tracking",fontsize='medium')
+ax_fwdpp.set_title("fwdpy11 with neutral mutations", fontsize='medium')
+ax_fwdpp_arg.set_title("fwdpy11 with ancestry tracking", fontsize='medium')
 ax_simupop.set_ylabel("Run time (hours)")
 ax_fwdpp.set_ylabel("Run time (hours)")
-ax_simupop.set_title("simuPOP with neutral mutations",fontsize='medium')
-ax_simupop_arg.set_title("simuPOP with ancestry tracking",fontsize='medium')
+ax_simupop.set_title("simuPOP with neutral mutations", fontsize='medium')
+ax_simupop_arg.set_title("simuPOP with ancestry tracking", fontsize='medium')
 ax_simupop.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
 ax_simupop_arg.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
 ax_simupop_arg.set_xticks([1e3, 1e4, 1e5])
@@ -158,4 +158,3 @@ for ax in (ax_simupop, ax_simupop_arg):
 fig.tight_layout()
 # plt.ticklabel_format(style='sci', axis='x', scilimits=(0,2))
 plt.savefig("rawspeed_nosel.pdf")
-
