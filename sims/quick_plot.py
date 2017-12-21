@@ -158,3 +158,40 @@ for ax in (ax_simupop, ax_simupop_arg):
 fig.tight_layout()
 # plt.ticklabel_format(style='sci', axis='x', scilimits=(0,2))
 plt.savefig("rawspeed_nosel.pdf")
+
+# Relative speedup for sims w/o selection
+data_arg = data_neut[(data_neut['arg'] == True) & (data_neut['queue'] == False)].copy()
+data_noarg = data_neut[(data_neut['arg'] == False) & (data_neut['queue'] == False)].copy()
+joined = data_arg.merge(data_noarg, on=[
+                        'engine', 'N', 'rho'], how='outer', suffixes=('_arg', '_noarg')).dropna()
+joined['speedup'] = joined['time_noarg'] / joined['time_arg']
+groups = joined.groupby(['engine', 'N'])
+fig, (ax_fwdpp, ax_simupop) = plt.subplots(
+    2,  sharex=True, sharey=True)
+for name, group in groups:
+    lstyle = 'solid'
+    if name[0] == 'fwdpy11':
+        ax = ax_fwdpp
+    m = 'o'
+    if name[0] == 'simuPOP':
+        ax = ax_simupop
+    mfacecolor = colors[name[1]]
+    popsize = int(name[1])
+    ax.plot(group.rho, group.speedup, marker=m,
+            ms=4, linestyle=lstyle, label=r'$N = {:.0e}$'.format(popsize),
+            color=colors[name[1]],
+            markerfacecolor=mfacecolor)
+
+for ax in (ax_fwdpp, ax_simupop):
+    ax.set_ylabel("Speedup due to\nARG tracking")
+ax_fwdpp.set_title("fwdpy11", fontsize='medium')
+ax_simupop.set_title("simuPOP", fontsize='medium')
+ax_simupop.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
+ax_simupop.set_xscale('log')
+# for tick in ax_simupop.get_xticklabels():
+#     tick.set_rotation(45)
+
+
+ax_fwdpp.legend(loc='best')
+fig.tight_layout()
+plt.savefig("speedup_nosel.pdf")
