@@ -19,7 +19,7 @@ for i in files:
     SEL = True
     if re.search('all_neutral', i):
         SEL = False
-        if re.search('with', i) is False:
+        if re.search('neutral_all_neutral', i):
             ARG = False
     else:
         if re.search('with', i):
