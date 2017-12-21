@@ -24,6 +24,8 @@ for i in files:
     else:
         if re.search('with', i):
             ARG = False
+        if re.search('time_neutral.',i):
+            ARG = False
         if re.search('queue', i):
             Q = True
 
