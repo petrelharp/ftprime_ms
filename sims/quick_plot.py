@@ -19,7 +19,9 @@ for x in sorted(data.N.unique()):
     colors[x] = lcolors[i]
     i = i + 1
 
-groups = data.groupby(['engine', 'arg', 'queue', 'sel', 'N'])
+
+data=data[data['sel'] == True]
+groups = data.groupby(['engine', 'arg', 'queue', 'N'])
 fig, (ax_fwdpp, ax_fwdpp_arg, ax_simupop) = plt.subplots(
     3, sharex=True, sharey=True)
 # ax.margins(0.05) # Optional, just adds 5% padding to the autoscaling
@@ -31,14 +33,14 @@ for name, group in groups:
     m = 'o'
     if name[0] == 'simuPOP':
         ax = ax_simupop
-    mfacecolor = colors[name[4]]
+    mfacecolor = colors[name[3]]
     if name[2] is True:
         lstyle = 'dashed'
         mfacecolor = 'none'
-    popsize = int(name[4])
+    popsize = int(name[3])
     ax.plot(group.rho, group.time / (60.**2.), marker=m,
             ms=6, linestyle=lstyle, label=r'$N = {}$'.format(popsize),
-            color=colors[name[4]],
+            color=colors[name[3]],
             markerfacecolor=mfacecolor)
 
 ax_fwdpp.legend(loc='best')
@@ -64,14 +66,14 @@ for name, group in groups:
     m = 'o'
     if name[0] == 'simuPOP':
         ax = ax_simupop
-    mfacecolor = colors[name[4]]
+    mfacecolor = colors[name[3]]
     if name[2] is True:
         lstyle = 'dashed'
         mfacecolor = 'none'
-    popsize = int(name[4])
+    popsize = int(name[3])
     ax.plot(group.rho, group.mem / (1024.**2.), marker=m,
             ms=6, linestyle=lstyle, label=r'$N = {}$'.format(popsize),
-            color=colors[name[4]],
+            color=colors[name[3]],
             markerfacecolor=mfacecolor)
 
 ax_fwdpp.legend(loc='best')
