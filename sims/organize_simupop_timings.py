@@ -17,14 +17,14 @@ for i in files:
     ARG = True
     Q = False
     SEL = True
-    if re.search('all_neutral', i):
+    if re.search('all_neutral', i) is not None:
         SEL = False
-        if re.search('with', i) is False:
+        if re.search('arg', i) is None:
             ARG = False
     else:
         if re.search('with', i):
             ARG = False
-        if re.search('time_neutral.',i):
+        if re.search('time_neutral.', i):
             ARG = False
         if re.search('queue', i):
             Q = True
