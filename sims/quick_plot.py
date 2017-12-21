@@ -137,7 +137,7 @@ for name, group in groups:
             color=colors[name[3]],
             markerfacecolor=mfacecolor)
 
-ax_fwdpp.legend(loc='best')
+ax_fwdpp.legend(loc='upper left')
 ax_fwdpp.set_title("fwdpy11 with neutral mutations",fontsize='medium')
 ax_fwdpp_arg.set_title("fwdpy11 with ancestry tracking",fontsize='medium')
 ax_simupop.set_ylabel("Run time (hours)")
