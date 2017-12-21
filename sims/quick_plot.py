@@ -61,14 +61,7 @@ ax_simupop_arg.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
 ax_simupop_arg.set_xticks([1e3, 1e4, 1e5])
 for ax in (ax_simupop, ax_simupop_arg):
     ax.set_xscale('log')
-#     for tick in ax.get_xticklabels():
-#         tick.set_rotation(45)
-    # ax.ticklabel_format(style='sci', axis='x', scilimits=(-3,0))
-# ax.set_yscale("log")
-# plt.legend(bbox_to_anchor=(1.05, 1), loc=2)
-# plt.xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
 fig.tight_layout()
-# plt.ticklabel_format(style='sci', axis='x', scilimits=(0,2))
 plt.savefig("rawspeed.pdf")
 
 # Plot the relative speedup due to ARG tracking for the sims with selection
@@ -102,10 +95,6 @@ ax_fwdpp.set_title("fwdpy11", fontsize='medium')
 ax_simupop.set_title("simuPOP", fontsize='medium')
 ax_simupop.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
 ax_simupop.set_xscale('log')
-# for tick in ax_simupop.get_xticklabels():
-#     tick.set_rotation(45)
-
-
 ax_fwdpp.legend(loc='best')
 fig.tight_layout()
 plt.savefig("speedup.pdf")
@@ -149,19 +138,14 @@ ax_simupop_arg.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
 ax_simupop_arg.set_xticks([1e3, 1e4, 1e5])
 for ax in (ax_simupop, ax_simupop_arg):
     ax.set_xscale('log')
-#     for tick in ax.get_xticklabels():
-#         tick.set_rotation(45)
-    # ax.ticklabel_format(style='sci', axis='x', scilimits=(-3,0))
-# ax.set_yscale("log")
-# plt.legend(bbox_to_anchor=(1.05, 1), loc=2)
-# plt.xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
 fig.tight_layout()
-# plt.ticklabel_format(style='sci', axis='x', scilimits=(0,2))
 plt.savefig("rawspeed_nosel.pdf")
 
 # Relative speedup for sims w/o selection
-data_arg = data_neut[(data_neut['arg'] == True) & (data_neut['queue'] == False)].copy()
-data_noarg = data_neut[(data_neut['arg'] == False) & (data_neut['queue'] == False)].copy()
+data_arg = data_neut[(data_neut['arg'] == True) &
+                     (data_neut['queue'] == False)].copy()
+data_noarg = data_neut[(data_neut['arg'] == False) &
+                       (data_neut['queue'] == False)].copy()
 joined = data_arg.merge(data_noarg, on=[
                         'engine', 'N', 'rho'], how='outer', suffixes=('_arg', '_noarg')).dropna()
 joined['speedup'] = joined['time_noarg'] / joined['time_arg']
@@ -188,10 +172,6 @@ ax_fwdpp.set_title("fwdpy11", fontsize='medium')
 ax_simupop.set_title("simuPOP", fontsize='medium')
 ax_simupop.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
 ax_simupop.set_xscale('log')
-# for tick in ax_simupop.get_xticklabels():
-#     tick.set_rotation(45)
-
-
 ax_fwdpp.legend(loc='best')
 fig.tight_layout()
 plt.savefig("speedup_nosel.pdf")
