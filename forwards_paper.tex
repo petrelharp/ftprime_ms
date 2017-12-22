@@ -256,15 +256,6 @@ partially obscures an important observation that the run times appear approximat
 tracking.  The reason for this behavior is that the simulations are generating a constant number of new edges on average
 each generation, and the number of edges is a function of $\rho$ in expectation.
 
-We also performed a more limited set of simulations without natural selection.  The total run times are shown in
-Figure~\ref{sfig:rawspeed_nosel} and show the same qualitative behavior as simulations with selection
-(Figure~\ref{fig:runtimes_selection}).  The relative improvement due to pedigree tracking is again substantial in these
-simulations (Figure~\ref{sfig:speedup_nosel}).  In fact, we see more of a benefit to pedigree tracking here with \fwdpy{}
-than we did with selection (Figure~\ref{fig:relative_speedup_selection}).  The reason is that the fitness function exits
-close to instantly in simulations without selection that are based on \fwdpp{}, meaning that \fwdpy{} is doing little
-more than generating random numbers and book-keeping in Figures~\ref{sfig:rawspeed_nosel}
-and~\ref{sfig:speedup_nosel}.
-
 \begin{figure}
     \includegraphics[]{sims/rawspeed}
     \caption{\label{fig:runtimes_selection}Total run time for a single simulation replicate as a function of region
@@ -276,6 +267,16 @@ panels shows run times tracking the pedigree instead of the neutral mutations. T
 the results for an implementation using \fwdpy{} where the pedigree simplification steps were handled in a separate thread of
 execution and fitness calculations were parallelized.}
 \end{figure}
+
+We also performed a more limited set of simulations without natural selection.  The total run times are shown in
+Figure~\ref{sfig:rawspeed_nosel} and show the same qualitative behavior as simulations with selection
+(Figure~\ref{fig:runtimes_selection}).  The relative improvement due to pedigree tracking is again substantial in these
+simulations (Figure~\ref{sfig:speedup_nosel}).  In fact, we see more of a benefit to pedigree tracking here with \fwdpy{}
+than we did with selection (Figure~\ref{fig:relative_speedup_selection}).  The reason is that the fitness function exits
+close to instantly in simulations without selection that are based on \fwdpp{}, meaning that \fwdpy{} is doing little
+more than generating random numbers and book-keeping in Figures~\ref{sfig:rawspeed_nosel}
+and~\ref{sfig:speedup_nosel}.
+
 
 \begin{figure}
     \includegraphics[]{sims/speedup}
