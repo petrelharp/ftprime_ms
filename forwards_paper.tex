@@ -13,6 +13,7 @@
 \include{macros}
 \newcommand{\simupop}{\texttt{simuPOP}}
 \newcommand{\fwdpp}{\texttt{fwdpp}}
+\newcommand{\fwdpy}{\texttt{fwdpy11}}
 \newcommand{\msprime}{\texttt{msprime}}
 \newcommand{\ftprime}{\texttt{ftprime}}
 \newcommand{\nodes}{\texttt{nodes}}
@@ -240,10 +241,50 @@ Our simulation scripts separately recorded the time spent in various steps of ea
 
 \plr{Insert figures/tables of performance here and describe them.}
 
+The total run times for simulations with selection are shown in Figure~\ref{fig:runtimes_selection}.  When tracking
+neutral mutations (instead of the pedigree), run times increase dramatically with increasing region size ($4Nr = 4Nu$ for
+these simulations).  With \fwdpy{}, simulations with $N=5 \times 10^4$ timed out for region sizes larger than $10^3$.
+With \simupop{}, we were only able to run simulations with $N=10^3$ and region sizes up to $10^4$.  Pedigree tracking
+dramatically improves run times for both \fwdpy{} and \simupop{} (right column of Figure~\ref{fig:runtimes_selection}).  For parameters that ran to completion when tracking neutral mutations and when tracking
+the pedigree, the relative speedup due to pedigree tracking is up to $\approx 50$ fold (Figure~\ref{fig:relative_speedup_selection}).  For \fwdpy{}, pedigree tracking reduces runtimes more for larger population sizes
+(Figure~\ref{fig:relative_speedup_selection}).  We could not make such an observation with \simupop{}, which tended to
+run out of memory on our system.  Note the log scale of the x axis in Figure~\ref{fig:runtimes_selection}, which
+partially obscures an important observation that the run times appear approximately linear in region size when pedigree
+tracking.  The reason for this behavior is that the simulations are generating a constant number of new edges on average
+each generation, and the number of edges is a function of $\rho$ in expectation.
+
+We also performed a more limited set of simulations without natural selection.  The total run times are shown in
+Figure~\ref{sfig:rawspeed_nosel} and show the same qualitative behavior as simulations with selection
+(Figure~\ref{fig:runtimes_selection}).  The relative improvement due to pedigree tracking is again substantial in these
+simulations (Figure~\ref{sfig:speedup_nosel}).  In fact, we see more of a benefit to pedigree tracking here with \fwdpy{}
+than we did with selection (Figure~\ref{fig:relative_speedup_selection}).  The reason is that the fitness function exits
+close to instantly in simulations without selection that are based on \fwdpp{}, meaning that \fwdpy{} is doing little
+more than generating random numbers and book-keeping in Figures~\ref{sfig:rawspeed_nosel}
+and~\ref{sfig:speedup_nosel}.
+
+\begin{figure}
+    \includegraphics[]{sims/rawspeed}
+    \caption{\label{fig:runtimes_selection}Total run time for a single simulation replicate as a function of region
+        length, measured as the scaled recombination parameter $\rho = 4Nr$. The different colored lines represent
+        different diploid population sizes ($N$). The left column shows run times for
+        simulations including the tracking of neutral mutations.  Missing data points are due to either simulations
+    being killed at 72 hours or running out of memory (which only happened with \simupop{}).  The right column of
+panels shows run times tracking the pedigree instead of the neutral mutations. The dashed line in the upper right panel shows
+the results for an implementation using \fwdpy{} where the pedigree simplification steps were handled in a separate thread of
+execution and fitness calculations were parallelized.}
+\end{figure}
+
+\begin{figure}
+    \includegraphics[]{sims/speedup}
+    \caption{\label{fig:relative_speedup_selection}Relative performance improvement due to pedigree tracking. This figure
+    shows the ratio of the run time tracking neutral mutations over the run time tracking the pedigree. Data points are taken
+from Figure~\ref{fig:runtimes_selection} for simulations that ran to completion using both methods.}
+\end{figure}
+
 % Comparison of simulation with/without msprime, using \simupop{}
 % or maybe just a simple haploid simulation with 1000 QTL and stabilizing selection on a trait (say).
 %
-% Maybe an estimate of how long \emph{just} the ARG recording and simplification takes,
+% Maybe an estimate of how long \emph{just} the pedigree recording and simplification takes,
 % so that then we can say how fast the simulator would have to be to do $10^6$ whole chromosomes for $10^7$ generations
 % in a day.
 
@@ -1118,6 +1159,24 @@ and $z.\lid = u$ for the output node ID.
 
 \end{taocpalg}
 
+\newpage
+\clearpage
+\section*{Supplementary Information}
+\renewcommand{\thefigure}{S\arabic{figure}}
+\setcounter{figure}{0}
 
+\begin{figure}[!h]
+    \includegraphics[]{sims/rawspeed_nosel}
+    \caption{\label{sfig:rawspeed_nosel}Total run time for a single simulation replicate as a function of region
+        length, measured as the scaled recombination parameter $\rho = 4Nr$.  The simulations here involve no natural
+    selection.}
+\end{figure}
+
+\begin{figure}
+    \includegraphics[]{sims/speedup_nosel}
+    \caption{\label{sfig:speedup_nosel}Relative performance improvement due to pedigree tracking for simulations without
+    selection.  Data points are taken from Figure~\ref{sfig:rawspeed_nosel} and show the ratio of run times tracking
+neutral variation over the run times tracking the pedigree.}
+\end{figure}
 
 \end{document}
