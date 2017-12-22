@@ -246,9 +246,12 @@ neutral mutations (instead of the pedigree), run times increase dramatically wit
 these simulations).  With \fwdpy{}, simulations with $N=5 \times 10^4$ timed out for region sizes larger than $10^3$.
 With \simupop{}, we were only able to run simulations with $N=10^3$ and region sizes up to $10^4$.  Pedigree tracking
 dramatically improves run times for both \fwdpy{} and \simupop{} (right column of Figure~\ref{fig:runtimes_selection}).  For parameters that ran to completion when tracking neutral mutations and when tracking
-the pedigree, the relative speedup due to pedigree tracking is up to $\approx 50$ fold (Figure~\ref{fig:relative_speedup_selection}).  For \fwdpy{}, pedigree tracking reduces runtimes more for larger population sizes
-(Figure~\ref{fig:relative_speedup_selection}).  We could not make such an observation with \simupop{}, which tended to
-run out of memory on our system.  Note the log scale of the x axis in Figure~\ref{fig:runtimes_selection}, which
+the pedigree, the relative speedup due to pedigree tracking is up to $\approx 50$ fold
+(Figure~\ref{fig:relative_speedup_selection}).  For \fwdpy{}, pedigree tracking reduces runtimes more for larger
+population sizes and we observe increasing relative speedups as $4Nr$ increases
+(Figure~\ref{fig:relative_speedup_selection}).  We saw a similar trend with $4Nr$ for \simupop{}, but the effect of $N$
+could not be explored because the simulations tended to run out of available memory.
+  Note the log scale of the x axis in Figure~\ref{fig:runtimes_selection}, which
 partially obscures an important observation that the run times appear approximately linear in region size when pedigree
 tracking.  The reason for this behavior is that the simulations are generating a constant number of new edges on average
 each generation, and the number of edges is a function of $\rho$ in expectation.
