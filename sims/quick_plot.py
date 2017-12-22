@@ -74,7 +74,7 @@ joined = data_arg.merge(data_noarg, on=[
 joined['speedup'] = joined['time_noarg'] / joined['time_arg']
 groups = joined.groupby(['engine', 'N'])
 fig, (ax_fwdpp, ax_simupop) = plt.subplots(
-    2,  sharex=True, sharey=True)
+    2,  sharex=True, sharey=False)
 for name, group in groups:
     lstyle = 'solid'
     if name[0] == 'fwdpy11':
@@ -151,7 +151,7 @@ joined = data_arg.merge(data_noarg, on=[
 joined['speedup'] = joined['time_noarg'] / joined['time_arg']
 groups = joined.groupby(['engine', 'N'])
 fig, (ax_fwdpp, ax_simupop) = plt.subplots(
-    2,  sharex=True, sharey=True)
+    2,  sharex=True, sharey=False)
 for name, group in groups:
     lstyle = 'solid'
     if name[0] == 'fwdpy11':
