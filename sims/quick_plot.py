@@ -12,7 +12,7 @@ fp11['engine'] = ['fwdpy11'] * len(fp11.index)
 data = pd.concat([spop, fp11])
 
 cmap = matplotlib.cm.get_cmap('viridis')
-lcolors = [cmap(0.25), cmap(0.5), cmap(0.75)]
+lcolors = [cmap(0), cmap(125), cmap(cmap.N-25)]
 colors = {}
 i = 0
 for x in sorted(data.N.unique()):
