@@ -465,7 +465,7 @@ Given a node table $\Nt$, the function $\taddnode{\Nt, t}$
 adds a new node to the table $\Nt$ with time $t$
 and returns the ID of this new node.
 Similarly, the function $\taddedge{\Et, \ell, r, p, c}$
-adds a new edge $(\ell, r, p, c)$ to the edge table $\Et$.
+adds a new edge $(\ell\mathrm{eft}, r\mathrm{ight}, p\mathrm{arent}, c\mathrm{hild})$ to the edge table $\Et$.
 The function $\tsimplify{P, \Nt, \Et}$ (described in section \ref{ss:simplify})
 simplifies the history stored in the tables $\Nt$ and $\Et$
 to the minimal information required to represent the genealogies of the list of node IDs $P$;
