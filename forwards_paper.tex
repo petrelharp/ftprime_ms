@@ -198,11 +198,9 @@ diploid,
 respectively, each generation. 
 % Both mutations and recombinations occur as Poisson processes with respective means $\mu$ and $r$,
 % and we used the infinitely-many sites mutation model \citep{Kimura1969-uc}.
-We ran simulations with different values of $N$
-and of the \emph{scaled} parameter $\rho = 4Nr$,
-categorized by the value of $\rho$, since this
-is what most strongly determines run time
-(along with the scaled mutation rate, $\theta = 4N\mu$, which is also equal to $\rho$.)
+We ran simulations with different values of $N$ and varied the size of the region according to the scaled recombination
+parameter $\rho = 4Nr$.  When simulating neutral mutations, we kept the scaled mutation parameter, $\theta = 4N\mu$
+equal to $\rho$.
 
 Deleterious mutations were introduced at rate $\rho/100$ per generation, drawing scaled selection
 coefficients ($2Ns$)
