@@ -84,7 +84,7 @@ for name, group in groups:
     lstyle = 'solid'
     if name[0] == 'fwdpy11':
         ax = ax_fwdpp
-    m = 'o'
+    m = points[name[1]]
     if name[0] == 'simuPOP':
         ax = ax_simupop
     mfacecolor = colors[name[1]]
@@ -116,7 +116,7 @@ for name, group in groups:
     if name[0] == 'fwdpy11' and name[1] is True:
         print(group)
         ax = ax_fwdpp_arg
-    m = 'o'
+    m = points[name[3]]
     if name[0] == 'simuPOP':
         ax = ax_simupop
         if name[1] is True:
@@ -161,7 +161,7 @@ for name, group in groups:
     lstyle = 'solid'
     if name[0] == 'fwdpy11':
         ax = ax_fwdpp
-    m = 'o'
+    m = points[name[1]]
     if name[0] == 'simuPOP':
         ax = ax_simupop
     mfacecolor = colors[name[1]]
