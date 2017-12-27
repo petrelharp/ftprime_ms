@@ -144,7 +144,7 @@ is equivalent to having generated them during the simulation.
 Precisely, we would need to know the genealogical tree relating all sampled individuals
 at each position along the genome.
 In this paper, we describe how algorithmic tools and data structures developed for the
-coalescent simulator \msprime{} \citep{kelleher2016efficient}
+coalescent simulator \msprime{}
 can be used to efficiently record, and later process, this history.
 In so doing we record the \emph{population pedigree} --
 the complete history of parent-offspring relationships of an entire population
@@ -159,7 +159,7 @@ This is much more than we need to know, however,
 so we discard all information irrelevant to the genetic history
 of the extant population. We show that we need only $O(N \log N)$
 space to store the resulting tree sequence for a single crossover per
-generation Wright-Fisher model.
+generation under the Wright-Fisher model.
 
 In this paper we discuss storage methods for genealogies (and hence, genome sequence),
 an algorithm for simplifying these,
