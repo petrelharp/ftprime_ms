@@ -18,7 +18,12 @@ i = 0
 for x in sorted(data.N.unique()):
     colors[x] = lcolors[i]
     i = i + 1
-
+ptypes = ['o','^','x']
+points = {}
+i=0
+for x in sorted(data.N.unique()):
+    points[x] = ptypes[i]
+    i = i+1
 
 data_neut = data[data['sel'] == False].copy(deep=True)
 
@@ -29,12 +34,12 @@ groups = data.groupby(['engine', 'arg', 'queue', 'N'])
 fig, ((ax_fwdpp, ax_fwdpp_arg), (ax_simupop, ax_simupop_arg)) = plt.subplots(
     2, 2, sharex=True, sharey=True)
 for name, group in groups:
-    lstyle = 'solid'
+    lstyle = '-'
     if name[0] == 'fwdpy11' and name[1] is False:
         ax = ax_fwdpp
     if name[0] == 'fwdpy11' and name[1] is True:
         ax = ax_fwdpp_arg
-    m = 'o'
+    m = points[name[3]]
     if name[0] == 'simuPOP':
         ax = ax_simupop
         if name[1] is True:
