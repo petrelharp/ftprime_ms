@@ -54,7 +54,7 @@ for name, group in groups:
             color=colors[name[3]],
             markerfacecolor=mfacecolor)
 
-ax_fwdpp.legend(loc='best')
+ax_fwdpp.legend(loc='upper left',frameon=False)
 ax_fwdpp.set_title("fwdpy11 with neutral mutations", fontsize='medium')
 ax_fwdpp_arg.set_title("fwdpy11 with pedigree tracking", fontsize='medium')
 ax_simupop.set_ylabel("Run time (hours)")
@@ -100,7 +100,7 @@ ax_fwdpp.set_title("fwdpy11", fontsize='medium')
 ax_simupop.set_title("simuPOP", fontsize='medium')
 ax_simupop.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
 ax_simupop.set_xscale('log')
-ax_fwdpp.legend(loc='best')
+ax_fwdpp.legend(loc='best',frameon=False)
 fig.tight_layout()
 plt.savefig("speedup.pdf")
 
@@ -131,7 +131,7 @@ for name, group in groups:
             color=colors[name[3]],
             markerfacecolor=mfacecolor)
 
-ax_fwdpp.legend(loc='upper left')
+ax_fwdpp.legend(loc='upper left',frameon=False)
 ax_fwdpp.set_title("fwdpy11 with neutral mutations", fontsize='medium')
 ax_fwdpp_arg.set_title("fwdpy11 with pedigree tracking", fontsize='medium')
 ax_simupop.set_ylabel("Run time (hours)")
@@ -177,6 +177,6 @@ ax_fwdpp.set_title("fwdpy11", fontsize='medium')
 ax_simupop.set_title("simuPOP", fontsize='medium')
 ax_simupop.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
 ax_simupop.set_xscale('log')
-ax_fwdpp.legend(loc='best')
+ax_fwdpp.legend(loc='best',frameon=False)
 fig.tight_layout()
 plt.savefig("speedup_nosel.pdf")
