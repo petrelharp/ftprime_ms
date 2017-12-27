@@ -287,7 +287,19 @@ and~\ref{sfig:speedup_nosel}.
 from Figure~\ref{fig:runtimes_selection} for simulations that ran to completion using both methods.}
 \end{figure}
 
-\krt{I should discuss RAM use here}
+The peak RAM use in gigabytes (GB) is shown for the simulations with selection in Figure~\ref{sfig:ramsel} aand for the
+simulations without selection in Figure~\ref{sfig:ramnosel}.  The general picture is that pedigree tracking requires
+more RAM.  With \fwdpy{}/\fwdpp{}, the reason for this behavior is clear.  When pedigree tracking, a non-recombinant
+individual still requires one new edge and two new nodes to be allocated.  Without pedigree tracking, no new memory is
+allocated for such an offspring.  Thus, pedigree tracking accumulates a large amount of data in RAM until
+simplification.  This extra RAM consumption is the trade off for reduced run times and the degree of extram RAM needed
+can be reduced by simplifying more often.  The simulations where we run the simplification step in a separate thread
+require even more RAM (dashed line in Figure \ref{sfig:ramsel}) because up to four epochs of unsimplified data are
+stored in RAM.
+
+\krt{I've avoided getting into how this much RAM means parallelization is required to make more progress.}
+
+
 % Comparison of simulation with/without msprime, using \simupop{}
 % or maybe just a simple haploid simulation with 1000 QTL and stabilizing selection on a trait (say).
 %
@@ -1197,6 +1209,18 @@ and $z.\lid = u$ for the output node ID.
     \caption{\label{sfig:speedup_nosel}Relative performance improvement due to pedigree tracking for simulations without
     selection.  Data points are taken from Figure~\ref{sfig:rawspeed_nosel} and show the ratio of run times tracking
 neutral variation over the run times tracking the pedigree.}
+\end{figure}
+
+\begin{figure}
+    \includegraphics[]{sims/memuse}
+    \caption{\label{sfig:ramsel}Peak RAM use in gigabytes (GB) for simulations with selection.  The plots are from the
+        same data as in Figure \ref{fig:runtimes_selection}.}
+\end{figure}
+
+\begin{figure}
+    \includegraphics[]{sims/memuse_nosel}
+    \caption{\label{sfig:ramnosel}Peak RAM use in gigabytes (GB) for simulations without selection.  The plots are from
+    the same data as in Figure \ref{sfig:rawspeed_nosel}.}
 \end{figure}
 
 \end{document}
