@@ -725,13 +725,19 @@ Second, the simulation can
 be \emph{begun} with a tree sequence produced by some other method -- for
 instance, by a coalescent simulation with \msprime,
 providing an easy, efficient way to specify prior history.
-A natural question is now: how often should simplification occur?
-As shown in the next section,
-there is no computational advantage to simplifying more often than is necessary
-to keep memory usage down.
+A natural question is now: how often should simplification occur?  We did some limited testing with the C++
+implementation of our simulations, and found that different simplification intervals affect run times by approximately
+25\%, with the lowest run time occuring when simplifying every $10^3$ generations.  Thus, there is a memory-versus-speed
+tradeoff as simplifying more often would keep fewer extinct nodes and edges in memory.  The run-time costs associated
+with simplifying have to do with preparing the data to be sent to the simplification algorithm, rather than with the
+algorithm itself, which we show in the next section has linear time complexity.
 
-\krt{Empirically, I did find that simplifying more often than every 1,000 generations gave a run-time hit of about 25
-percent???}
+% As shown in the next section,
+% there is no computational advantage to simplifying more often than is necessary
+% to keep memory usage down.
+% 
+% \krt{Empirically, I did find that simplifying more often than every 1,000 generations gave a run-time hit of about 25
+% percent???}
 
 
 
@@ -1025,9 +1031,10 @@ but perhaps it will prove useful elsewhere.
     \item GNU Scientific Library 1.16
     \item pybind11 2.2.1
     \item GCC 4.8.5
+    \item msprime master branch
 \end{enumerate}
 
-All of the above installed via conda.
+All of the above installed via conda, except for msprime, which must be installed from GitHub.
 
 
 %%%%%%%%%%%%%%%%%%%%%%
