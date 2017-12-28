@@ -294,7 +294,7 @@ individual still requires one new edge and two new nodes to be allocated.  Witho
 allocated for such an offspring.  Thus, pedigree tracking accumulates a large amount of data in RAM until
 simplification.  This extra RAM consumption is the trade off for reduced run times and the degree of extram RAM needed
 can be reduced by simplifying more often.  The simulations where we run the simplification step in a separate thread
-require even more RAM (dashed line in Figure \ref{sfig:ramsel}) because up to four epochs of unsimplified data are
+require even more RAM (dashed line in Figure \ref{sfig:ramsel}) because up to four sets of unsimplified data are
 stored in RAM.  In practice, the RAM consumption can be minimized by simplifying more often.
 
 %% \krt{I've avoided getting into how this much RAM means parallelization is required to make more progress.}
