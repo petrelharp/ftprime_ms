@@ -287,12 +287,12 @@ and~\ref{sfig:speedup_nosel}.
 from Figure~\ref{fig:runtimes_selection} for simulations that ran to completion using both methods.}
 \end{figure}
 
-The peak RAM use in gigabytes (GB) is shown for the simulations with selection in Figure~\ref{sfig:ramsel} aand for the
+The peak RAM use in gigabytes (GB) is shown for the simulations with selection in Figure~\ref{sfig:ramsel} and for the
 simulations without selection in Figure~\ref{sfig:ramnosel}.  For our parameters, which involved simplifying every
-$10^3$ generations,  pedigree tracking requires more RAM.  With \fwdpy{}/\fwdpp{}, the reason for the extran RAM use is clear.  When pedigree tracking, a non-recombinant
+$10^3$ generations,  pedigree tracking requires more RAM.  With \fwdpy{}/\fwdpp{}, the reason for the extra RAM use is clear.  When pedigree tracking, a non-recombinant
 individual still requires one new edge and two new nodes to be allocated.  Without pedigree tracking, no new memory is
 allocated for such an offspring.  Thus, pedigree tracking accumulates a large amount of data in RAM until
-simplification.  This extra RAM consumption is the trade off for reduced run times and the degree of extram RAM needed
+simplification.  This extra RAM consumption is the trade off for reduced run times and the degree of extra RAM needed
 can be reduced by simplifying more often.  The simulations where we run the simplification step in a separate thread
 require even more RAM (dashed line in Figure \ref{sfig:ramsel}) because up to four sets of unsimplified data are
 stored in RAM.  In practice, the RAM consumption can be minimized by simplifying more often.
