@@ -253,8 +253,8 @@ population sizes and we observe increasing relative speedups as $4Nr$ increases 
 (Figure~\ref{fig:relative_speedup_selection}).  We saw a similar trend with $4Nr$ for \simupop{}, but the effect of $N$
 could not be explored because the simulations tended to run out of available memory.
   Note the log scale of the x axis in Figure~\ref{fig:runtimes_selection}, which
-partially obscures an important observation that the run times appear approximately linear in region size when pedigree
-tracking.  The reason for this behavior is that the simulations are generating a constant number of new edges on
+partially obscures an important observation that the run times appear approximately linear in region size when tracking
+pedigree.  The reason for this behavior is that, when tracking pedigrees, the simulations are generating a constant number of new edges on
 average
 each generation as the number of new recombination breakpoints is Poisson distributed with expectation $\rho$.
 
