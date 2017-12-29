@@ -93,7 +93,7 @@ but it remains a challenge to map results of coalescent models
 onto species that are distributed across continuous geographical space
 and/or have large numbers of loci under various sorts of selection.
 Furthermore, the relationship between the life history of a species --
-fecundity and mortality schedules, Allee effects, and demographic fluctuations --
+fecundity and mortality schedules, density-dependent effects on fitness, and demographic fluctuations --
 are all absorbed into a single compound parameter, the coalescence rate.
 The third assumption is no longer safe, either --
 for example, a recent study~\citep{martin2017human}
@@ -128,7 +128,7 @@ can ``only'' simulate tens of megabases of sequence in tens of thousands of indi
 for tens of thousands of generations, and there are still near-order-of-magnitude performance differences between these
 implementations~\citep{haller2017flexible}.
 In practice, current state-of-the-art simulation software may take on the order of
-weeks to simulate models without selection~\citep{fwdpp,Hernandez2015-wf},
+weeks to simulate models of large genomic regions without selection~\citep{fwdpp,Hernandez2015-wf},
 and existing simulation engines differ in how efficiently they
 calculate fitnesses in models with selection~\citep{fwdpp}.
 These population and region sizes are still substantially short of whole genomes
@@ -136,7 +136,7 @@ These population and region sizes are still substantially short of whole genomes
 for many biological population sizes of interest.
 
 However, it is thought that most genetic variation is selectively neutral (or nearly so).
-By definition, the alleles carried by individuals in a population at neutral sites
+By definition, the neutral alleles carried by individuals in a population
 do not affect the population process.
 For this reason, if one records the entire genealogical history of a population over the course of a simulation,
 simply laying down neutral mutations on top of that history afterwards
@@ -159,7 +159,7 @@ This is much more than we need to know, however,
 so we discard all information irrelevant to the genetic history
 of the extant population. We show that we need only $O(N \log N)$
 space to store the resulting tree sequence for a single crossover per
-generation Wright-Fisher model.
+generation under the Wright-Fisher model.
 
 In this paper we discuss storage methods for genealogies (and hence, genome sequence),
 an algorithm for simplifying these,
@@ -193,15 +193,14 @@ All simulations implemented a discrete-time Wright-Fisher population of diploid
 population size $N$, simulated for $10N$ generations.
 The simulations without pedigree recording introduced neutral mutations at a rate
 equal to the recombination rate,
-so $\mu = r$, where $\mu$ and $r$ are the expected number of mutations and recombinations,
-respectively, per gamete and per generation.
+so $\mu = r$, where $\mu$ and $r$ are the expected number of mutations per gamete and recombination breakpoints per
+diploid,
+respectively, each generation. 
 % Both mutations and recombinations occur as Poisson processes with respective means $\mu$ and $r$,
 % and we used the infinitely-many sites mutation model \citep{Kimura1969-uc}.
-We ran simulations with different values of $N$
-and of the \emph{scaled} parameter $\rho = 4Nr$,
-categorized by the value of $\rho$, since this
-is what most strongly determines run time
-(along with the scaled mutation rate, $\theta = 4N\mu$, which is also equal to $\rho$.)
+We ran simulations with different values of $N$ and varied the size of the region according to the scaled recombination
+parameter $\rho = 4Nr$.  When simulating neutral mutations, we kept the scaled mutation parameter, $\theta = 4N\mu$
+equal to $\rho$.
 
 Deleterious mutations were introduced at rate $\rho/100$ per generation, drawing scaled selection
 coefficients ($2Ns$)
@@ -217,7 +216,8 @@ we implemented these simulations separately using two different simulation engin
 
     \item
         In C++, using \fwdpp{} library functions and interface code (details below),
-        using a continuum-sites model for both mutation and recombination.
+        using a continuum-sites model for both mutation and recombination. Simulations were run using \fwdpy{}, a Python
+        package based on \fwdpp.
         % $\mu$ and $r$ were the means of Poisson processes,
         % and mutations used the infinite-sites model \citep{Kimura1969-uc}.
         % We varied $N \in (1000, 10000, 50000)$, $\rho \in (10^3, 10^4, 10^5)$.
@@ -236,31 +236,27 @@ hyperthreading enabled.
 We ran one simulation at a time and the machine was under minimal load otherwise.
 We used GNU parallel \citep{Tange2011a} to kill any simulation that did not finish within 72 hours,
 and the Linux \texttt{time} command to record run time and peak memory usage of each replicate.
-Our simulation scripts separately recorded the time spent in various steps of each run.
+%% Our simulation scripts separately recorded the time spent in various steps of each run.
 
+%% \krt{currently, we are not doing anything with the detailed timings.  I think that is fine, and that we can delete last
+%%sentence of preceding paragraph.}
 
-\plr{Insert figures/tables of performance here and describe them.}
 
 The total run times for simulations with selection are shown in Figure~\ref{fig:runtimes_selection}.  When tracking
 neutral mutations (instead of the pedigree), run times increase dramatically with increasing region size ($4Nr = 4Nu$ for
 these simulations).  With \fwdpy{}, simulations with $N=5 \times 10^4$ timed out for region sizes larger than $10^3$.
 With \simupop{}, we were only able to run simulations with $N=10^3$ and region sizes up to $10^4$.  Pedigree tracking
 dramatically improves run times for both \fwdpy{} and \simupop{} (right column of Figure~\ref{fig:runtimes_selection}).  For parameters that ran to completion when tracking neutral mutations and when tracking
-the pedigree, the relative speedup due to pedigree tracking is up to $\approx 50$ fold (Figure~\ref{fig:relative_speedup_selection}).  For \fwdpy{}, pedigree tracking reduces runtimes more for larger population sizes
-(Figure~\ref{fig:relative_speedup_selection}).  We could not make such an observation with \simupop{}, which tended to
-run out of memory on our system.  Note the log scale of the x axis in Figure~\ref{fig:runtimes_selection}, which
-partially obscures an important observation that the run times appear approximately linear in region size when pedigree
-tracking.  The reason for this behavior is that the simulations are generating a constant number of new edges on average
-each generation, and the number of edges is a function of $\rho$ in expectation.
-
-We also performed a more limited set of simulations without natural selection.  The total run times are shown in
-Figure~\ref{sfig:rawspeed_nosel} and show the same qualitative behavior as simulations with selection
-(Figure~\ref{fig:runtimes_selection}).  The relative improvement due to pedigree tracking is again substantial in these
-simulations (Figure~\ref{sfig:speedup_nosel}).  In fact, we see more of a benefit to pedigree tracking here with \fwdpy{}
-than we did with selection (Figure~\ref{fig:relative_speedup_selection}).  The reason is that the fitness function exits
-close to instantly in simulations without selection that are based on \fwdpp{}, meaning that \fwdpy{} is doing little
-more than generating random numbers and book-keeping in Figures~\ref{sfig:rawspeed_nosel}
-and~\ref{sfig:speedup_nosel}.
+the pedigree, the relative speedup due to pedigree tracking is up to $\approx 50$ fold
+(Figure~\ref{fig:relative_speedup_selection}).  For \fwdpy{}, pedigree tracking reduces runtimes more for larger
+population sizes and we observe increasing relative speedups as $4Nr$ increases for a given $N$
+(Figure~\ref{fig:relative_speedup_selection}).  We saw a similar trend with $4Nr$ for \simupop{}, but the effect of $N$
+could not be explored because the simulations tended to run out of available memory.
+  Note the log scale of the x axis in Figure~\ref{fig:runtimes_selection}, which
+partially obscures an important observation that the run times appear approximately linear in region size when tracking
+pedigree.  The reason for this behavior is that, when tracking pedigrees, the simulations are generating a constant number of new edges on
+average
+each generation as the number of new recombination breakpoints is Poisson distributed with expectation $\rho$.
 
 \begin{figure}
     \includegraphics[]{sims/rawspeed}
@@ -274,12 +270,35 @@ the results for an implementation using \fwdpy{} where the pedigree simplificati
 execution and fitness calculations were parallelized.}
 \end{figure}
 
+We also performed a more limited set of simulations without natural selection.  The total run times are shown in
+Figure~\ref{sfig:rawspeed_nosel} and show the same qualitative behavior as simulations with selection
+(Figure~\ref{fig:runtimes_selection}).  The relative improvement due to pedigree tracking is again substantial in these
+simulations (Figure~\ref{sfig:speedup_nosel}).  In fact, we see more of a benefit to pedigree tracking here with \fwdpy{}
+than we did with selection (Figure~\ref{fig:relative_speedup_selection}).  The reason is that the fitness function exits
+close to instantly in simulations without selection that are based on \fwdpp{}, meaning that \fwdpy{} is doing little
+more than generating random numbers and book-keeping in Figures~\ref{sfig:rawspeed_nosel}
+and~\ref{sfig:speedup_nosel}.
+
+
 \begin{figure}
     \includegraphics[]{sims/speedup}
     \caption{\label{fig:relative_speedup_selection}Relative performance improvement due to pedigree tracking. This figure
     shows the ratio of the run time tracking neutral mutations over the run time tracking the pedigree. Data points are taken
 from Figure~\ref{fig:runtimes_selection} for simulations that ran to completion using both methods.}
 \end{figure}
+
+The peak RAM use in gigabytes (GB) is shown for the simulations with selection in Figure~\ref{sfig:ramsel} and for the
+simulations without selection in Figure~\ref{sfig:ramnosel}.  For our parameters, which involved simplifying every
+$10^3$ generations,  pedigree tracking requires more RAM.  With \fwdpy{}/\fwdpp{}, the reason for the extra RAM use is clear.  When pedigree tracking, a non-recombinant
+individual still requires one new edge and two new nodes to be allocated.  Without pedigree tracking, no new memory is
+allocated for such an offspring.  Thus, pedigree tracking accumulates a large amount of data in RAM until
+simplification.  This extra RAM consumption is the trade off for reduced run times and the degree of extra RAM needed
+can be reduced by simplifying more often.  The simulations where we run the simplification step in a separate thread
+require even more RAM (dashed line in Figure \ref{sfig:ramsel}) because up to four sets of unsimplified data are
+stored in RAM.  In practice, the RAM consumption can be minimized by simplifying more often.
+
+%% \krt{I've avoided getting into how this much RAM means parallelization is required to make more progress.}
+
 
 % Comparison of simulation with/without msprime, using \simupop{}
 % or maybe just a simple haploid simulation with 1000 QTL and stabilizing selection on a trait (say).
@@ -459,7 +478,7 @@ Given a node table $\Nt$, the function $\taddnode{\Nt, t}$
 adds a new node to the table $\Nt$ with time $t$
 and returns the ID of this new node.
 Similarly, the function $\taddedge{\Et, \ell, r, p, c}$
-adds a new edge $(\ell, r, p, c)$ to the edge table $\Et$.
+adds a new edge $(\ell\mathrm{eft}, r\mathrm{ight}, p\mathrm{arent}, c\mathrm{hild})$ to the edge table $\Et$.
 The function $\tsimplify{P, \Nt, \Et}$ (described in section \ref{ss:simplify})
 simplifies the history stored in the tables $\Nt$ and $\Et$
 to the minimal information required to represent the genealogies of the list of node IDs $P$;
@@ -544,6 +563,10 @@ Step \algref{W7} loops these steps until the required number of generations have
     }
 \end{figure}
 
+
+\krt{The following paragraph has a sentence mangling.  I think some comment is warrented about when it is useful to
+record selected mutations, like for ancient samples?}
+
 This algorithm records only topological information about the simulated genealogies,
 but it is straightforward to add mutational information.
 This can be done in two different ways.
@@ -560,7 +583,7 @@ an example of a marginal genealogy produced by a forwards-time Wright--Fisher
 process like Algorithm~\algref{W}.
 On the left is the tree showing all the edges output by the simulation,
 while on the right
-is the minimal tree representing the ancestry of the currently alive population.
+is the minimal tree representing the ancestry of the current set of samples.
 Clearly there is a great deal of redundancy in the topological
 information output by the simulation.
 This redundancy comes from two sources.
@@ -643,7 +666,7 @@ the coalescent with recombination~\citep{hudson1983properties},
 paralleling the implementation in \msprime{} \citep{kelleher2016efficient};
 an implementation in pseudocode is provided in Appendix~\ref{ss:simplify_algorithm}.
 Conceptually, this works by
-(a) beginning by painting the chromosome each sample a distinct color;
+(a) beginning by painting the chromosome in each sample a distinct color;
 (b) moving back through history,
 copying the colors of each chromosome to the portions of its' parental chromosomes
 from which it was inherited;
@@ -702,17 +725,29 @@ Second, the simulation can
 be \emph{begun} with a tree sequence produced by some other method -- for
 instance, by a coalescent simulation with \msprime,
 providing an easy, efficient way to specify prior history.
-A natural question is now: how often should simplification occur?
-As shown in the next section,
-there is no computational advantage to simplifying more often than is necessary
-to keep memory usage down.
+A natural question is now: how often should simplification occur?  We did some limited testing with the C++
+implementation of our simulations, and found that different simplification intervals affect run times by approximately
+25\%, with the lowest run time occuring when simplifying every $10^3$ generations.  Thus, there is a memory-versus-speed
+tradeoff as simplifying more often would keep fewer extinct nodes and edges in memory.  The run-time costs associated
+with simplifying have to do with preparing the data to be sent to the simplification algorithm, rather than with the
+algorithm itself, which we show in the next section has linear time complexity.
+
+% As shown in the next section,
+% there is no computational advantage to simplifying more often than is necessary
+% to keep memory usage down.
+% 
+% \krt{Empirically, I did find that simplifying more often than every 1,000 generations gave a run-time hit of about 25
+% percent???}
 
 
 
 %%%%%%%%%%%%
 \subsubsection*{Estimates of run-time complexity}
 
-\plr{Refer to simulation results here.}
+The simulation results shown in Figures \ref{fig:runtimes_selection} and \ref{fig:relative_speedup_selection} show that
+pedigree tracking greatly speeds up forward-time simulations.  Further, the run times with pedigree tracking become
+near-linear in $rho$ (Figure \ref{fig:runtimes_selection}).  In this section, we explore the run-time complexity using a
+simplified Wright-Fisher model with recombination.
 
 %% Memory reduction thanks to simplification
 Consider a simulation of a Wright-Fisher population of $2N$ haploid individuals
@@ -726,7 +761,7 @@ Suppose that $T$ is large enough that all samples coalesce within the simulation
 ($T \sim 20N$, say).
 After simplification, we are left with the tree sequence describing the history
 of only the current generation of $2N$ individuals.
-This tree sequence has $4N-2$ edges to describe the leftmost tree;
+Ignoring the possibility of coalescent events involving more than two lineages, this tree sequence has $4N-2$ edges to describe the leftmost tree;
 and each time the marginal tree changes along the sequence,
 four edges end and four new edges begin
 (except for changes affecting the root, which require fewer; see \citet{kelleher2016efficient}).
@@ -765,7 +800,7 @@ leads to an upper bound on the number of edges of
     \label{eqn:edge_bound}
     2 N \left( 1 + 4 \log\left( \frac{NT}{T + 2 N} \right)\right) .
 \end{align}
-This holds up quite well in practice,
+These calculations hold up quite well in practice,
 as shown in Figure~\ref{fig:simplify_complexity}.
 % by comparison to
 % the number of edges actually required for 50 independent Wright--Fisher simulations,
@@ -842,7 +877,7 @@ in our scheme we must store $13N$ quantities per generation (two edges and one n
 The simplification algorithm is linear in the number of edges of the input tree sequence
 (because it must process each edge),
 and so multiplies this by a constant factor.
-This implies that propagating neutral genotypes for $T$ generations has time complexity $O(\mu T N^2)$,
+These considerations imply that propagating neutral genotypes for $T$ generations has time complexity $O(\mu T N^2)$,
 while our implementation is only $O(T N \log(2N))$.
 
 
@@ -926,12 +961,14 @@ A similar but much more limited method for
 discarding this information does appear in \citet{padhukasahasram2008exploring}.
 
 
+\krt{The following para contains numbers that are results, not discussion.}
+
 The tree sequences produced by default by this method
 are very compact, storing genotype \emph{and} genealogical information
 in a small fraction of the space taken by a compressed VCF file.
 The format is also highly efficient to process,
 leading to advantages for downstream analysis as well.
-This is because many algorithms to compute statistics of interest for population genetics
+The dowstream advantages are because many algorithms to compute statistics of interest for population genetics
 are naturally expressed in terms of tree topologies,
 and so can be quickly computed from the trees underlying the tree sequence format.
 For example, pairwise nucleotide diversity $\pi$, is the average density of
@@ -962,9 +999,11 @@ Simulating very large populations and entire genomes will likely require paralle
 The one-way nature of information flow here makes our scheme relatively easy to incorporate
 into a parallel algorithm.
 Recently, \citet{lawrie2017accelerating} used parallelization
-to improve performance for the ``Poisson Random Field'' family of models~\citep{Sawyer1992-jw},
+to improve performance for the ``Poisson Random Field'' (PRF) family of models~\citep{Sawyer1992-jw},
 in which mutations are unlinked and there is no effect of genetic background on fitness.
-However, thus far little attention has been paid to parallelization of simulations involving linkage.
+However, thus far little attention has been paid to parallelization of simulations involving linkage, as our simulations
+where do, which is much more
+complex than the PRF model. 
 
 A final note:
 in preparing this manuscript,
@@ -982,6 +1021,21 @@ but perhaps it will prove useful elsewhere.
 
 %%%%%%%%%%%%%%
 % \section*{Methods}
+
+\krt{Are we doing a methods section?}
+
+\subsection{Reagents list for the C++ implementation}
+
+\begin{enumerate}
+    \item \fwdpy{} 0.13.a0
+    \item \fwdpp{} 0.5.7
+    \item GNU Scientific Library 1.16
+    \item pybind11 2.2.1
+    \item GCC 4.8.5
+    \item msprime master branch
+\end{enumerate}
+
+All of the above installed via conda, except for msprime, which must be installed from GitHub.
 
 
 %%%%%%%%%%%%%%%%%%%%%%
@@ -1013,7 +1067,7 @@ so that if $M[p] = u$ then the $p^\text{th}$ node in the input
 is the same as the $u^\text{th}$ node in the output.
 The current state of the algorithm is recorded in $\Al$,
 a list of ancestors
-each of which is a collections of ancestral segments.
+each of which is a collection of ancestral segments.
 An ancestral segment is a triple $(\ell, r, x)$,
 indicating that the output node $x$ inherits from this ancestor
 on the genomic segment $[\ell, r)$.
@@ -1035,7 +1089,7 @@ on the genomic segment $[\ell, r)$.
     Set the current input parent index to $p=0$
     and $M[u] \leftarrow -1$ for $0 \le u < \len(\Nt_I)$.
 }
-
+\krt{We need a verbal definition of $Q$}
 \algstep{S1.}{Input parent loop.}{Set $Q \leftarrow \emptyset$.
 }
 
@@ -1158,11 +1212,12 @@ and $z.\lid = u$ for the output node ID.
     }
 
 \end{taocpalg}
+\krt{I think the algo discussion is  clear.  I've not tried to implement it, which would be the real test, but I find the description fine other than needing to define $Q$ when first used.}
 
-\newpage
-\clearpage
-\section*{Supplementary Information}
-\renewcommand{\thefigure}{S\arabic{figure}}
+%% \newpage
+%% \clearpage
+%% \section*{Supplementary Information}
+\renewcommand{\thefigure}{A\arabic{figure}}
 \setcounter{figure}{0}
 
 \begin{figure}[!h]
@@ -1179,4 +1234,16 @@ and $z.\lid = u$ for the output node ID.
 neutral variation over the run times tracking the pedigree.}
 \end{figure}
 
+\begin{figure}
+    \includegraphics[]{sims/memuse}
+    \caption{\label{sfig:ramsel}Peak RAM use in gigabytes (GB) for simulations with selection.  The plots are from the
+        same data as in Figure \ref{fig:runtimes_selection}. Note that the y-axis scales differ considerably across
+    panels.}
+\end{figure}
+
+\begin{figure}
+    \includegraphics[]{sims/memuse_nosel}
+    \caption{\label{sfig:ramnosel}Peak RAM use in gigabytes (GB) for simulations without selection.  The plots are from
+    the same data as in Figure \ref{sfig:rawspeed_nosel}.}
+\end{figure}
 \end{document}
