@@ -1,17 +1,15 @@
 #!/bin/bash
 
 # 2 hour run limit
-SECONDS_TO_KILL=`echo "2*60*60"|bc -l`
+SECONDS_TO_KILL=`echo "24*60*60"|bc -l`
 
-for N in 100
+for N in 10000
 do
     KILL=0
-    for size in 500
+    for size in 1000 2500 5000 7500 10000
     do
         if [ $KILL == 0 ]
         then
-            #We will arbitrarily GC every 0.1N generations
-            GC=`echo "0.1*$N"|bc -l| sed 's/\.0//'`
             GC=1000
             TIME_MEM_FILE=time_arg.N$N"."size$size".out"
             DETAILED_TIME_FILE=simupop_detailed_time_arg.N$N"."size$size".out.gz"
@@ -27,8 +25,7 @@ do
             if [ $STATUS -gt 0 ]
             then
                 echo "STATUS = " $STATUS
-		# don't do this for now
-                KILL=0
+                KILL=1
             fi
         fi
     done
