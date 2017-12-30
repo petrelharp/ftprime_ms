@@ -223,7 +223,8 @@ we implemented these simulations separately using two different simulation engin
         % We varied $N \in (1000, 10000, 50000)$, $\rho \in (10^3, 10^4, 10^5)$.
 
     \item
-        In Python, using the \simupop{} library interfacing with a custom Python library (\ftprime{}),
+        In Python, using the \simupop{} library interfacing with Python code
+	(via our package \ftprime{}),
         using a discrete but large number of sites.
         % $\mu$ and $r$ define per-base-pair mutation rate and we
         % defined the length of the simulated sequence, in base pairs, as $L = \tfrac{\rho}{4N \mu}$.
@@ -1042,6 +1043,20 @@ but perhaps it will prove useful elsewhere.
 
 All of the above installed via conda, except for msprime, which must be installed from GitHub.
 
+\subsection{Requirements for the \simupop{} implementation}
+
+The simulations are implemented the Python package \ftprime{} 0.0.6rc0
+which is available at \url{https://www.github.com/ashander/ftprime}.
+Its requirements are encoded in an \texttt{environment.yml} file, compatible
+with conda, but \msprime{} must be updated to the version listed below via pip
+from GitHub \jda{TODO add command}.
+In brief the requirements are:
+
+\begin{enumerate}
+    \item \msprime{} \jda{TODO add version from KRT's dev machine}
+    \item \simupop{} 1.1.8.3
+    \item python 3.5
+\end{enumerate}
 
 %%%%%%%%%%%%%%%%%%%%%%
 \section*{Acknowledgements}
