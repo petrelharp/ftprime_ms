@@ -277,6 +277,13 @@ pedigree.  The reason for this behavior is that, when tracking pedigrees, the si
 average
 each generation as the number of new recombination breakpoints is Poisson distributed with expectation $\rho$.
 
+Our method uses more RAM use than simple forward simulations (see~\ref{ss:memuse_nosel}),
+although in practice shorter simplification intervals may reduce RAM use
+(but at a slight cost to the speed up achieved, see~\ref{ss:seq_simp}).
+The benefits to our method are not limited to situations with selection:
+in a more limited set of neutral simulations we found the same qualitative
+behavior with a numerically larger benefit to pedigree tracking (see~\ref{ss:speedup_nosel}).
+
 \begin{figure}
     \includegraphics[]{sims/rawspeed}
     \caption{\label{fig:runtimes_selection}Total run time for a single simulation replicate as a function of region
@@ -289,15 +296,6 @@ the results for an implementation using \fwdpy{} where the pedigree simplificati
 execution and fitness calculations were parallelized.}
 \end{figure}
 
-We also performed a more limited set of simulations without natural selection.  The total run times are shown in
-Figure~\ref{sfig:rawspeed_nosel} and show the same qualitative behavior as simulations with selection
-(Figure~\ref{fig:runtimes_selection}).  The relative improvement due to pedigree tracking is again substantial in these
-simulations (Figure~\ref{sfig:speedup_nosel}).  In fact, we see more of a benefit to pedigree tracking here with \fwdpy{}
-than we did with selection (Figure~\ref{fig:relative_speedup_selection}).  The reason is that the fitness function exits
-close to instantly in simulations without selection that are based on \fwdpp{}, meaning that \fwdpy{} is doing little
-more than generating random numbers and book-keeping in Figures~\ref{sfig:rawspeed_nosel}
-and~\ref{sfig:speedup_nosel}.
-
 
 \begin{figure}
     \includegraphics[]{sims/speedup}
@@ -305,19 +303,6 @@ and~\ref{sfig:speedup_nosel}.
     shows the ratio of the run time tracking neutral mutations over the run time tracking the pedigree. Data points are taken
 from Figure~\ref{fig:runtimes_selection} for simulations that ran to completion using both methods.}
 \end{figure}
-
-The peak RAM use in gigabytes (GB) is shown for the simulations with selection in Figure~\ref{sfig:ramsel} and for the
-simulations without selection in Figure~\ref{sfig:ramnosel}.  For our parameters, which involved simplifying every
-$10^3$ generations,  pedigree tracking requires more RAM.  With \fwdpy{}/\fwdpp{}, the reason for the extra RAM use is clear.  When pedigree tracking, a non-recombinant
-individual still requires one new edge and two new nodes to be allocated.  Without pedigree tracking, no new memory is
-allocated for such an offspring.  Thus, pedigree tracking accumulates a large amount of data in RAM until
-simplification.  This extra RAM consumption is the trade off for reduced run times and the degree of extra RAM needed
-can be reduced by simplifying more often.  The simulations where we run the simplification step in a separate thread
-require even more RAM (dashed line in Figure \ref{sfig:ramsel}) because up to four sets of unsimplified data are
-stored in RAM.  In practice, the RAM consumption can be minimized by simplifying more often.
-
-%% \krt{I've avoided getting into how this much RAM means parallelization is required to make more progress.}
-
 
 % Comparison of simulation with/without msprime, using \simupop{}
 % or maybe just a simple haploid simulation with 1000 QTL and stabilizing selection on a trait (say).
@@ -735,6 +720,7 @@ linear in the number of edges of the input tree sequence.
 
 %%%%%%%%%%%%%%
 \subsubsection*{Sequential simplification and prior history}
+\label{ss:seq_simp}
 
 Any simulation scheme that records data into tables,
 as does Algorithm~\algref{W},
@@ -1259,8 +1245,51 @@ and $z.\lid = u$ for the output node ID.
 %% \newpage
 %% \clearpage
 %% \section*{Supplementary Information}
-\renewcommand{\thefigure}{A\arabic{figure}}
+
+\section{Memory usage with selection}
+\label{ss:memuse}
+\renewcommand{\thefigure}{B\arabic{figure}}
 \setcounter{figure}{0}
+
+The peak RAM use in gigabytes (GB) is shown for the simulations with selection in Figure~\ref{sfig:ramsel} and for the
+simulations without selection in Figure~\ref{sfig:ramnosel}.  For our parameters, which involved simplifying every
+$10^3$ generations,  pedigree tracking requires more RAM.  With \fwdpy{}/\fwdpp{}, the reason for the extra RAM use is clear.  When pedigree tracking, a non-recombinant
+individual still requires one new edge and two new nodes to be allocated.  Without pedigree tracking, no new memory is
+allocated for such an offspring.  Thus, pedigree tracking accumulates a large amount of data in RAM until
+simplification.  This extra RAM consumption is the trade off for reduced run times and the degree of extra RAM needed
+can be reduced by simplifying more often.  The simulations where we run the simplification step in a separate thread
+require even more RAM (dashed line in Figure \ref{sfig:ramsel}) because up to four sets of unsimplified data are
+stored in RAM.  In practice, the RAM consumption can be minimized by simplifying more often.
+
+%% \krt{I've avoided getting into how this much RAM means parallelization is required to make more progress.}
+
+\begin{figure}
+    \includegraphics[]{sims/memuse}
+    \caption{\label{sfig:ramsel}Peak RAM use in gigabytes (GB) for simulations with selection.  The plots are from the
+        same data as in Figure \ref{fig:runtimes_selection}. Note that the y-axis scales differ considerably across
+    panels.}
+\end{figure}
+
+\begin{figure}
+    \includegraphics[]{sims/memuse_nosel}
+    \caption{\label{sfig:ramnosel}Peak RAM use in gigabytes (GB) for simulations without selection.  The plots are from
+    the same data as in Figure \ref{sfig:rawspeed_nosel}.}
+\end{figure}
+
+\section{Timing with no selection}
+\label{ss:timing_nosel}
+\renewcommand{\thefigure}{C\arabic{figure}}
+\setcounter{figure}{0}
+
+We also performed a more limited set of simulations without natural selection.  The total run times are shown in
+Figure~\ref{sfig:rawspeed_nosel} and show the same qualitative behavior as simulations with selection
+(Figure~\ref{fig:runtimes_selection}).  The relative improvement due to pedigree tracking is again substantial in these
+simulations (Figure~\ref{sfig:speedup_nosel}).  In fact, we see more of a benefit to pedigree tracking here with \fwdpy{}
+than we did with selection (Figure~\ref{fig:relative_speedup_selection}).  The reason is that the fitness function exits
+close to instantly in simulations without selection that are based on \fwdpp{}, meaning that \fwdpy{} is doing little
+more than generating random numbers and book-keeping in Figures~\ref{sfig:rawspeed_nosel}
+and~\ref{sfig:speedup_nosel}.
+
 
 \begin{figure}[!h]
     \includegraphics[]{sims/rawspeed_nosel}
@@ -1274,18 +1303,5 @@ and $z.\lid = u$ for the output node ID.
     \caption{\label{sfig:speedup_nosel}Relative performance improvement due to pedigree tracking for simulations without
     selection.  Data points are taken from Figure~\ref{sfig:rawspeed_nosel} and show the ratio of run times tracking
 neutral variation over the run times tracking the pedigree.}
-\end{figure}
-
-\begin{figure}
-    \includegraphics[]{sims/memuse}
-    \caption{\label{sfig:ramsel}Peak RAM use in gigabytes (GB) for simulations with selection.  The plots are from the
-        same data as in Figure \ref{fig:runtimes_selection}. Note that the y-axis scales differ considerably across
-    panels.}
-\end{figure}
-
-\begin{figure}
-    \includegraphics[]{sims/memuse_nosel}
-    \caption{\label{sfig:ramnosel}Peak RAM use in gigabytes (GB) for simulations without selection.  The plots are from
-    the same data as in Figure \ref{sfig:rawspeed_nosel}.}
 \end{figure}
 \end{document}
