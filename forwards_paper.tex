@@ -26,9 +26,10 @@
 \newcommand{\St}{\mathcal{S}}  % site table
 \newcommand{\Mt}{\mathcal{M}}  % mutation table
 \newcommand{\Al}{\mathcal{A}}  % list of ancestors
-\newcommand{\taddnode}[1]{\mbox{addnode}(#1)}
-\newcommand{\taddedge}[1]{\mbox{addedge}(#1)}
-\newcommand{\tsimplify}[1]{\mbox{simplify}(#1)}
+% mbox to avoid hyphenating
+\newcommand{\taddnode}[1]{\mbox{\texttt{addnode}}(#1)}
+\newcommand{\taddedge}[1]{\mbox{\texttt{addedge}}(#1)}
+\newcommand{\tsimplify}[1]{\mbox{\texttt{simplify}}(#1)}
 \DeclareMathOperator{\len}{length}
 \DeclareMathOperator{\add}{add} % for adding to tables
 \newcommand{\lleft}{\mathrm{left}}  % left label
@@ -495,8 +496,8 @@ information from $\Nt$ and $\Et$ unreachable from the current population $P$.
 }
 
 \algstep{W1.}{Initialisation.}{
-Set $\Nt \leftarrow \mbox{NodeTable}()$, $\mathcal{E}
-\leftarrow \mbox{EdgeTable}()$, $t \leftarrow T$, and $j \leftarrow 0$.
+Set $\Nt \leftarrow \mbox{\texttt{NodeTable}}()$, $\mathcal{E}
+\leftarrow \mbox{\texttt{EdgeTable}}()$, $t \leftarrow T$, and $j \leftarrow 0$.
  For $0 \leq k < N$, set $P_k \leftarrow \taddnode{\Nt, T}$.
 }
 
