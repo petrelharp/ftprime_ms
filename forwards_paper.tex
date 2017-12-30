@@ -64,7 +64,9 @@
     We implement the method in two popular forwards-time simulation frameworks,
     and show that not only does this speed up large simulations by one or two orders of magnitude,
     but saves substantially more information from the simulation
-    (all marginal genealogies).
+    (all marginal genealogies) than simply recording the final sequences of
+    simulated individuals.
+    \jda{ this is still only 120 words and we should say 'more than what'}
     % This has the promise of making large-scale, whole-genome simulations with realistic geography and selection finally possible.
 \end{abstract}
 
@@ -89,7 +91,7 @@ thanks to the important assumptions of
 (a) random mating,
 (b) neutrality,
 and (c) small sample size relative to the population size.
-The first two assumptions can be side-stepped to a limited extent,
+The first two assumptions can be side-stepped to a limited extent \jda{cite?},
 but it remains a challenge to map results of coalescent models
 onto species that are distributed across continuous geographical space
 and/or have large numbers of loci under various sorts of selection.
@@ -116,14 +118,15 @@ Modern computing power easily allows simulations of birth, death and reproductio
 in a population having even hundreds of millions of individuals.
 However, if our interest lies in the resulting genetic patterns of variation
 -- and often, the point of such simulations is to compare to real data --
-then such simulations must somehow produce at the end data for each individual on a genomic scale.
+then such simulations must record data for each individual genome.
 As samples of most species' genomes harbor tens or hundreds of millions of variant sites,
 naively carrying full genotypes for even modest numbers of individuals through a simulation
 becomes quickly prohibitive.
 To make matters worse,
 a population of size $N$ must be simulated across many multiples of $N$ generations
-to produce stable genetic patterns.
-Because of this computational burden of neutral mutations, even the fastest simulation frameworks such as SLiM,
+to produce stable genetic patterns \jda {citation?}.
+Because of this computational burden, even the fastest simulation frameworks such as SLiM,
+\jda{We haven't motivatd that neutral muts are the burden yet}
 SLiM2~\citep{haller2017flexible} and fwdpp~\citep{fwdpp}
 can ``only'' simulate tens of megabases of sequence in tens of thousands of individuals
 for tens of thousands of generations, and there are still near-order-of-magnitude performance differences between these
@@ -144,27 +147,34 @@ simply laying down neutral mutations on top of that history afterwards
 is equivalent to having generated them during the simulation.
 Precisely, we would need to know the genealogical tree relating all sampled individuals
 at each position along the genome.
-In this paper, we describe how algorithmic tools and data structures developed for the
-coalescent simulator \msprime{}
-can be used to efficiently record, and later process, this history.
-In so doing we record the \emph{population pedigree} --
+This \emph{population pedigree} is 
 the complete history of parent-offspring relationships of an entire population
 going back to a remote time including the genetic outcomes of each ancestral
 meiosis.
-This embellished pedigree contains all the information necessary
-to construct the genealogical tree that relates each individual to each other
-at each position on the genome, i.e., the \emph{tree sequence}~\citep{kelleher2016efficient}.
+The embellished pedigree contains all the information necessary
+to construct the genealogical tree that relates each individual to every other
+at each position on the genome,
+i.e., the \emph{tree sequence} implemented in the coalescent simulator \msprime{}~\citep{kelleher2016efficient}.
+\jda{Currently (even before my edit) we no longer mention the ARG equivalence *at all* in the intro which
+	seems wrong, but we might've hashed this over already? (and it's
+	mentioned later so maybe no matter)}
 Combined with ancestral genotypes and the origins of new mutations,
 it also completely specifies the genomic sequence of any individual in the population at any time.
-This is much more than we need to know, however,
-so we discard all information irrelevant to the genetic history
-of the extant population. We show that we need only $O(N \log N)$
-space to store the resulting tree sequence for a single crossover per
-generation under the Wright-Fisher model.
+This is much much more than typically recorded in a forward simulation, however,
+so further savings can be had by discarding all information irrelevant to the genetic history
+of the extant population.
+\jda{The space complexity result seemed like a result in the intro; and maybe didn't include some detail
+	about assumed number of generations}
 
-In this paper we discuss storage methods for genealogies (and hence, genome sequence),
-an algorithm for simplifying these,
-and their use in forwards-time simulation.
+In this paper, we describe storage methods for genealogies
+(and hence, genome sequence) and an algorithm for simplifying these,
+both implemented as improvements to the algorithmic tools and data structures in \msprime{}.
+We also describe a general method of using these tools to efficiently record,
+and later process, the population pedgiree in forwards-time simulation.
+While providing substantial savings in time and space, our methods provide much
+more information than simply simulating the genomes -- the tree sequence format
+encodes all marginal genealogies of individuals living at the end of the
+simulation.
 Although we were motivated by a need for more efficient genomic simulations,
 these tools may prove more widely useful.
 
