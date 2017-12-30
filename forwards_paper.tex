@@ -872,8 +872,11 @@ computational burden of propagating mutations forwards across generations.
 Above we have described memory requirements;
 how does the computation time required for simplification scale?
 Simply because it must process each edge,
-the simplification algorithm is linear in the number of edges of the input tree sequence.
-This is seen in Figure~\ref{fig:simplify_complexity}X,
+% below per discussion
+% https://github.com/petrelharp/ftprime_ms/pull/37#discussion_r156617283
+the simplification algorithm is at least linear in the number of edges of the input tree sequence.
+Empirically the algorithm is exactly linear,
+as seen in Figure~\ref{fig:simplify_complexity}X,
 where we show shows the time required to simplify increasingly large subsets of a large tree sequence.
 When simplifying the result of a forwards-time sequence, the number of edges is the main contributing factor.
 Suppose on the other hand we want to
