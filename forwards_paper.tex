@@ -224,14 +224,20 @@ and the time savings due to pedigree recording come from not having to record \t
 
 To demonstrate the method's flexibility and to test it in different contexts,
 we implemented these simulations separately using two different simulation engines:
+
+\jda{Note/TODO: the varying references to c++, python, fwdpp, fwdpy11 and
+	simupop are probably confusing to a new reader. This is in part because
+	we refer to the python/simupop method in various places as one or the
+	other; the same goes for c++/fwdpy11/fwdpp. We should decide what to
+	call these and make our usage consistent}
+
 \begin{enumerate}
 
     \item
         In \cpp{}, using \fwdpp{} library functions and interface code (details below),
         using a continuum-sites model for both mutation and recombination. Simulations were run using \fwdpy{}, a Python
         package based on \fwdpp.
-        % $\mu$ and $r$ were the means of Poisson processes,
-        % and mutations used the infinite-sites model \citep{Kimura1969-uc}.
+        % $\mu$ and $r$ were the means of Poisson processes, and mutations used the infinite-sites model \citep{Kimura1969-uc}.
         % We varied $N \in (1000, 10000, 50000)$, $\rho \in (10^3, 10^4, 10^5)$.
 
     \item
