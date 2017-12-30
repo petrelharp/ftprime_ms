@@ -14,6 +14,7 @@
 \newcommand{\simupop}{\texttt{simuPOP}}
 \newcommand{\fwdpp}{\texttt{fwdpp}}
 \newcommand{\fwdpy}{\texttt{fwdpy11}}
+\newcommand{\cpp}{\texttt{C++}}
 \newcommand{\msprime}{\texttt{msprime}}
 \newcommand{\ftprime}{\texttt{ftprime}}
 \newcommand{\nodes}{\texttt{nodes}}
@@ -226,7 +227,7 @@ we implemented these simulations separately using two different simulation engin
 \begin{enumerate}
 
     \item
-        In C++, using \fwdpp{} library functions and interface code (details below),
+        In \cpp{}, using \fwdpp{} library functions and interface code (details below),
         using a continuum-sites model for both mutation and recombination. Simulations were run using \fwdpy{}, a Python
         package based on \fwdpp.
         % $\mu$ and $r$ were the means of Poisson processes,
@@ -740,7 +741,7 @@ Second, the simulation can
 be \emph{begun} with a tree sequence produced by some other method -- for
 instance, by a coalescent simulation with \msprime,
 providing an easy, efficient way to specify prior history.
-A natural question is now: how often should simplification occur?  We did some limited testing with the C++
+A natural question is now: how often should simplification occur?  We did some limited testing with the \cpp{}
 implementation of our simulations, and found that different simplification intervals affect run times by approximately
 25\%, with the lowest run time occuring when simplifying every $10^3$ generations.  Thus, there is a memory-versus-speed
 tradeoff as simplifying more often would keep fewer extinct nodes and edges in memory.  The run-time costs associated
@@ -939,19 +940,19 @@ The \msprime{} Tables API is designed to be easily ``plugged'' into any simulati
 One simply needs to fill the relevant columns,
 and to send them to \msprime{} at regular intervals for simplification.
 For example, in the benchmarking simulations above,
-we used the \fwdpp{} C++ API \citep{fwdpp}
+we used the \fwdpp{} \cpp{} API \citep{fwdpp}
 to fill arrays of simple structures representing the node and edge data.
 Doing so requires no modification of the \fwdpp{} code base.
 Rather, we simply need to bookkeep parent/offspring labels,
 and perform simple processing of the recombination breakpoints from each mating event.
 Using \texttt{pybind11} (\url{https://github.com/pybind/pybind11/}),
-the node/edge arrays on the C++ side are made visible, without copy, to Python as a multi-column numpy array,
+the node/edge arrays on the \cpp{} side are made visible, without copy, to Python as a multi-column numpy array,
 which is processed by the \msprime{} tables API.
 Our implementation also uses \texttt{pybind11}
 to create a Python package extending \texttt{fwdpy11}
 (a Python package based on \fwdpp{}; \url{https://github.com/molpopgen/fwdpy11}),
 % (A neat aside, that we may wish to skip here, is that it may be possible to use the tables
-% API from a command-line C/C++ application via an embedded Python interpreter.)
+% API from a command-line C/\cpp{} application via an embedded Python interpreter.)
 
 
 
@@ -1037,11 +1038,11 @@ but perhaps it will prove useful elsewhere.
 
 
 %%%%%%%%%%%%%%
-% \section*{Methods}
+\section*{Methods}
 
 \krt{Are we doing a methods section?}
 
-\subsection{Reagents list for the C++ implementation}
+\subsection{Requirements for the \cpp{} implementation}
 
 \begin{enumerate}
     \item \fwdpy{} 0.13.a0
@@ -1049,7 +1050,8 @@ but perhaps it will prove useful elsewhere.
     \item GNU Scientific Library 1.16
     \item pybind11 2.2.1
     \item GCC 4.8.5
-    \item msprime master branch
+    \item \msprime{} master branch \jda{which commit hash or short version number
+		    from pip freeze or {\tt msprime.\_\_version\_\_}?}
 \end{enumerate}
 
 All of the above installed via conda, except for msprime, which must be installed from GitHub.
