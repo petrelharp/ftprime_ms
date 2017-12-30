@@ -902,6 +902,7 @@ which allows for very efficient interchange of large amounts of numerical data.
 In principle, this enables zero-copy semantics,
 where a data consumer can read the information directly
 from the memory of a producer without incurring the overhead of a copy.
+\jda{TODO citation missing}
 Our implementation uses the numpy C API \citep{numpy_C_api} to efficiently copy
 data from Python into the low-level C library used to manipulate tree sequences.
 Since tables are encoded as contiguous arrays of numeric data,
@@ -912,6 +913,7 @@ This also provides basic input and output operations via numpy's
 array interface, which provides a great deal of flexibility and efficiency,
 and makes it straightforward to transfer data from sources
 such as HDF5 \citep{hdf5}, Dask, or Zarr.
+\jda{TODO citation missing}
 (For small scale data and debugging purposes, a simple text format is also supported.)
 % PLR: this was mentioned above, and belongs in the documentation, I think.
 % The API also provides functions to sort tables
