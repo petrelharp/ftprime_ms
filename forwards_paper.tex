@@ -271,7 +271,9 @@ pedigree.  The reason for this behavior is that, when tracking pedigrees, the si
 average
 each generation as the number of new recombination breakpoints is Poisson distributed with expectation $\rho$.
 
-Our method uses more RAM use than simple forward simulations (see~\ref{ss:memuse_nosel}),
+\jda{Maybe we should quantify the factor by which RAM use increased; it's not
+	easy to read off the figures}
+Our method uses more RAM (up to 2 orders of magnitude more) than simple forward simulations (see~\ref{ss:memuse_nosel}),
 although in practice shorter simplification intervals may reduce RAM use
 (but at a slight cost to the speed up achieved, see~\ref{ss:seq_simp}).
 The benefits to our method are not limited to situations with selection:
