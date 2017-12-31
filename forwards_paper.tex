@@ -90,7 +90,7 @@ thanks to the important assumptions of
 (a) random mating,
 (b) neutrality,
 and (c) small sample size relative to the population size.
-The first two assumptions can be side-stepped to a limited extent \jda{cite?},
+The first two assumptions can be side-stepped to a limited extent \citep{Neuhauser1997-nn, hudson1990gene},
 but it remains a challenge to map results of coalescent models
 onto species that are distributed across continuous geographical space
 and/or have large numbers of loci under various sorts of selection.
@@ -117,15 +117,14 @@ Modern computing power easily allows simulations of birth, death and reproductio
 in a population having even hundreds of millions of individuals.
 However, if our interest lies in the resulting genetic patterns of variation
 -- and often, the point of such simulations is to compare to real data --
-then such simulations must record data for each individual genome.
+then such simulations must record each individual's genome.
 As samples of most species' genomes harbor tens or hundreds of millions of variant sites,
 naively carrying full genotypes for even modest numbers of individuals through a simulation
 becomes quickly prohibitive.
 To make matters worse,
 a population of size $N$ must be simulated across many multiples of $N$ generations
-to produce stable genetic patterns \jda {citation?}.
-Because of this computational burden, even the fastest simulation frameworks such as SLiM,
-\jda{We haven't motivatd that neutral muts are the burden yet}
+to produce stable genetic patterns \citep{wright1931evolution, wakeley2005coalescent}.
+Because of this computational burden, even the fastest simulation frameworks such as
 SLiM2~\citep{haller2017flexible} and fwdpp~\citep{fwdpp}
 can ``only'' simulate tens of megabases of sequence in tens of thousands of individuals
 for tens of thousands of generations, and there are still near-order-of-magnitude performance differences between these
@@ -154,9 +153,6 @@ The embellished pedigree contains all the information necessary
 to construct the genealogical tree that relates each individual to every other
 at each position on the genome,
 i.e., the \emph{tree sequence} implemented in the coalescent simulator \msprime{}~\citep{kelleher2016efficient}.
-\jda{Currently (even before my edit) we no longer mention the ARG equivalence *at all* in the intro which
-	seems wrong, but we might've hashed this over already? (and it's
-	mentioned later so maybe no matter)}
 Combined with ancestral genotypes and the origins of new mutations,
 it also completely specifies the genomic sequence of any individual in the population at any time.
 This is much much more than typically recorded in a forward simulation, however,
