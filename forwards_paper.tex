@@ -1249,7 +1249,9 @@ and $z.\lid = u$ for the output node ID.
 
 The peak RAM use in gigabytes (GB) is shown for the simulations with selection in Figure~\ref{sfig:ramsel} and for the
 simulations without selection in Figure~\ref{sfig:ramnosel}.  For our parameters, which involved simplifying every
-$10^3$ generations,  pedigree tracking requires more RAM.  With \fwdpy{}/\fwdpp{}, the reason for the extra RAM use is clear.  When pedigree tracking, a non-recombinant
+$10^3$ generations,  pedigree tracking requires more RAM with \fwdpp{} and less
+RAM with \simupop{}. The reason for reduced RAM use with \simupop{} is unclear;
+with \fwdpy{}/\fwdpp{}, however the reason for the extra RAM use is clear.  When pedigree tracking, a non-recombinant
 individual still requires one new edge and two new nodes to be allocated.  Without pedigree tracking, no new memory is
 allocated for such an offspring.  Thus, pedigree tracking accumulates a large amount of data in RAM until
 simplification.  This extra RAM consumption is the trade off for reduced run times and the degree of extra RAM needed
