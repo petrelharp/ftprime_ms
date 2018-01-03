@@ -33,7 +33,7 @@ for n, g in N10000g:
     ax1.plot(g['size'], g['time'], marker='.', ms=10)
 
 ax0.legend(loc='upper left', frameon=False,
-           title="GC interval\n(generations)", fontsize='x-small')
+           title="Simplification interval\n(generations)", fontsize='xx-small')
 for ax in [ax0, ax1]:
     print(sorted(data['size'].unique()))
     ax.xaxis.set_ticks(sorted(data['size'].unique()))
@@ -78,8 +78,8 @@ N10000g = N10000.groupby('GC')
 for n, g in N10000g:
     ax1.plot(g['size'], g['mem'], marker='.', ms = 10)
 
-ax0.legend(loc='upper left', frameon=False,
-           title="GC interval\n(generations)", fontsize='x-small')
+ax0.legend(loc="upper left", frameon=False,
+           title="Simplification\ninterval (generations)", fontsize='xx-small')
 for ax in [ax0, ax1]:
     print(sorted(data['size'].unique()))
     ax.xaxis.set_ticks(sorted(data['size'].unique()))
