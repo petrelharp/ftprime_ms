@@ -1280,8 +1280,9 @@ stored in RAM.  In practice, the RAM consumption can be minimized by simplifying
 
 \section{Effect of simplification interval on run time and memory use}
 \label{ss:gcinterval}
+\renewcommand{\thefigure}{C\arabic{figure}}
 
-We performed a limited set of simulations to explore the effect of the simplification interval on run times and memory
+We performed a limited set of simulations with \fwdpy{} to explore the effect of the simplification interval on run times and memory
 use. Figure~\ref{sfig:gctime} shows that run times increase for simplification intervals less than 100 generations.  For
 intervals $\geq 100$ generations, run times are very similar, with no appreciable difference between $10^3$ and $10^4$
 generations.  As expected, the simplification interval has a near-linear effect on peak RAM use
@@ -1304,7 +1305,7 @@ often.
 \newpage
 \section{Timing and memory use with no selection}
 \label{ss:timing_nosel}
-\renewcommand{\thefigure}{C\arabic{figure}}
+\renewcommand{\thefigure}{D\arabic{figure}}
 \setcounter{figure}{0}
 
 We also performed a more limited set of simulations without natural selection.  The total run times are shown in
