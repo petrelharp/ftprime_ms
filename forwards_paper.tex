@@ -273,12 +273,12 @@ each generation as the number of new recombination breakpoints is Poisson distri
 
 \jda{Maybe we should quantify the factor by which RAM use increased; it's not
 	easy to read off the figures}
-Our method uses more RAM (up to 2 orders of magnitude more) than simple forward simulations (see~\ref{ss:memuse_nosel}),
+Our method uses more RAM (up to 2 orders of magnitude more) than simple forward simulations (see~\ref{ss:memuse}),
 although in practice shorter simplification intervals may reduce RAM use
-(but at a slight cost to the speed up achieved, see~\ref{ss:seq_simp}).
+(but at a slight cost to the speed up achieved, see~\ref{ss:gcinterval}).
 The benefits to our method are not limited to situations with selection:
 in a more limited set of neutral simulations we found the same qualitative
-behavior with a numerically larger benefit to pedigree tracking (see~\ref{ss:speedup_nosel}).
+behavior with a numerically larger benefit to pedigree tracking (see~\ref{ss:timing_nosel}).
 
 \begin{figure}
     \includegraphics[]{sims/rawspeed}
@@ -1274,7 +1274,33 @@ stored in RAM.  In practice, the RAM consumption can be minimized by simplifying
     the same data as in Figure \ref{sfig:rawspeed_nosel}.}
 \end{figure}
 
-\section{Timing with no selection}
+\newpage
+
+\section{Effect of simplification interval on run time and memory use}
+\label{ss:gcinterval}
+
+We performed a limited set of simulations to explore the effect of the simplification interval on run times and memory
+use. Figure~\ref{sfig:gctime} shows that run times increase for simplification intervals less than 100 generations.  For
+intervals $\geq 100$ generations, run times are very similar, with no appreciable difference between $10^3$ and $10^4$
+generations.  As expected, the simplification interval has a near-linear effect on peak RAM use
+(Figure~\ref{sfig:gcmem}).  Taken together Figures~\ref{sfig:gctime} and~\ref{sfig:gcmem} suggest that one can tune the
+simplification interval to available RAM with little effect on run times provided that simplification doesn't occur too
+often.
+
+\begin{figure}[!h]
+    \includegraphics{sims/gc_interval/GCtime}
+    \caption{\label{sfig:gctime}The effect of simplification interval on run times.  A single replicate was done for the
+        parameters shown in the figure.  These simulations were done with the same selection parameters as in
+    Figure~\ref{fig:runtimes_selection}.}
+\end{figure}
+
+\begin{figure}[!h]
+    \includegraphics{sims/gc_interval/GCmem}
+    \caption{\label{sfig:gcmem}Peak RAM use for the simulations shown in Figure~\ref{sfig:gctime}.}
+\end{figure}
+
+\newpage
+\section{Timing and memory use with no selection}
 \label{ss:timing_nosel}
 \renewcommand{\thefigure}{C\arabic{figure}}
 \setcounter{figure}{0}
