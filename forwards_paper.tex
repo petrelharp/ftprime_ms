@@ -632,14 +632,16 @@ two children (i.e., unary tree vertices are removed).
     \end{center}
     \caption{
         A simple example of the simplify method.
-        \textbf{Top:} the diagram on the left relates ten haploid individuals to each other.
-        It has 10 node records (one for each individual)
+        \textbf{Top:} the augmented pedigree diagram on the left 
+        relates ten haploid ``individuals'' (i.e., parental chromosomes) to each other;
+        dotted lines connect individuals who mate, and solid lines lead to their offspring.
+        The corresponding tables (right) have 10 node records (one for each individual)
         and 14 edge records (one for each distinctly inherited segment).
-        Blue numbers denote crossing over locations in each meiosis --
+        Blue numbers denote crossing over locations --
         for instance, $C$ and $D$ were parents to $F$,
         who inherited the left 70\% of the chromosome from $D$ and the remainder from $C$.
-        The individuals $B$, $C$, and $D$ inherit clonally from $A$.
-        \textbf{Center:} the five distinct trees relating all individuals to each other
+        Individuals $B$, $C$, and $D$ inherit clonally from $A$.
+        \textbf{Center:} the five distinct trees
         found across the chromosome (blue numbers denote locations on the chromosome).
         Labels after simplification are shown in red.
         \textbf{Bottom:} tables recording the tree sequence after simplification
