@@ -636,16 +636,17 @@ two children (i.e., unary tree vertices are removed).
         \includegraphics{method_diagram}
     \end{center}
     \caption{
-        A simple example of the simplify method.
+        An example of tree sequence simplification.
         \textbf{Top:} the augmented pedigree diagram on the left 
-        relates ten haploid ``individuals'' (i.e., parental chromosomes) to each other;
-        dotted lines connect individuals who mate, and solid lines lead to their offspring.
-        The corresponding tables (right) have 10 node records (one for each individual)
+        relates the ten homologous chromosomes of five diploid individuals (BC, DE, FG, HI, and JK) 
+        to each other and to a common ancestral chromosome (A);
+        dotted lines connect the two chromosomes of each individual, and solid lines lead to the products of their meioses.
+        The corresponding tables (right) have 10 node records (one for each chromosome)
         and 14 edge records (one for each distinctly inherited segment).
         Blue numbers denote crossing over locations --
-        for instance, $C$ and $D$ were parents to $F$,
-        who inherited the left 70\% of the chromosome from $D$ and the remainder from $C$.
-        Individuals $B$, $C$, and $D$ inherit clonally from $A$.
+        for instance, $D$ and $E$ were parents to $F$,
+        who inherited the left 70\% of the chromosome from $E$ and the remainder from $D$.
+        $B$, $C$, $D$, and $E$ inherit clonally from $A$.
         \textbf{Center:} the five distinct trees
         found across the chromosome (blue numbers denote locations on the chromosome).
         Labels after simplification are shown in red.
@@ -701,9 +702,12 @@ during the process of simplifying this tree sequence.
         A depiction of the state of the simplification algorithm
         at each point in time,
         in the example of Figure~\ref{fig:method_diagram}A.
-        As in that figure, blue numbers denote the crossing over location in a meiosis --
-        for instance, $G$ and $H$ were parents to $I$,
-        who inherited the left 70\% of the chromosome from $G$ and the remainder from $H$.
+        Ancestral material from J (red) and K (blue) are traced up through the pedigree
+        until they coalesce;
+        the smaller colored chromosomes on either side of each solid arrow show the bits inherited from each of the two parental chromosomes;
+        each time two colors overlap, a coalescence occurs, and two edges are output.
+        For instance, both J and K inherit from H beteen 0.5 and 0.9,
+        which resulted in the first two edges of the simplified table of Figure~\ref{fig:method_diagram}C.
         \label{fig:simplify_state}
     }
 \end{figure}
