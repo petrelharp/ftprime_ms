@@ -270,22 +270,22 @@ the pedigree, the relative speedup due to pedigree tracking is up to $\approx 50
 population sizes and we observe increasing relative speedups as $4Nr$ increases for a given $N$
 (Figure~\ref{fig:relative_speedup_selection}).  We saw a similar trend with $4Nr$ for \simupop{}, but the effect of $N$
 could not be explored because the simulations tended to run out of available memory.
-  Note the log scale of the x axis in Figure~\ref{fig:runtimes_selection}, which
+Note the log scale of the x axis in Figure~\ref{fig:runtimes_selection}, which
 partially obscures an important observation that the run times appear approximately linear in region size when tracking
-pedigree.  The reason for this behavior is that, when tracking pedigrees, the simulations are generating a constant number of new edges on
-average
+pedigree.  The reason for this behavior is that, when tracking pedigrees, the simulations are generating a constant number of new edges on average
 each generation as the number of new recombination breakpoints is Poisson distributed with expectation $\rho$.
-
-\jda{Maybe we should quantify the factor by which RAM use increased; it's not
-	easy to read off the figures}
-\krt{I'm not sure it really matters.  It goes from a little to a lot.  And if we do relative, then we lose a lot of
-    points again}
-Our method uses more RAM (up to 2 orders of magnitude more) than simple forward simulations (see~\ref{ss:memuse}),
-although in practice shorter simplification intervals may reduce RAM use
-(but at a slight cost to the speed up achieved, see~\ref{ss:gcinterval}).
-The benefits to our method are not limited to situations with selection:
-in a more limited set of neutral simulations we found the same qualitative
+In a more limited set of neutral simulations we found the same qualitative
 behavior with a numerically larger benefit to pedigree tracking (see~\ref{ss:timing_nosel}).
+
+In our test runs, our method used substantially more RAM than simple forward simulations (see~\ref{ss:memuse}).
+This is unsurprising:
+unsimplified tree sequences grow quickly, and so storing history can use arbitrarily much memory. 
+However, this is not a requirement of the method, only a straightforwards consequence of a speed--memory tradeoff:
+the amount of required memory is mostly determined by the interval between simplification steps,
+but less frequent simplification reduces overall computation time (see~\ref{ss:gcinterval}). 
+In fact, our method could in some situations \emph{reduce} the amount of memory required, 
+if memory usage in the forwards simulation was dominated by the cost of maintaining neutral genetic variants.
+
 
 \begin{figure}
     \includegraphics[]{sims/rawspeed}
