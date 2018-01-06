@@ -63,10 +63,15 @@
     and recording history in the \emph{tree sequence} format introduced in the software package \msprime,
     on which neutral mutations can be quickly placed afterwards.
     We implement the method in two popular forwards-time simulation frameworks,
-    and show that not only does this speed up large simulations by one or two orders of magnitude,
-    but saves not only full genotype sequences, but also all marginal
-    geneologies of the simulated individuals.
-    % This has the promise of making large-scale, whole-genome simulations with realistic geography and selection finally possible.
+    which speeds up large, whole-genome simulations by one or two orders of magnitude.
+    In addition to speed, we show that the method has several advantages:
+    (1) All marginal genealogies of the simulated individuals are recorded, rather than just genotypes.
+    (2) A population of $N$ individuals with $M$ polymorphic sites
+    can be stored on $O(N \log N + M)$ space, making it feasible to store a simulation's entire final generation
+    rather than only a subset.
+    (3) A simulation can easily be initialized with prior history produced by a more efficient coalescent simulation of deep history.
+    To make these possible, 
+    we introduce the \msprime{} Tables API, which allows for the efficient interchange of genealogical data between modular program components.
 \end{abstract}
 
 % NOTE: I tend to use semantic linebreaks.
