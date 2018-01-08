@@ -72,8 +72,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1"
-     inkscape:cx="219.34184"
-     inkscape:cy="363.86644"
+     inkscape:cx="49.34184"
+     inkscape:cy="359.86644"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -82,7 +82,7 @@
      fit-margin-right="0"
      fit-margin-bottom="0"
      inkscape:window-width="1920"
-     inkscape:window-height="1016"
+     inkscape:window-height="1136"
      inkscape:window-x="0"
      inkscape:window-y="27"
      inkscape:window-maximized="1"
@@ -102,7 +102,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -3103,14 +3103,14 @@
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:0%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans, Normal';text-align:end;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:end;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="180.60768"
+       x="186.23268"
        y="792.20422"
        id="text8990"><tspan
          sodipodi:role="line"
-         x="180.60768"
+         x="186.23268"
          y="792.20422"
          id="tspan4915"
-         style="font-size:15.00000095px;line-height:1.25">(C) Simplified for I,J:</tspan></text>
+         style="font-size:15.00000095px;line-height:1.25">(C) Simplified for J,K:</tspan></text>
     <path
        inkscape:connector-curvature="0"
        id="path9006"
