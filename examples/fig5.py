@@ -23,8 +23,7 @@ tss2 = msprime.load_text(edges=open('edges.txt'), nodes=open('nodes.txt'))
 for t in tss2.trees():
     print(t.draw(format='unicode'))
 
-print("note the nodes.flags differ between the output of `ts.simplify()`:")
+print("Raw tables from `ts.simplify()`:")
 print(tss.dump_tables())
-print("\n\n\n...and the the trees loaded from the raw table:")
+print("\n\n\n...and from the trees loaded from text tables:")
 print(tss2.dump_tables())
-
