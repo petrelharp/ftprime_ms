@@ -58,7 +58,7 @@
     In this paper we describe how to
     efficiently record the entire genetic history of a population
     during a forwards-time, individual-based population genetics simulation.
-    This allows us to dramatically reduce the computational burden of tracking individual genomes
+    This dramatically reduces the computational burden of tracking individual genomes
     by simulating only those loci that may affect reproduction (those having non-neutral variants),
     and recording history in the \emph{tree sequence} format introduced in the software package \msprime,
     on which neutral mutations can be quickly placed afterwards.
@@ -70,7 +70,7 @@
     can be stored on $O(N \log N + M)$ space, making it feasible to store a simulation's entire final generation
     rather than only a subset.
     (3) A simulation can easily be initialized with prior history produced by a more efficient coalescent simulation of deep history.
-    To make these possible, 
+    To make these possible,
     we introduce the \msprime{} Tables API, which allows for the efficient interchange of genealogical data between modular program components.
 \end{abstract}
 
@@ -95,9 +95,10 @@ thanks to the important assumptions of
 (a) random mating,
 (b) neutrality,
 and (c) small sample size relative to the population size.
-The first two assumptions can be side-stepped to a limited extent \citep{Neuhauser1997-nn, hudson1990gene},
+The first two assumptions can be side-stepped to a limited extent \citep{hudson1990gene, Neuhauser1997-nn},
 but it remains a challenge to map results of coalescent models
-onto species that are distributed across continuous geographical space
+onto species that are distributed across continuous geographical
+space~\citep{barton2010new,kelleher2014coalescent}
 and/or have large numbers of loci under various sorts of selection.
 Furthermore, the relationship between the life history of a species --
 fecundity and mortality schedules, density-dependent effects on fitness, and demographic fluctuations --
@@ -105,7 +106,7 @@ are all absorbed into a single compound parameter, the coalescence rate.
 The third assumption is no longer safe, either --
 for example, a recent study~\citep{martin2017human}
 simulated 600,000 samples of human chromosome 20 to examine biases in GWAS.
-Several studies have now shown that in samples of size approaching that of the population,
+Several studies have now shown that in samples approaching the size of the population,
 genealogical properties may be distorted relative to the coalescent expectation
 \citep{wakeley2003gene,maruvka2011recovering,bhaskar2014distortion}.
 These considerations, and increasing computational power, have led to a resurgence of
@@ -206,7 +207,7 @@ The simulations without pedigree recording introduced neutral mutations at a rat
 equal to the recombination rate,
 so $\mu = r$, where $\mu$ and $r$ are the expected number of mutations per gamete and recombination breakpoints per
 diploid,
-respectively, each generation. 
+respectively, each generation.
 % Both mutations and recombinations occur as Poisson processes with respective means $\mu$ and $r$,
 % and we used the infinitely-many sites mutation model \citep{Kimura1969-uc}.
 We ran simulations with different values of $N$ and varied the size of the region according to the scaled recombination
@@ -249,7 +250,7 @@ we implemented these simulations separately using two different simulation engin
 
 \end{enumerate}
 
-We ran all benchmarks on an Ubuntu Linux (version 16.04) system with two 2.6 Gigahertz Intel E5-2650 CPU with
+We ran all benchmarks on an Ubuntu Linux (version 16.04) system with two 2.6 GHz Intel E5-2650 CPU with
 hyperthreading enabled.
 We ran one simulation at a time and the machine was under minimal load otherwise.
 We used GNU parallel \citep{Tange2011a} to kill any simulation that did not finish within 72 hours,
@@ -279,11 +280,11 @@ behavior with a numerically larger benefit to pedigree tracking (see~\ref{ss:tim
 
 In our test runs, our method used substantially more RAM than simple forward simulations (see~\ref{ss:memuse}).
 This is unsurprising:
-unsimplified tree sequences grow quickly, and so storing history can use arbitrarily much memory. 
+unsimplified tree sequences grow quickly, and so storing history can use arbitrarily much memory.
 However, this is not a requirement of the method, only a straightforwards consequence of a speed--memory tradeoff:
 the amount of required memory is mostly determined by the interval between simplification steps,
-but less frequent simplification reduces overall computation time (see~\ref{ss:gcinterval}). 
-In fact, our method could in some situations \emph{reduce} the amount of memory required, 
+but less frequent simplification reduces overall computation time (see~\ref{ss:gcinterval}).
+In fact, our method could in some situations \emph{reduce} the amount of memory required,
 if memory usage in the forwards simulation was dominated by the cost of maintaining neutral genetic variants.
 
 
@@ -320,7 +321,7 @@ from Figure~\ref{fig:runtimes_selection} for simulations that ran to completion 
 \subsection*{Working with a tree sequence through tables}
 
 The simulations above recorded information about each new individual
-in collection of tables that together encode a \emph{tree sequence}.
+in a collection of tables that together define a \emph{tree sequence}.
 A {tree sequence} is an encoding for a sequence of correlated trees,
 such as those describing the history of a sexual population.
 A closely related structure is known as the \emph{ancestral recombination graph} --
@@ -383,13 +384,13 @@ Each edge records:
 the endpoints $[\ell, r)$ of the half-open genomic interval defining the
 spatial extent of the edge;
 and the identities $p$ and $c$ of the parent and child nodes
-of a single branch that occurs in all trees covering this interval.
+of a single branch that occurs in all trees in this interval.
 The spatial extent of the edges defining the topology of Figure~\ref{fig:example_tree_sequence}
 are shown in the bottom left panel.
 For example, the branch joining nodes 1 to 3 appears in both trees,
 and so is recorded as a single edge extending over the whole chromosome.
 It is this method of capturing the shared structure between adjacent trees that makes the
-tree sequence encoding very compact and algorithmically efficient.
+tree sequence encoding compact and algorithmically efficient.
 
 Recovering the sequence of trees from this information is straightforward:
 each point along the genome that the tree topology changes
@@ -411,14 +412,14 @@ Given the topology defined by the nodes and edges, \emph{sites} and \emph{mutati
 encode the sequence information for each sample in an efficient way. Each site
 is associated with a position on the genome and an ancestral state. For example,
 in Figure~\ref{fig:example_tree_sequence} we have two sites, one at position
-2 with ancestral state `A' and the other at position 7 with ancestral state `G'. If
+2.5 with ancestral state `A' and the other at position 7.5 with ancestral state `G'. If
 no mutations occur, all samples inherit the ancestral state at a given site.
 Each mutation occurs above a specific node at a given site,
 and results in a specific derived state.
 Thus, all samples below the mutation's node in the tree will inherit this state,
 unless further mutations are encountered.
 Three mutations are shown in Figure~\ref{fig:example_tree_sequence},
-illustrated by red hexagons.
+illustrated by red stars.
 The first site, in the left-hand tree,
 has a single mutation, which results in node $2$ inheriting the state `T'.
 The second site, in the right hand tree, has two mutations:
@@ -513,11 +514,11 @@ Set $\Nt \leftarrow \mbox{\texttt{NodeTable}}()$, $\mathcal{E}
     $b \leftarrow \randomuniform(\{0, \dots, N - 1\})$ and $x \leftarrow \randomuniform([0, L))$.
 }
 
-\algstep{W4.}{Record edges}{
+\algstep{W4.}{Record edges.}{
 Call $\taddedge{\Et, 0, x, P_a, u}$ and $\taddedge{\Et, x, r, P_b, u}$.
 }
 
-\algstep{W5.}{Individual loop}{Set $j \leftarrow j + 1$. If $j < N$ go to \algref{W2}.
+\algstep{W5.}{Individual loop.}{Set $j \leftarrow j + 1$. If $j < N$ go to \algref{W2}.
 Otherwise, if $t\bmod s \neq 0$ go to \algref{W7}.
 }
 
@@ -594,14 +595,14 @@ is the minimal tree representing the ancestry of the current set of samples.
 Clearly there is a great deal of redundancy in the topological
 information output by the simulation.
 This redundancy comes from two sources.
-First, there are a large number of nodes in tree that have only one child.
+First, there are a large number of nodes in the tree that have only one child.
 In Algorithm~\algref{W} we do not attempt to identify coalescence events,
 but simply record all parent-child
 relationships in the history of the population.
 As such, many of these edges
 will record the simple passing of genealogical information from parent to child
 and only some small subset will correspond to coalescences within the marginal
-trees. The second source of redundancy in the output of Algorithm~\algref{W}
+trees. The second source of redundancy in the (unsimplified) output of Algorithm~\algref{W}
 is due to the fact that lineages die out: a large number of
 individuals in the simulation leave no descendants in the present day population.
 Node 26 in Figure~\ref{fig:wf-trees}a, for example, leaves no
@@ -637,8 +638,8 @@ two children (i.e., unary tree vertices are removed).
     \end{center}
     \caption{
         An example of tree sequence simplification.
-        \textbf{Top:} the augmented pedigree diagram on the left 
-        relates the ten homologous chromosomes of five diploid individuals (BC, DE, FG, HI, and JK) 
+        \textbf{Top:} the augmented pedigree diagram on the left
+        relates the ten homologous chromosomes of five diploid individuals (BC, DE, FG, HI, and JK)
         to each other and to a common ancestral chromosome (A);
         dotted lines connect the two chromosomes of each individual, and solid lines lead to the products of their meioses.
         The corresponding tables (right) have 10 node records (one for each chromosome)
@@ -732,7 +733,7 @@ linear in the number of edges of the input tree sequence.
 \label{ss:seq_simp}
 
 Any simulation scheme that records data into tables,
-as does Algorithm~\algref{W},
+as Algorithm~\algref{W} does,
 has its genealogical history available at any time as a tree sequence.
 This has two additional advantages:
 First, simplification can be run periodically through the simulation,
@@ -752,7 +753,7 @@ algorithm itself, which we show in the next section has linear time complexity.
 % As shown in the next section,
 % there is no computational advantage to simplifying more often than is necessary
 % to keep memory usage down.
-% 
+%
 % \krt{Empirically, I did find that simplifying more often than every 1,000 generations gave a run-time hit of about 25
 % percent???}
 
@@ -763,7 +764,7 @@ algorithm itself, which we show in the next section has linear time complexity.
 
 The simulation results shown in Figures \ref{fig:runtimes_selection} and \ref{fig:relative_speedup_selection} show that
 pedigree tracking greatly speeds up forward-time simulations.  Further, the run times with pedigree tracking become
-near-linear in $rho$ (Figure \ref{fig:runtimes_selection}).  In this section, we explore the run-time complexity using a
+near-linear in $\rho$ (Figure \ref{fig:runtimes_selection}).  In this section, we explore the run-time complexity using a
 simplified Wright-Fisher model with recombination.
 
 %% Memory reduction thanks to simplification
@@ -913,8 +914,6 @@ The four key tables: nodes, edges, sites and mutations, are described above.
 
 The Tables API is primarily designed to facilitate efficient interchange of
 data between programs or between different modules of the same program.
-% we are capitalizing Tables API but not the more generic "tables".
-% \jda{should capitalize Tables, or not, as above}
 Following current best practises
 \plr{citations: Apache arrow, etc},
 data is stored in a columnar format,
@@ -923,18 +922,18 @@ In principle, this enables zero-copy semantics,
 where a data consumer can read the information directly
 from the memory of a producer without incurring the overhead of a copy.
 \jda{TODO citation missing}
-Our implementation uses the numpy C API \citep{numpy_C_api} to efficiently copy
+Our implementation uses the NumPy C API~\citep{walt2011numpy} to efficiently copy
 data from Python into the low-level C library used to manipulate tree sequences.
 Since tables are encoded as contiguous arrays of numeric data,
 this achieves data transfer rates that would be impossible under
 any text-based approach while retaining excellent portability.
 
-This also provides basic input and output operations via numpy's
+This also provides basic input and output operations via NumPy's
 array interface, which provides a great deal of flexibility and efficiency,
 and makes it straightforward to transfer data from sources
-such as HDF5 \citep{hdf5}, Dask, or Zarr.
-\jda{TODO citation missing}
-(For small scale data and debugging purposes, a simple text format is also supported.)
+such as HDF5 \citep{hdf5}or Dask~\citep{dask}.
+For small scale data and debugging purposes, a simple text format is also supported.
+
 % PLR: this was mentioned above, and belongs in the documentation, I think.
 % The API also provides functions to sort tables
 % to ensure that the records are in the form required to input
@@ -1025,7 +1024,7 @@ to improve performance for the ``Poisson Random Field'' (PRF) family of models~\
 in which mutations are unlinked and there is no effect of genetic background on fitness.
 However, thus far little attention has been paid to parallelization of simulations involving linkage, as our simulations
 where do, which is much more
-complex than the PRF model. 
+complex than the PRF model.
 
 A final note:
 in preparing this manuscript,
