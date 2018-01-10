@@ -1084,7 +1084,7 @@ the \texttt{Recombinator} class of \simupop{}, adding them to a \tnodetable{} an
 The tables are initialized using the \texttt{TreeSequence} returned from
 \texttt{msprime.simulate($2N$, Ne=$N$, recombination\_rate=$r/2$, length=$n$)}.
 The \texttt{simuPOP.Population()} is initialized and tagged with individual IDs,
-a mapping of these IDs to the \tnodetable IDs is passed to
+a mapping of these IDs to the \tnodetable{} IDs is passed to
 an instance of \texttt{RecombCollector} and used internally to update the tables.
 The \texttt{simuPOP.Population()} is then evolved.
 Before mating: selected mutations are created (using
@@ -1098,7 +1098,7 @@ simplifed.
 
 \texttt{RecombCollector} uses the Python class \texttt{ARGrecorder} internally
 to add data to the tables and perform simplification.
-This class contains the \tnodetable and \tedgetable and also the mapping from
+This class contains the \tnodetable{} and \tedgetable{} and also the mapping from
 (haploid) ids to ids in the tables.
 It also provides methods (\texttt{add\_individual} and \texttt{add\_record})
 to append data to the tables.
