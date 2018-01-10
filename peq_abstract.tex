@@ -2,13 +2,22 @@
 \usepackage{fullpage}
 \begin{document}
 
+\textbf{KT:}
+
 We present a new approach to recording the entire history of a population during forward-time, individual-based
 population genetics simulation.  Our approach uses extensions of the data structures in the \emph{msprime} software to
 record the marginal genealogies of all individuals (including ancient samples when needed), eliminating the need to
-expicitly simulate mutations not affecting fitness.  We show that recording histories substantially reduces the run-time
+expicitly simulate mutations not affecting fitness.  
+As another benefit, it is easy with these tools to initialize a forward-time simulation
+with prior history produced by efficient coalescent simulation.
+We show that recording histories substantially reduces the run-time
 complexity of two different forward simulation engines, providing run time improvements of at least an order of
 magnitude and the possibility of substantial reductions in memory requirements.  We will also describe the API, new in
 \emph{msprime} 0.5.0, that enables our simulation method.  These new features generally enable storage of
-population-genomic information within the \emph{msprime} data structures from third-party code.
+population-genomic information within the \emph{msprime} data structures from third-party code. The method
+makes it possible to not only run substantially larger simulations (whole chromosomes with XX individuals in X hours),
+but also to record and analyze the resulting whole-population genealogies across entire genomes.
+
+
 
 \end{document}
