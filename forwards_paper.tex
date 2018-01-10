@@ -31,6 +31,9 @@
 \newcommand{\taddnode}[1]{\mbox{\texttt{addnode}}(#1)}
 \newcommand{\taddedge}[1]{\mbox{\texttt{addedge}}(#1)}
 \newcommand{\tsimplify}[1]{\mbox{\texttt{simplify}}(#1)}
+\newcommand{\tsort}[1]{\mbox{\texttt{sort}}(#1)}
+\newcommand{\tnodetable}[1]{\mbox{\texttt{NodeTable}}(#1)}
+\newcommand{\tedgetable}[1]{\mbox{\texttt{EdgeTable}}(#1)}
 \DeclareMathOperator{\len}{length}
 \DeclareMathOperator{\add}{add} % for adding to tables
 \newcommand{\lleft}{\mathrm{left}}  % left label
@@ -502,7 +505,7 @@ information from $\Nt$ and $\Et$ unreachable from the current population $P$.
 }
 
 \algstep{W1.}{Initialisation.}{
-Set $\Nt \leftarrow \mbox{\texttt{NodeTable}}()$, $\mathcal{E}
+Set $\Nt \leftarrow \tnodetable()$, $\mathcal{E}
 \leftarrow \mbox{\texttt{EdgeTable}}()$, $t \leftarrow T$, and $j \leftarrow 0$.
  For $0 \leq k < N$, set $P_k \leftarrow \taddnode{\Nt, T}$.
 }
@@ -1043,9 +1046,11 @@ but perhaps it will prove useful elsewhere.
 %%%%%%%%%%%%%%
 \section*{Methods}
 
-\krt{Are we doing a methods section?}
+\subsection*{The \cpp{} implementation}
 
-\subsection{Requirements for the \cpp{} implementation}
+\paragraph{Requirements.}
+The \cpp{} implementation uses several packages installed via conda,
+except for \msprime{}, which must be installed from GitHub.
 
 \begin{enumerate}
     \item \fwdpy{} 0.13.a0
@@ -1053,23 +1058,69 @@ but perhaps it will prove useful elsewhere.
     \item GNU Scientific Library 1.16
     \item pybind11 2.2.1
     \item GCC 4.8.5
-    \item \msprime{} master branch \jda{which commit hash or short version number
-		    from pip freeze or {\tt msprime.\_\_version\_\_}?}
+    \item \msprime{} 0.5.0 \jda{Changed these but the actual sims were not run
+		    with this version...}
 \end{enumerate}
 
-All of the above installed via conda, except for msprime, which must be installed from GitHub.
+\subsection*{The \simupop{} implementation}
 
-\subsection{Requirements for the \simupop{} implementation}
+We implemented simulations in a Python script, usable as a command-line utility,
+taking input parameters for population size $N$ and scaled recombination rate $\rho$.
+As described in 'Simulation benchmarks', we set scaled mutation rate $\theta=\rho$,
+we used simplify interval of 1000 and simulated for $T=10N$ generations in each
+simulation, introducing deleterious mutations at a rate of $\rho/100$ per
+generation.
+Because \simupop{} requires explicit locations for loci, we set the number of
+loci $n=\rho / (4Nr)$ and marked
+$k={\rm round}(\mu / (100 (\mu + \mu / 100))) = 0$ of these as selected loci.
+\jda{unfortunately probably what we did...}
+The selected loci were chosen as a random sample of all the loci.
 
-The simulations are implemented the Python package \ftprime{} 0.0.6rc0
-which is available at \url{https://www.github.com/ashander/ftprime}.
+We coupled \simupop{} to \msprime{} using a Python class \texttt{RecombCollector} that 1)
+tracks time, and 2) collects and parses recombination information provided by
+the \texttt{Recombinator} class of \simupop{}, adding them to a \tnodetable{} and
+\tedgetable{} upon which simplification is performed every 1000 generations (using
+\texttt{msprime.sort\_tables()} and \texttt{msprime.simplify\_tables}).
+The tables are initialized using the \texttt{TreeSequence} returned from
+\texttt{msprime.simulate($2N$, Ne=$N$, recombination\_rate=$r/2$, length=$n$)}.
+The \texttt{simuPOP.Population()} is initialized and tagged with individual IDs,
+a mapping of these IDs to the \tnodetable{} IDs is passed to
+an instance of \texttt{RecombCollector} and used internally to update the tables.
+The \texttt{simuPOP.Population()} is then evolved.
+Before mating: selected mutations are created (using
+\texttt{simuPOP.SNPMutator}) and multiplicative selection occurs (using
+\texttt{simuPOP.PyMlSelector}) only on the selected loci;
+the internal time of the \texttt{RecombCollector} instance is updated.
+During mating: male and female parents are drawn randomly, recombination data is
+output by \simupop{} to the \texttt{RecombCollector} instance.
+After mating: nothing happens 999/1000 generations, every 1000 generations the tables are
+simplifed.
+
+\texttt{RecombCollector} uses the Python class \texttt{ARGrecorder} internally
+to add data to the tables and perform simplification.
+This class contains the \tnodetable{} and \tedgetable{} and also the mapping from
+(haploid) ids to ids in the tables.
+It also provides methods (\texttt{add\_individual} and \texttt{add\_record})
+to append data to the tables.
+The only functions of
+\texttt{RecombCollector} not delegated to this internal class are computing
+haploid IDs from \simupop{}'s diploid IDs and parsing recomination data into
+data suitible for use with use with \texttt{add\_individual} and
+\texttt{add\_record}; these functions are used to stream data into the tables as
+it is received by an instance of \texttt{RecombCollector}.
+
+\paragraph{Requirements.}
+The simulations as implemented depend on the class \texttt{RecombCollector} provided by
+the Python package \ftprime{} 0.0.6rc0,
+available at \url{https://www.github.com/ashander/ftprime}.
 Its requirements are encoded in an \texttt{environment.yml} file, compatible
 with conda, but \msprime{} must be updated to the version listed below via pip
-from GitHub \jda{TODO add command}.
+from GitHub \jda{TODO add command?}.
+
 In brief the requirements are:
 
 \begin{enumerate}
-    \item \msprime{} \jda{TODO add version from KRT's dev machine}
+    \item \msprime{} 0.5.0
     \item \simupop{} 1.1.8.3
     \item python 3.5
 \end{enumerate}
