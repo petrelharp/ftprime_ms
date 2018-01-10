@@ -1065,8 +1065,8 @@ except for \msprime{}, which must be installed from GitHub.
 \subsection*{The \simupop{} implementation}
 
 We implemented simulations in a Python script, usable as a command-line utility,
-taking input parameters for population size $N$ and scaled recombination $\rho$.
-As described in 'Simulation benchmarks', we set scaled mutation $\theta=\rho$,
+taking input parameters for population size $N$ and scaled recombination rate $\rho$.
+As described in 'Simulation benchmarks', we set scaled mutation rate $\theta=\rho$,
 we used simplify interval of 1000 and simulated for $T=10N$ generations in each
 simulation, introducing deleterious mutations at a rate of $\rho/100$ per
 generation.
@@ -1076,10 +1076,10 @@ $k={\rm round}(\mu / (100 (\mu + \mu / 100))) = 0$ of these as selected loci.
 \jda{unfortunately probably what we did...}
 The selected loci were chosen as a random sample of all the loci.
 
-We coupled \simupop{} to \msprime{} using a Python class \texttt{RecombCollector} 1)
+We coupled \simupop{} to \msprime{} using a Python class \texttt{RecombCollector} that 1)
 tracks time, and 2) collects and parses recombination information provided by
 the \texttt{Recombinator} class of \simupop{}, adding them to a \tnodetable{} and
-\tedgetable{} upon which simplification is performed every 1000 years (using
+\tedgetable{} upon which simplification is performed every 1000 generations (using
 \texttt{msprime.sort\_tables()} and \texttt{msprime.simplify\_tables}).
 The tables are initialized using the \texttt{TreeSequence} returned from
 \texttt{msprime.simulate($2N$, Ne=$N$, recombination\_rate=$r/2$, length=$n$)}.
@@ -1093,7 +1093,7 @@ Before mating: selected mutations are created (using
 the internal time of the \texttt{RecombCollector} instance is updated.
 During mating: male and female parents are drawn randomly, recombination data is
 output by \simupop{} to the \texttt{RecombCollector} instance.
-After mating: nothing happens 999/1000 years, every 1000 years the tables are
+After mating: nothing happens 999/1000 generations, every 1000 generations the tables are
 simplifed.
 
 \texttt{RecombCollector} uses the Python class \texttt{ARGrecorder} internally
