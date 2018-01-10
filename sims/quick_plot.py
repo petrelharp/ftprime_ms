@@ -31,8 +31,10 @@ data_neut = data[data['sel'] == False].copy(deep=True)
 data = data[data['sel'] == True]
 data.sort_values(by='rho', inplace=True)
 groups = data.groupby(['engine', 'arg', 'queue', 'N'])
-fig, ((ax_fwdpp, ax_fwdpp_arg), (ax_simupop, ax_simupop_arg)) = plt.subplots(
-    2, 2, sharex=True, sharey=True)
+fig, (ax_fwdpp, ax_fwdpp_arg) = plt.subplots(
+    1, 2, sharex=True, sharey=True)
+# fig, ((ax_fwdpp, ax_fwdpp_arg), (ax_simupop, ax_simupop_arg)) = plt.subplots(
+#     2, 2, sharex=True, sharey=True)
 for name, group in groups:
     lstyle = '-'
     if name[0] == 'fwdpy11' and name[1] is False:
@@ -41,9 +43,10 @@ for name, group in groups:
         ax = ax_fwdpp_arg
     m = points[name[3]]
     if name[0] == 'simuPOP':
-        ax = ax_simupop
-        if name[1] is True:
-            ax = ax_simupop_arg
+        continue
+    #     ax = ax_simupop
+    #     if name[1] is True:
+    #         ax = ax_simupop_arg
     mfacecolor = colors[name[3]]
     if name[2] is True:
         lstyle = 'dashed'
@@ -57,15 +60,19 @@ for name, group in groups:
 ax_fwdpp.legend(loc='upper left',frameon=False)
 ax_fwdpp.set_title("fwdpy11 with neutral mutations", fontsize='medium')
 ax_fwdpp_arg.set_title("fwdpy11 with pedigree tracking", fontsize='medium')
-ax_simupop.set_ylabel("Run time (hours)")
+# ax_fwdpp_arg.set_ylabel("Run time (hours)")
 ax_fwdpp.set_ylabel("Run time (hours)")
-ax_simupop.set_title("simuPOP with neutral mutations", fontsize='medium')
-ax_simupop_arg.set_title("simuPOP with pedigree tracking", fontsize='medium')
-ax_simupop.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
-ax_simupop_arg.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
-ax_simupop_arg.set_xticks([1e3, 1e4, 1e5])
-for ax in (ax_simupop, ax_simupop_arg):
+for ax in (ax_fwdpp,ax_fwdpp_arg):
+    ax.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
+    ax.set_xticks([1e3, 1e4, 1e5])
     ax.set_xscale('log')
+# ax_simupop.set_title("simuPOP with neutral mutations", fontsize='medium')
+# ax_simupop_arg.set_title("simuPOP with pedigree tracking", fontsize='medium')
+# ax_simupop.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
+# ax_simupop_arg.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
+# ax_simupop_arg.set_xticks([1e3, 1e4, 1e5])
+# for ax in (ax_simupop, ax_simupop_arg):
+#     ax.set_xscale('log')
 fig.tight_layout()
 plt.savefig("rawspeed.pdf")
 
@@ -78,15 +85,15 @@ joined = data_arg.merge(data_noarg, on=[
                         'engine', 'N', 'rho'], how='outer', suffixes=('_arg', '_noarg')).dropna()
 joined['speedup'] = joined['time_noarg'] / joined['time_arg']
 groups = joined.groupby(['engine', 'N'])
-fig, (ax_fwdpp, ax_simupop) = plt.subplots(
-    2,  sharex=True, sharey=False)
+fig, (ax_fwdpp) = plt.subplots(
+    1,  sharex=True, sharey=False)
 for name, group in groups:
     lstyle = 'solid'
     if name[0] == 'fwdpy11':
         ax = ax_fwdpp
     m = points[name[1]]
     if name[0] == 'simuPOP':
-        ax = ax_simupop
+        continue
     mfacecolor = colors[name[1]]
     popsize = int(name[1])
     ax.plot(group.rho, group.speedup, marker=m,
@@ -94,12 +101,11 @@ for name, group in groups:
             color=colors[name[1]],
             markerfacecolor=mfacecolor)
 
-for ax in (ax_fwdpp, ax_simupop):
+for ax in (ax_fwdpp,):
     ax.set_ylabel("Speedup due to\npedigree recording")
 ax_fwdpp.set_title("fwdpy11", fontsize='medium')
-ax_simupop.set_title("simuPOP", fontsize='medium')
-ax_simupop.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
-ax_simupop.set_xscale('log')
+ax_fwdpp.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
+ax_fwdpp.set_xscale('log')
 ax_fwdpp.legend(loc='best',frameon=False)
 fig.tight_layout()
 plt.savefig("speedup.pdf")
@@ -107,8 +113,8 @@ plt.savefig("speedup.pdf")
 # Now, plots for sims w/o selection
 data_neut.sort_values(by='rho', inplace=True)
 groups = data_neut.groupby(['engine', 'arg', 'queue', 'N'])
-fig, ((ax_fwdpp, ax_fwdpp_arg), (ax_simupop, ax_simupop_arg)) = plt.subplots(
-    2, 2, sharex=True, sharey=True)
+fig, (ax_fwdpp, ax_fwdpp_arg) = plt.subplots(
+    1, 2, sharex=True, sharey=True)
 for name, group in groups:
     lstyle = 'solid'
     if name[0] == 'fwdpy11' and name[1] is False:
@@ -118,6 +124,7 @@ for name, group in groups:
         ax = ax_fwdpp_arg
     m = points[name[3]]
     if name[0] == 'simuPOP':
+        continue
         ax = ax_simupop
         if name[1] is True:
             ax = ax_simupop_arg
@@ -134,14 +141,15 @@ for name, group in groups:
 ax_fwdpp.legend(loc='upper left',frameon=False)
 ax_fwdpp.set_title("fwdpy11 with neutral mutations", fontsize='medium')
 ax_fwdpp_arg.set_title("fwdpy11 with pedigree tracking", fontsize='medium')
-ax_simupop.set_ylabel("Run time (hours)")
+#ax_simupop.set_ylabel("Run time (hours)")
 ax_fwdpp.set_ylabel("Run time (hours)")
-ax_simupop.set_title("simuPOP with neutral mutations", fontsize='medium')
-ax_simupop_arg.set_title("simuPOP with pedigree tracking", fontsize='medium')
-ax_simupop.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
-ax_simupop_arg.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
-ax_simupop_arg.set_xticks([1e3, 1e4, 1e5])
-for ax in (ax_simupop, ax_simupop_arg):
+#ax_simupop.set_title("simuPOP with neutral mutations", fontsize='medium')
+#ax_simupop_arg.set_title("simuPOP with pedigree tracking", fontsize='medium')
+#ax_simupop.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
+#ax_simupop_arg.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
+#ax_simupop_arg.set_xticks([1e3, 1e4, 1e5])
+for ax in (ax_fwdpp, ax_fwdpp_arg):
+    ax.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
     ax.set_xscale('log')
 fig.tight_layout()
 plt.savefig("rawspeed_nosel.pdf")
@@ -155,14 +163,15 @@ joined = data_arg.merge(data_noarg, on=[
                         'engine', 'N', 'rho'], how='outer', suffixes=('_arg', '_noarg')).dropna()
 joined['speedup'] = joined['time_noarg'] / joined['time_arg']
 groups = joined.groupby(['engine', 'N'])
-fig, (ax_fwdpp, ax_simupop) = plt.subplots(
-    2,  sharex=True, sharey=False)
+fig, (ax_fwdpp) = plt.subplots(
+    1,  sharex=True, sharey=False)
 for name, group in groups:
     lstyle = 'solid'
     if name[0] == 'fwdpy11':
         ax = ax_fwdpp
     m = points[name[1]]
     if name[0] == 'simuPOP':
+        continue
         ax = ax_simupop
     mfacecolor = colors[name[1]]
     popsize = int(name[1])
@@ -171,12 +180,11 @@ for name, group in groups:
             color=colors[name[1]],
             markerfacecolor=mfacecolor)
 
-for ax in (ax_fwdpp, ax_simupop):
+for ax in (ax_fwdpp,):
     ax.set_ylabel("Speedup due to\npedigree recording")
 ax_fwdpp.set_title("fwdpy11", fontsize='medium')
-ax_simupop.set_title("simuPOP", fontsize='medium')
-ax_simupop.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
-ax_simupop.set_xscale('log')
+ax_fwdpp.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
+ax_fwdpp.set_xscale('log')
 ax_fwdpp.legend(loc='best',frameon=False)
 fig.tight_layout()
 plt.savefig("speedup_nosel.pdf")
