@@ -76,14 +76,15 @@ joined = data_arg.merge(data_noarg, on=[
                         'engine', 'N', 'rho'], how='outer', suffixes=('_arg', '_noarg')).dropna()
 joined['speedup'] = joined['time_noarg'] / joined['time_arg']
 groups = joined.groupby(['engine', 'N'])
-fig, (ax_fwdpp, ax_simupop) = plt.subplots(
-    2,  sharex=True, sharey=False)
+fig, (ax_fwdpp) = plt.subplots(
+    1,  sharex=True, sharey=False)
 for name, group in groups:
     lstyle = 'solid'
     if name[0] == 'fwdpy11':
         ax = ax_fwdpp
     m = points[name[1]]
     if name[0] == 'simuPOP':
+        continue
         ax = ax_simupop
     mfacecolor = colors[name[1]]
     popsize = int(name[1])
@@ -92,12 +93,10 @@ for name, group in groups:
             color=colors[name[1]],
             markerfacecolor=mfacecolor)
 
-for ax in (ax_fwdpp, ax_simupop):
+for ax in (ax_fwdpp,):
     ax.set_ylabel("Speedup due to\npedigree recording")
-ax_fwdpp.set_title("fwdpy11", fontsize='medium')
-ax_simupop.set_title("simuPOP", fontsize='medium')
-ax_simupop.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
-ax_simupop.set_xscale('log')
+ax_fwdpp.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
+ax_fwdpp.set_xscale('log')
 ax_fwdpp.legend(loc='best',frameon=False)
 fig.tight_layout()
 plt.savefig("speedup.pdf")
