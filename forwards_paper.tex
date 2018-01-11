@@ -434,7 +434,6 @@ a collection of directed, acyclic graphs -- in other words, a forest of trees.
 For some applications it is necessary to check that at every point
 there is only a \emph{single} tree.
 Checking this is more difficult, but is implemented in \msprime{}'s API.
-% \jda{TODO add function name}  PLR: not sure this is necessary.
 For efficiency, \msprime{} makes several other sortedness requirements on the tables,
 that are not necessarily satisfied by tables emitted by a forwards-time simulation.
 \msprime{}'s API includes tools to rectify this by first sorting % (using \texttt{sort\_tables})
@@ -929,27 +928,11 @@ memory usage.
 It uses the \simupop{} library, interfacing with Python code (via our
 package \ftprime{}) to simulate a discrete but large number of sites instead of the
 infinite sites model; we provide results from this implementation alongside the
-results from the \cpp implementation for simulations without selection  (see
+results from the \cpp\ implementation for simulations without selection  (see
 Appendix~\ref{ss:timing_nosel}).
 % $\mu$ and $r$ define per-base-pair mutation rate a
 % the simulated sequence, in base pairs, as $L = \tfrac{\rho}{4N \mu}$.  We
 % varied $N \in (1000, 10000)$, $\rho \in (10^3, 10^4)$.
-
-\paragraph{Next steps.}
-While these methods work well, and indeed result in significant performance
-gains over non-ancestry based simulation, they are far from optimal. Because
-forwards time simulation is highly CPU intensive, most simulation engines
-are written in C or C++ out of necessity. Therefore, the simplest and most
-efficient approach would be to call the \msprime\ C library directly as part of
-the core simulation logic, in the manner outlined in Algorithm W. If designed
-in this way, the simulation engine would not need to keep copies of the node
-and edge information (and in the more flexible \simupop{} implementation, would
-not need to infer edges);
-even greater gains in computational efficiency could then be obtained. To
-facilitate this usage, a standalone, embeddable C library encompassing the core
-tree sequence functionality is planned, which should make recording and
-outputting tree sequences from any C/C++ code straightforward.
-
 
 % is designed to be easily ``plugged'' into any simulation engine.
 % One simply needs to fill the relevant columns,
@@ -1038,7 +1021,22 @@ However, thus far little attention has been paid to parallelization of simulatio
 where do, which is much more
 complex than the PRF model.
 
-A final note:
+\paragraph{Next steps.}
+While our methods work well, and indeed result in significant performance
+gains over non-ancestry based simulation, they are far from optimal. Because
+forwards time simulation is highly CPU intensive, most simulation engines
+are written in C or C++ out of necessity. Therefore, the simplest and most
+efficient approach would be to call the \msprime\ C library directly as part of
+the core simulation logic, in the manner outlined in Algorithm W. If designed
+in this way, the simulation engine would not need to keep copies of the node
+and edge information (and in the more flexible \simupop{} implementation, would
+not need to infer edges);
+even greater gains in computational efficiency could then be obtained. To
+facilitate this usage, a standalone, embeddable C library encompassing the core
+tree sequence functionality is planned, which should make recording and
+outputting tree sequences from any C/C++ code straightforward.
+
+\paragraph{A final note:}
 in preparing this manuscript,
 we debated a number of possible terms for the embellished pedigree,
 i.e., the ``pedigree with ancestral recombination information''.
