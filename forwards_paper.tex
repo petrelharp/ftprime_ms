@@ -188,8 +188,8 @@ these tools may prove more widely useful.
 
 
 We begin by benchmarking the performance improvement achieved by connecting
-two previously published forwards-time simulation libraries,
-\simupop{} \citep{peng2005simupop} and \fwdpp{} \citep{fwdpp}
+a previously published forwards-time simulation library,
+\fwdpp{} \citep{fwdpp},
 to the tools we describe here, as implemented in \msprime{}.
 Then, we describe the conceptual and algorithmic foundations for the method:
 (a) a format, implemented in the \msprime{} Python API,
@@ -225,34 +225,12 @@ frequencies.  The case of many mutations with selection is a non-trivial violati
 coalescent \citep{Neuhauser1997-nn}.  Therefore, these selected mutations must be explicitly tracked in our forward simulation
 and the time savings due to pedigree recording come from not having to record \textit{neutral} mutations.
 
-To demonstrate the method's flexibility and to test it in different contexts,
-we implemented these simulations separately using two different simulation engines:
-
-\jda{Note/TODO: the varying references to c++, python, fwdpp, fwdpy11 and
-	simupop are probably confusing to a new reader. This is in part because
-	we refer to the python/simupop method in various places as one or the
-	other; the same goes for c++/fwdpy11/fwdpp. We should decide what to
-	call these and make our usage consistent}
-
-\begin{enumerate}
-
-    \item
-        In \cpp{}, using \fwdpp{} library functions and interface code (details below),
-        using a continuum-sites model for both mutation and recombination. Simulations were run using \fwdpy{}, a Python
-        package based on \fwdpp.
-        % $\mu$ and $r$ were the means of Poisson processes, and mutations used the infinite-sites model \citep{Kimura1969-uc}.
-        % We varied $N \in (1000, 10000, 50000)$, $\rho \in (10^3, 10^4, 10^5)$.
-
-    \item
-        In Python, using the \simupop{} library interfacing with Python code
-	(via our package \ftprime{}),
-        using a discrete but large number of sites.
-        % $\mu$ and $r$ define per-base-pair mutation rate and we
-        % defined the length of the simulated sequence, in base pairs, as $L = \tfrac{\rho}{4N \mu}$.
-        % We varied $N \in (1000, 10000)$, $\rho \in (10^3, 10^4)$.
-
-\end{enumerate}
-
+We implemented our method in \cpp{}, using \fwdpp{} library functions and
+interface code (details below), using a continuum-sites model for both mutation
+and recombination. Simulations were run using \fwdpy{}, a Python package based
+on \fwdpp.
+% $\mu$ and $r$ were the means of Poisson processes, and mutations used the infinite-sites model \citep{Kimura1969-uc}.
+% We varied $N \in (1000, 10000, 50000)$, $\rho \in (10^3, 10^4, 10^5)$.
 We ran all benchmarks on an Ubuntu Linux (version 16.04) system with two 2.6 GHz Intel E5-2650 CPU with
 hyperthreading enabled.
 We ran one simulation at a time and the machine was under minimal load otherwise.
@@ -266,38 +244,35 @@ and the Linux \texttt{time} command to record run time and peak memory usage of 
 
 The total run times for simulations with selection are shown in Figure~\ref{fig:runtimes_selection}.  When tracking
 neutral mutations (instead of the pedigree), run times increase dramatically with increasing region size ($4Nr = 4Nu$ for
-these simulations).  With \fwdpy{}, simulations with $N=5 \times 10^4$ timed out for region sizes larger than $10^3$.
-With \simupop{}, we were only able to run simulations with $N=10^3$ and region sizes up to $10^4$.  Pedigree tracking
-dramatically improves run times for both \fwdpy{} and \simupop{} (right column of Figure~\ref{fig:runtimes_selection}).  For parameters that ran to completion when tracking neutral mutations and when tracking
+these simulations).  Simulations with $N=5 \times 10^4$ timed out for region sizes larger than $10^3$.
+Pedigree tracking
+dramatically improves run times (right column of Figure~\ref{fig:runtimes_selection}).  For parameters that ran to completion when tracking neutral mutations and when tracking
 the pedigree, the relative speedup due to pedigree tracking is up to $\approx 50$ fold
-(Figure~\ref{fig:relative_speedup_selection}).  For \fwdpy{}, pedigree tracking reduces runtimes more for larger
+(Figure~\ref{fig:relative_speedup_selection}).  Pedigree tracking reduces runtimes more for larger
 population sizes and we observe increasing relative speedups as $4Nr$ increases for a given $N$
-(Figure~\ref{fig:relative_speedup_selection}).  We saw a similar trend with $4Nr$ for \simupop{}, but the effect of $N$
-could not be explored because the simulations tended to run out of available memory.
+(Figure~\ref{fig:relative_speedup_selection}).
 Note the log scale of the x axis in Figure~\ref{fig:runtimes_selection}, which
 partially obscures an important observation that the run times appear approximately linear in region size when tracking
 pedigree.  The reason for this behavior is that, when tracking pedigrees, the simulations are generating a constant number of new edges on average
 each generation as the number of new recombination breakpoints is Poisson distributed with expectation $\rho$.
 In a more limited set of neutral simulations we found the same qualitative
-behavior with a numerically larger benefit to pedigree tracking (see~\ref{ss:timing_nosel}).
+behavior with a numerically larger benefit to pedigree tracking (see Appendix~\ref{ss:timing_nosel}).
 
-In our test runs, our method used substantially more RAM than simple forward simulations (see~\ref{ss:memuse}).
+In our test runs, our method used substantially more RAM than simple forward simulations (see Appendix~\ref{ss:memuse}).
 This is unsurprising:
 unsimplified tree sequences grow quickly, and so storing history can use arbitrarily much memory.
 However, this is not a requirement of the method, only a straightforwards consequence of a speed--memory tradeoff:
 the amount of required memory is mostly determined by the interval between simplification steps,
-but less frequent simplification reduces overall computation time (see~\ref{ss:gcinterval}).
+but less frequent simplification reduces overall computation time (see Appendix~\ref{ss:gcinterval}).
 In fact, our method could in some situations \emph{reduce} the amount of memory required,
 if memory usage in the forwards simulation was dominated by the cost of maintaining neutral genetic variants.
-
 
 \begin{figure}
     \includegraphics[]{sims/rawspeed}
     \caption{\label{fig:runtimes_selection}Total run time for a single simulation replicate as a function of region
         length, measured as the scaled recombination parameter $\rho = 4Nr$. The different colored lines represent
         different diploid population sizes ($N$). The left column shows run times for
-        simulations including the tracking of neutral mutations.  Missing data points are due to either simulations
-    being killed at 72 hours or running out of memory (which only happened with \simupop{}).  The right column of
+        simulations including the tracking of neutral mutations. The right column of
 panels shows run times tracking the pedigree instead of the neutral mutations. The dashed line in the upper right panel shows
 the results for an implementation using \fwdpy{} where the pedigree simplification steps were handled in a separate thread of
 execution and fitness calculations were parallelized.}
@@ -311,12 +286,9 @@ execution and fitness calculations were parallelized.}
 from Figure~\ref{fig:runtimes_selection} for simulations that ran to completion using both methods.}
 \end{figure}
 
-% Comparison of simulation with/without msprime, using \simupop{}
-% or maybe just a simple haploid simulation with 1000 QTL and stabilizing selection on a trait (say).
-%
 % Maybe an estimate of how long \emph{just} the pedigree recording and simplification takes,
-% so that then we can say how fast the simulator would have to be to do $10^6$ whole chromosomes for $10^7$ generations
-% in a day.
+% so that then we can say how fast the simulator would have to be to do $10^6$
+% whole chromosomes for $10^7$ generations in a day.
 
 
 
@@ -906,7 +878,7 @@ while our implementation is only $O(T N \log(2N))$.
 
 
 %%%%%%
-\subsection*{Implementation overview}
+\subsection*{Overview of \msprime\ APIs that enable the method}
 
 The facilities for working with succinct tree sequences are implemented as part
 of the \msprime\ Python API, which provides a powerful platform for processing
@@ -936,12 +908,7 @@ For small scale data and debugging purposes, a simple text based format is also 
 
 The \msprime\ Python Tables API provides a general purpose toolkit for importing
 and processing succinct tree sequences. Interoperation with Python simulators
-is then straightforward. For the proof-of-concept implementations discussed
-here, we took two different approaches to doing this. In the first method,
-based on \simupop{}, the simulation engine invokes callbacks at critical points
-of the simulation, and we infer nodes and edges from the information that is
-provided. Rows are appended to the tables one-by-one, and the tables are
-periodically sorted and simplified to control memory usage. The second method we developed uses
+is then straightforward.  The implementation we benchmark here uses
 \texttt{pybind11} (\url{https://github.com/pybind/pybind11/}) to inferface
 with the \fwdpp{} \cpp{} API \citep{fwdpp}. No modifications were
 required to the \fwdpp{} code base; rather, we simply need to bookkeep parent/offspring labels,
@@ -949,6 +916,26 @@ and perform simple processing of the recombination breakpoints from each mating
 event to generate node and edge data. This information is then periodically copied
 to the \msprime\ Tables API, where it is sorted and simplified.
 
+\paragraph{Flexibility.}
+To demonstrate the flexibility provided by the Tables API and provide an
+implementation that decouples forward simulation internals from transfer of data
+to \msprime\, we implemented a version of the simulations described in
+``Simulation benchmarks'' separately in Python (see Appendix~\ref{ss:simupop}).
+For this proof-of-concept implementation, the simulation engine invokes
+callbacks at critical points of the simulation, and we infer nodes and edges
+from the information that is provided. Rows are appended to the tables
+one-by-one, and the tables are periodically sorted and simplified to control
+memory usage.
+It uses the \simupop{} library, interfacing with Python code (via our
+package \ftprime{}) to simulate a discrete but large number of sites instead of the
+infinite sites model; we provide results from this implementation alongside the
+results from the \cpp implementation for simulations without selection  (see
+Appendix~\ref{ss:timing_nosel}).
+% $\mu$ and $r$ define per-base-pair mutation rate a
+% the simulated sequence, in base pairs, as $L = \tfrac{\rho}{4N \mu}$.  We
+% varied $N \in (1000, 10000)$, $\rho \in (10^3, 10^4)$.
+
+\paragraph{Next steps.}
 While these methods work well, and indeed result in significant performance
 gains over non-ancestry based simulation, they are far from optimal. Because
 forwards time simulation is highly CPU intensive, most simulation engines
@@ -1067,8 +1054,6 @@ but perhaps it will prove useful elsewhere.
 %%%%%%%%%%%%%%
 \section*{Methods}
 
-\subsection*{The \cpp{} implementation}
-
 \paragraph{Requirements.}
 The \cpp{} implementation uses several packages installed via conda,
 except for \msprime{}, which must be installed from GitHub.
@@ -1081,69 +1066,6 @@ except for \msprime{}, which must be installed from GitHub.
     \item GCC 4.8.5
     \item \msprime{} 0.5.0 \jda{Changed these but the actual sims were not run
 		    with this version...}
-\end{enumerate}
-
-\subsection*{The \simupop{} implementation}
-
-We implemented simulations in a Python script, usable as a command-line utility,
-taking input parameters for population size $N$ and scaled recombination rate $\rho$.
-As described in 'Simulation benchmarks', we set scaled mutation rate $\theta=\rho$,
-we used simplify interval of 1000 and simulated for $T=10N$ generations in each
-simulation, introducing deleterious mutations at a rate of $\rho/100$ per
-generation.
-Because \simupop{} requires explicit locations for loci, we set the number of
-loci $n=\rho / (4Nr)$ and marked
-$k={\rm round}(\mu / (100 (\mu + \mu / 100))) = 0$ of these as selected loci.
-\jda{unfortunately probably what we did...}
-The selected loci were chosen as a random sample of all the loci.
-
-We coupled \simupop{} to \msprime{} using a Python class \texttt{RecombCollector} that 1)
-tracks time, and 2) collects and parses recombination information provided by
-the \texttt{Recombinator} class of \simupop{}, adding them to a \tnodetable{} and
-\tedgetable{} upon which simplification is performed every 1000 generations (using
-\texttt{msprime.sort\_tables()} and \texttt{msprime.simplify\_tables}).
-The tables are initialized using the \texttt{TreeSequence} returned from
-\texttt{msprime.simulate($2N$, Ne=$N$, recombination\_rate=$r/2$, length=$n$)}.
-The \texttt{simuPOP.Population()} is initialized and tagged with individual IDs,
-a mapping of these IDs to the \tnodetable{} IDs is passed to
-an instance of \texttt{RecombCollector} and used internally to update the tables.
-The \texttt{simuPOP.Population()} is then evolved.
-Before mating: selected mutations are created (using
-\texttt{simuPOP.SNPMutator}) and multiplicative selection occurs (using
-\texttt{simuPOP.PyMlSelector}) only on the selected loci;
-the internal time of the \texttt{RecombCollector} instance is updated.
-During mating: male and female parents are drawn randomly, recombination data is
-output by \simupop{} to the \texttt{RecombCollector} instance.
-After mating: nothing happens 999/1000 generations, every 1000 generations the tables are
-simplifed.
-
-\texttt{RecombCollector} uses the Python class \texttt{ARGrecorder} internally
-to add data to the tables and perform simplification.
-This class contains the \tnodetable{} and \tedgetable{} and also the mapping from
-(haploid) ids to ids in the tables.
-It also provides methods (\texttt{add\_individual} and \texttt{add\_record})
-to append data to the tables.
-The only functions of
-\texttt{RecombCollector} not delegated to this internal class are computing
-haploid IDs from \simupop{}'s diploid IDs and parsing recomination data into
-data suitible for use with use with \texttt{add\_individual} and
-\texttt{add\_record}; these functions are used to stream data into the tables as
-it is received by an instance of \texttt{RecombCollector}.
-
-\paragraph{Requirements.}
-The simulations as implemented depend on the class \texttt{RecombCollector} provided by
-the Python package \ftprime{} 0.0.6rc0,
-available at \url{https://www.github.com/ashander/ftprime}.
-Its requirements are encoded in an \texttt{environment.yml} file, compatible
-with conda, but \msprime{} must be updated to the version listed below via pip
-from GitHub \jda{TODO add command?}.
-
-In brief the requirements are:
-
-\begin{enumerate}
-    \item \msprime{} 0.5.0
-    \item \simupop{} 1.1.8.3
-    \item python 3.5
 \end{enumerate}
 
 %%%%%%%%%%%%%%%%%%%%%%
@@ -1331,11 +1253,8 @@ and $z.\lid = u$ for the output node ID.
 \renewcommand{\thefigure}{B\arabic{figure}}
 \setcounter{figure}{0}
 
-The peak RAM use in gigabytes (GB) is shown for the simulations with selection in Figure~\ref{sfig:ramsel} and for the
-simulations without selection in Figure~\ref{sfig:ramnosel}.  For our parameters, which involved simplifying every
-$10^3$ generations,  pedigree tracking requires more RAM with \fwdpp{} and less
-RAM with \simupop{}. The reason for reduced RAM use with \simupop{} is unclear;
-with \fwdpy{}/\fwdpp{}, however the reason for the extra RAM use is clear.  When pedigree tracking, a non-recombinant
+The peak RAM use in gigabytes (GB) is shown for the simulations with selection in Figure~\ref{sfig:ramsel}.  For our parameters, which involved simplifying every
+$10^3$ generations,  pedigree tracking requires more RAM.  This is because with pedigree tracking, a non-recombinant
 individual still requires one new edge and two new nodes to be allocated.  Without pedigree tracking, no new memory is
 allocated for such an offspring.  Thus, pedigree tracking accumulates a large amount of data in RAM until
 simplification.  This extra RAM consumption is the trade off for reduced run times and the degree of extra RAM needed
@@ -1352,19 +1271,13 @@ stored in RAM.  In practice, the RAM consumption can be minimized by simplifying
     panels.}
 \end{figure}
 
-\begin{figure}
-    \includegraphics[]{sims/memuse_nosel}
-    \caption{\label{sfig:ramnosel}Peak RAM use in gigabytes (GB) for simulations without selection.  The plots are from
-    the same data as in Figure \ref{sfig:rawspeed_nosel}.}
-\end{figure}
-
 \newpage
 
 \section{Effect of simplification interval on run time and memory use}
 \label{ss:gcinterval}
 \renewcommand{\thefigure}{C\arabic{figure}}
 
-We performed a limited set of simulations with \fwdpy{} to explore the effect of the simplification interval on run times and memory
+We performed a limited set of simulations  to explore the effect of the simplification interval on run times and memory
 use. Figure~\ref{sfig:gctime} shows that run times increase for simplification intervals less than 100 generations.  For
 intervals $\geq 100$ generations, run times are very similar, with no appreciable difference between $10^3$ and $10^4$
 generations.  As expected, the simplification interval has a near-linear effect on peak RAM use
@@ -1390,15 +1303,30 @@ often.
 \renewcommand{\thefigure}{D\arabic{figure}}
 \setcounter{figure}{0}
 
-We also performed a more limited set of simulations without natural selection.  The total run times are shown in
-Figure~\ref{sfig:rawspeed_nosel} and show the same qualitative behavior as simulations with selection
+We also performed a more limited set of simulations without natural selection.
+For these we used \cpp{} as in the main text, but also provide results from our
+proof-of-concept implementation that uses \simupop{} (see
+Appendix~\ref{ss:simupop}).
+
+The total run times are shown in
+Figure~\ref{sfig:rawspeed_nosel} and for \cpp{} show the same qualitative behavior as simulations with selection
 (Figure~\ref{fig:runtimes_selection}).  The relative improvement due to pedigree tracking is again substantial in these
 simulations (Figure~\ref{sfig:speedup_nosel}).  In fact, we see more of a benefit to pedigree tracking here with \fwdpy{}
 than we did with selection (Figure~\ref{fig:relative_speedup_selection}).  The reason is that the fitness function exits
 close to instantly in simulations without selection that are based on \fwdpp{}, meaning that \fwdpy{} is doing little
 more than generating random numbers and book-keeping in Figures~\ref{sfig:rawspeed_nosel}
 and~\ref{sfig:speedup_nosel}.
+For \simupop{}, the results show a qualitatively similar pattern but 1) the
+simulations for $N = 10000$ or greater did no finish in the 72 hour limit or
+exceed memory limits (more than 500 GB), and 2) the magnitude of the speedup is
+much less.
 
+The total RAM use for the
+simulations without selection in Figure~\ref{sfig:ramnosel}.
+Pedigree tracking used more RAM with \fwdpp{} and less
+RAM with \simupop{}. The reason for reduced RAM use with \simupop{} is unclear;
+with \fwdpy{}/\fwdpp{}, however the reason for the extra RAM use is as in
+Appendix~\ref{ss:memuse}.
 
 \begin{figure}[!h]
     \includegraphics[]{sims/rawspeed_nosel}
@@ -1413,4 +1341,73 @@ and~\ref{sfig:speedup_nosel}.
     selection.  Data points are taken from Figure~\ref{sfig:rawspeed_nosel} and show the ratio of run times tracking
 neutral variation over the run times tracking the pedigree.}
 \end{figure}
+\begin{figure}
+    \includegraphics[]{sims/memuse_nosel}
+    \caption{\label{sfig:ramnosel}Peak RAM use in gigabytes (GB) for simulations without selection.  The plots are from
+    the same data as in Figure \ref{sfig:rawspeed_nosel}.}
+\end{figure}
+
+
+\section{The \simupop{} implementation}
+\label{ss:simupop}
+
+We implemented simulations in a Python script, usable as a command-line utility,
+taking input parameters for population size $N$ and scaled recombination rate $\rho$.
+As described in 'Simulation benchmarks', we set scaled mutation rate $\theta=\rho$,
+we used simplify interval of 1000 and simulated for $T=10N$ generations in each
+simulation, introducing deleterious mutations at a rate of $\rho/100$ per
+generation.
+Because \simupop{} requires explicit locations for loci, we set the number of
+loci $n=\rho / (4Nr)$ and for these simulations without selection marked $0$ of
+these as selected loci.
+
+We coupled \simupop{} to \msprime{} using a Python class \texttt{RecombCollector} that 1)
+tracks time, and 2) collects and parses recombination information provided by
+the \texttt{Recombinator} class of \simupop{}, adding them to a \tnodetable{} and
+\tedgetable{} upon which simplification is performed every 1000 generations (using
+\texttt{msprime.sort\_tables()} and \texttt{msprime.simplify\_tables}).
+The tables are initialized using the \texttt{TreeSequence} returned from
+\texttt{msprime.simulate($2N$, Ne=$N$, recombination\_rate=$r/2$, length=$n$)}.
+The \texttt{simuPOP.Population()} is initialized and tagged with individual IDs,
+a mapping of these IDs to the \tnodetable{} IDs is passed to
+an instance of \texttt{RecombCollector} and used internally to update the tables.
+The \texttt{simuPOP.Population()} is then evolved.
+Before mating: selected mutations are created (using
+\texttt{simuPOP.SNPMutator}) and multiplicative selection occurs (using
+\texttt{simuPOP.PyMlSelector}) only on the selected loci;
+the internal time of the \texttt{RecombCollector} instance is updated.
+During mating: male and female parents are drawn randomly, recombination data is
+output by \simupop{} to the \texttt{RecombCollector} instance.
+After mating: nothing happens 999/1000 generations, every 1000 generations the tables are
+simplifed.
+
+\texttt{RecombCollector} uses the Python class \texttt{ARGrecorder} internally
+to add data to the tables and perform simplification.
+This class contains the \tnodetable{} and \tedgetable{} and also the mapping from
+(haploid) ids to ids in the tables.
+It also provides methods (\texttt{add\_individual} and \texttt{add\_record})
+to append data to the tables.
+The only functions of
+\texttt{RecombCollector} not delegated to this internal class are computing
+haploid IDs from \simupop{}'s diploid IDs and parsing recomination data into
+data suitible for use with use with \texttt{add\_individual} and
+\texttt{add\_record}; these functions are used to stream data into the tables as
+it is received by an instance of \texttt{RecombCollector}.
+
+\paragraph{Requirements.}
+The simulations as implemented depend on the class \texttt{RecombCollector} provided by
+the Python package \ftprime{} 0.0.6rc0,
+available at \url{https://www.github.com/ashander/ftprime}.
+Its requirements are encoded in an \texttt{environment.yml} file, compatible
+with conda, but \msprime{} must be updated to the version listed below via pip
+from GitHub \jda{TODO add command?}.
+
+In brief the requirements are:
+
+\begin{enumerate}
+    \item \msprime{} 0.5.0
+    \item \simupop{} 1.1.8.3
+    \item python 3.5
+\end{enumerate}
+
 \end{document}
