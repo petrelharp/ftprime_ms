@@ -1025,10 +1025,13 @@ and the fact that these are correlated,
 sequential tree algorithms similar to those in~\citep{kelleher2016efficient}
 can do this in roughly $O(n + m \log n)$ operations.
 The \msprime{} API provides a method to compute $\pi$ among arbitrary subsets of the
-samples in a tree sequence, which took about 1.2 seconds
-applied to the example tree sequence above with 1.1 million mutations
-in 200 megabases for 500,000 samples.
-Calculating $\pi$ from the numeric genotype matrix using numpy took \plr{HOW MANY} seconds.
+samples in a tree sequence, which took about 0.7 seconds when
+applied to an example simulation of 100 megabases of human-like
+sequence for 200,000 samples ($~\sim$ 500K sites). The correspoding
+numeric genotype matrix required about 95GiB of RAM, and
+calculating $\pi$ took about 66 seconds with NumPy.
+
+% This is done by running $ python msprime-examples.py benchmark-pi
 
 Another attractive feature of this set of tools
 is that it makes it easy to incorporate \emph{prior history},
