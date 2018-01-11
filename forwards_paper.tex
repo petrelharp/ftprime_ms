@@ -830,28 +830,25 @@ as shown in Figure~\ref{fig:simplify_complexity}.
 
 \begin{figure}
     \begin{center}
-        \includegraphics{sims/num_edges_50}
-        \includegraphics{sims/simplify_timings}
+        \includegraphics{sims/simplify-results}
     \end{center}
     \caption{
+        Time and space complexity of simplify.
         \textbf{(A)}
         Number of edges in the simplified tree sequence
-        for 50 Wright--Fisher simulations begun with no prior history,
-        as a function of number of generations.
-        Each line is one simulation, the black line gives the average,
-        and the dotted line is the upper bound of equation \eqref{eqn:edge_bound}.
-        \plr{Propose to add other figures as subfigures here; but better than this.}
+        for 10 replicate Wright--Fisher simulations with $N=50$ as a function
+        of number of generations.
+        Each line is one simulation, the heavy blue line gives the average,
+        and the dashed line is the upper bound of equation \eqref{eqn:edge_bound}.
         \textbf{(B)}
-        Time required to simplify the first $k$ edges
-        of \plr{what tree sequence?},
-        plotted against $k$.
+        Time required to simplify the first $k$ edges of a large (4.2GiB)
+        unsimplified tree sequence produced by a forwards-time simulation plotted
+        against $k$. The time scales linearly with the number of input edges.
         \textbf{(C)}
-        Time required to simplify
-        \plr{what tree sequence?}
-        down to a sample of size $n$,
-        plotted against $n$
-        (note the log scale;
-        the time scales logarithmically with $n$).
+        Time required to simplify the tree sequence resulting from a coalescent
+        simulation of 500K samples of a 200 megabase human chromosome
+        for a random sample of $n$ samples, plotted against $n$
+        (note the log scale; the time scales logarithmically with $n$).
         \label{fig:simplify_complexity}
     }
 \end{figure}
