@@ -906,59 +906,80 @@ while our implementation is only $O(T N \log(2N))$.
 
 
 %%%%%%
-\subsection*{Overview of the API}
+\subsection*{Implementation overview}
 
-These tools are implemented through the \msprime{} Python API,
-which provides a powerful platform for working with tree topology and mutation data.
-The new portions of \msprime{} that we cover here
-are dedicated to tree sequence input and output using simple tables of data,
-so we refer to this as the `Tables API'.
-The four key tables: nodes, edges, sites and mutations, are described above.
+The facilities for working with succinct tree sequences are implemented as part
+of the \msprime\ Python API, which provides a powerful platform for processing
+tree topology and mutation data. The new portions of \msprime{} that we discuss
+here are dedicated to tree sequence input and output using simple tables of
+data, so we refer to this as the `Tables API'. The four key tables (nodes,
+edges, sites and mutations) are described above.
 
 The Tables API is primarily designed to facilitate efficient interchange of
-data between programs or between different modules of the same program.
-Following current best practises
-\plr{citations: Apache arrow, etc},
-data is stored in a columnar format,
-which allows for very efficient interchange of large amounts of numerical data.
-In principle, this enables zero-copy semantics,
-where a data consumer can read the information directly
-from the memory of a producer without incurring the overhead of a copy.
-\jda{TODO citation missing}
+data between programs or between different modules of the same program. We
+adopted a `columnar' design, i.e., where all the values for a
+particular column are stored in adjacent memory locations.
+There are many advantages to columnar storage---for example, since adjacent
+values in memory are from the same column, they tend to compress well,
+and suitable encodings can be chosen on a per-column basis~\citep{abadi2006integrating}.
+A particular advantage of this approach is that it enables very
+efficient copying of data, and in principle zero-copy data access
+(where a data consumer reads directly from the memory of a producer) is possible.
 Our implementation uses the NumPy C API~\citep{walt2011numpy} to efficiently copy
 data from Python into the low-level C library used to manipulate tree sequences.
-Since tables are encoded as contiguous arrays of numeric data,
-this achieves data transfer rates that would be impossible under
-any text-based approach while retaining excellent portability.
-
-This also provides basic input and output operations via NumPy's
-array interface, which provides a great deal of flexibility and efficiency,
+This architecture allows for data transfer rates of gigabytes per second
+(impossible under any text-based approach), while retaining excellent portability.
+NumPy's array interface provides a great deal of flexibility and efficiency,
 and makes it straightforward to transfer data from sources
 such as HDF5 \citep{hdf5}or Dask~\citep{dask}.
-For small scale data and debugging purposes, a simple text format is also supported.
+For small scale data and debugging purposes, a simple text based format is also supported.
 
-% PLR: this was mentioned above, and belongs in the documentation, I think.
-% The API also provides functions to sort tables
-% to ensure that the records are in the form required to input
-% into an \msprime{} tree sequence object. (Simplification may also be required.)
+The \msprime\ Python Tables API provides a general purpose toolkit for importing
+and processing succinct tree sequences. Interoperation with Python simulators
+is then straightforward. For the proof-of-concept implementations discussed
+here, we took two different approaches to doing this. In the first method,
+based on \simupop{}, the simulation engine invokes callbacks at critical points
+of the simulation, and we infer nodes and edges from the information that is
+provided. Rows are appended to the tables one-by-one, and the tables are
+periodically sorted and simplified to control memory usage. The second method we developed uses
+\texttt{pybind11} (\url{https://github.com/pybind/pybind11/}) to inferface
+with the \fwdpp{} \cpp{} API \citep{fwdpp}. No modifications were
+required to the \fwdpp{} code base; rather, we simply need to bookkeep parent/offspring labels,
+and perform simple processing of the recombination breakpoints from each mating
+event to generate node and edge data. This information is then periodically copied
+to the \msprime\ Tables API, where it is sorted and simplified.
 
-The \msprime{} Tables API is designed to be easily ``plugged'' into any simulation engine.
-One simply needs to fill the relevant columns,
-and to send them to \msprime{} at regular intervals for simplification.
-For example, in the benchmarking simulations above,
-we used the \fwdpp{} \cpp{} API \citep{fwdpp}
-to fill arrays of simple structures representing the node and edge data.
-Doing so requires no modification of the \fwdpp{} code base.
-Rather, we simply need to bookkeep parent/offspring labels,
-and perform simple processing of the recombination breakpoints from each mating event.
-Using \texttt{pybind11} (\url{https://github.com/pybind/pybind11/}),
-the node/edge arrays on the \cpp{} side are made visible, without copy, to Python as a multi-column numpy array,
-which is processed by the \msprime{} tables API.
-Our implementation also uses \texttt{pybind11}
-to create a Python package extending \texttt{fwdpy11}
-(a Python package based on \fwdpp{}; \url{https://github.com/molpopgen/fwdpy11}),
-% (A neat aside, that we may wish to skip here, is that it may be possible to use the tables
-% API from a command-line C/\cpp{} application via an embedded Python interpreter.)
+While these methods work well, and indeed result in significant performance
+gains over non-ancestry based simulation, they are far from optimal. Because
+forwards time simulation is highly CPU intensive, most simulation engines
+are written in C or C++ out of necessity. Therefore, the simplest and most
+efficient approach would be to call the \msprime\ C library directly as part of
+the core simulation logic, in the manner outlined in Algorithm W. If designed
+in this way, the simulation engine would not need to keep copies of the node
+and edge information and would not need to infer edges;
+even greater gains in computational efficiency could then be obtained. To
+facilitate this usage, a standalone, embeddable C library encompassing the core
+tree sequence functionality is planned, which should make recording and
+outputting tree sequences from any C/C++ code straightforward.
+
+
+% is designed to be easily ``plugged'' into any simulation engine.
+% One simply needs to fill the relevant columns,
+% and to send them to \msprime{} at regular intervals for simplification.
+% For example, in the benchmarking simulations above,
+% we used the \fwdpp{} \cpp{} API \citep{fwdpp}
+% to fill arrays of simple structures representing the node and edge data.
+% Doing so requires no modification of the \fwdpp{} code base.
+% Rather, we simply need to bookkeep parent/offspring labels,
+% and perform simple processing of the recombination breakpoints from each mating event.
+% Using \texttt{pybind11} (\url{https://github.com/pybind/pybind11/}),
+% the node/edge arrays on the \cpp{} side are made visible, without copy, to Python as a multi-column numpy array,
+% which is processed by the \msprime{} tables API.
+% Our implementation also uses \texttt{pybind11}
+% to create a Python package extending \texttt{fwdpy11}
+% (a Python package based on \fwdpp{}; \url{https://github.com/molpopgen/fwdpy11}),
+% % (A neat aside, that we may wish to skip here, is that it may be possible to use the tables
+% % API from a command-line C/\cpp{} application via an embedded Python interpreter.)
 
 
 
