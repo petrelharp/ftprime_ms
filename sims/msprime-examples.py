@@ -16,15 +16,10 @@ import pandas as pd
 
 import msprime
 
-# TODO:
-if False:
-    # compare speed of pi calc to this:
-
-    ts = msprime.simulate(100)
-
 
 def run_simulation(args):
     before = time.process_time()
+    print("Running sim for n = ", args.sample_size, "l = ", args.length)
     ts = msprime.simulate(
         sample_size=args.sample_size, length=args.length * 10**6, Ne=10**4,
         recombination_rate=1e-8, mutation_rate=1e-8, random_seed=10)
@@ -148,8 +143,7 @@ def run_simplify_num_edges_benchmark(args):
     np.random.seed(1)
     print("num_nodes = ", ts.num_nodes)
     print("num_edges = ", ts.num_edges)
-    num_slices = 20
-    N = 1000
+    num_slices = 10
 
     tables = ts.dump_tables()
     nodes = tables.nodes
@@ -163,34 +157,46 @@ def run_simplify_num_edges_benchmark(args):
 
     size = left.nbytes + right.nbytes + parent.nbytes + child.nbytes
     print("Total edge size = ", size / 1024**3, "GiB")
+    sample_sizes = [10, 100, 1000]
+    num_sample_sizes = len(sample_sizes)
 
-    num_edges = np.zeros(num_slices)
-    simplify_time = np.zeros(num_slices)
+    num_edges = np.zeros(num_slices * num_sample_sizes)
+    simplify_time = np.zeros(num_slices * num_sample_sizes)
+    sample_size = np.zeros(num_slices * num_sample_sizes)
     slice_size = ts.num_edges // num_slices
-    for j, start in enumerate(range(ts.num_edges - slice_size, 0, -slice_size)):
-        max_node = np.max(child[start:])
-        samples = np.arange(max_node - N, max_node, dtype=np.int32)
-        subset_nodes = msprime.NodeTable()
-        subset_nodes.set_columns(
-            time=node_time[:max_node + 1], flags=np.ones(max_node + 1, dtype=np.uint32))
-        subset_edges = msprime.EdgeTable()
-        subset_edges.set_columns(
-            left=left[start:], right=right[start:], parent=parent[start:],
-            child=child[start:])
-        before = time.process_time()
-        msprime.simplify_tables(samples=samples, nodes=subset_nodes, edges=subset_edges)
-        duration = time.process_time() - before
-        num_edges[j] = ts.num_edges - start
-        simplify_time[j] = duration
-        print(num_edges[j], duration, num_edges[j] / duration, "per second")
 
-    df = pd.DataFrame({"num_edges": num_edges, "time": simplify_time})
+    j = 0
+    for N in sample_sizes:
+        for start in range(ts.num_edges - slice_size, 0, -slice_size):
+            max_node = np.max(child[start:])
+            samples = np.arange(max_node - N, max_node, dtype=np.int32)
+            subset_nodes = msprime.NodeTable()
+            subset_nodes.set_columns(
+                time=node_time[:max_node + 1], flags=np.ones(max_node + 1, dtype=np.uint32))
+            subset_edges = msprime.EdgeTable()
+            subset_edges.set_columns(
+                left=left[start:], right=right[start:], parent=parent[start:],
+                child=child[start:])
+            before = time.process_time()
+            msprime.simplify_tables(samples=samples, nodes=subset_nodes, edges=subset_edges)
+            duration = time.process_time() - before
+            num_edges[j] = ts.num_edges - start
+            simplify_time[j] = duration
+            sample_size[j] = N
+            print(N, num_edges[j], duration, num_edges[j] / duration, "per second")
+            j += 1
+
+    df = pd.DataFrame(
+        {"sample_size": sample_size, "num_edges": num_edges, "time": simplify_time})
     df.to_csv("data/simplify_num_edges.dat")
 
-    plt.plot(num_edges, simplify_time, marker="o")
-    plt.xlabel("num edges")
-    plt.ylabel("Time to simplify (s)")
-    plt.savefig("simplify_num_edges.png")
+    for N in sample_sizes:
+        index = sample_size == N
+
+        plt.plot(num_edges[index], simplify_time[index], marker="o")
+        plt.xlabel("num edges")
+        plt.ylabel("Time to simplify (s)")
+        plt.savefig("simplify_num_edges.png")
 
 
 def run_benchmark_pi(args):
@@ -220,7 +226,7 @@ def run_benchmark_pi(args):
     pi2 = ts.get_pairwise_diversity()
     msp_time = time.process_time() - before
     print("msp time = ", msp_time)
-    # print("pi values = ", pi1, pi2)
+    print("pi values = ", pi1, pi2)
 
 
 if __name__ == "__main__":
@@ -231,8 +237,8 @@ if __name__ == "__main__":
 
     subparser = subparsers.add_parser('simulate')
     subparser.add_argument("file")
-    subparser.add_argument("--sample-size", "-s", type=int, default=500*10**6)
-    subparser.add_argument("--length", "-l", type=int, default=500)
+    subparser.add_argument("--sample-size", "-s", type=int, default=5*10**5)
+    subparser.add_argument("--length", "-l", type=int, default=200)
     subparser.set_defaults(func=run_simulation)
 
     subparser = subparsers.add_parser('stats')
@@ -262,7 +268,7 @@ if __name__ == "__main__":
     subparser.set_defaults(func=run_simplify_num_edges_benchmark)
 
     subparser = subparsers.add_parser('benchmark-pi')
-    subparser.add_argument("--sample-size", "-s", type=int, default=100**4)
+    subparser.add_argument("--sample-size", "-s", type=int, default=2 * 10**5)
     subparser.add_argument("--length", "-l", type=int, default=100)
     subparser.set_defaults(func=run_benchmark_pi)
 

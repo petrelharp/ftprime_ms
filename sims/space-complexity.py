@@ -6,11 +6,13 @@ import random
 import numpy as np
 import msprime
 
+import pandas as pd
+
 import matplotlib
 # Force matplotlib to not use any Xwindows backend.
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import seaborn as sns
+# import seaborn as sns
 
 
 def wright_fisher(N, T, simplify_interval=1):
@@ -89,27 +91,45 @@ def verify():
                 assert ts1.tables.edges == ts2.tables.edges
 
 def plot():
-    num_reps = 50
-    # for n in [10, 20, 30, 40, 50]:
-    # for n in [100, 200]:
-    for n in [50]:
-        T = 15 * n
-        A = np.zeros((num_reps, T))
-        for j in range(num_reps):
-            ts, S = wright_fisher(n, T)
-            A[j] = S
-            plt.plot(S, alpha=0.5)
-            print(n, j, "done")
 
-        x = [ub(t,n) for t in range(1,T)]
-        plt.plot(x, ls="dashed", color="black", lw=3)
-        mean_S = np.mean(A, axis=0)
-        plt.plot(mean_S, lw=3)
-        plt.title("N = {}".format(n))
-        plt.xlabel("Generations")
-        plt.ylabel("Number of edges")
-        plt.savefig("num_edges_{}.pdf".format(n), format='pdf')
-        plt.clf()
+    fig = plt.figure()
+    ax1 = plt.subplot2grid((2, 2), (0, 0), colspan=2)
+    ax2 = plt.subplot2grid((2, 2), (1, 0))
+    ax3 = plt.subplot2grid((2, 2), (1, 1))
+
+    num_reps = 10
+    n = 50
+
+    T = 15 * n
+    A = np.zeros((num_reps, T))
+    for j in range(num_reps):
+        ts, S = wright_fisher(n, T)
+        A[j] = S
+        ax1.plot(S, alpha=0.5)
+        print(n, j, "done")
+
+    x = [ub(t,n) for t in range(1,T)]
+    ax1.plot(x, ls="dashed", color="black", lw=3)
+    mean_S = np.mean(A, axis=0)
+    ax1.plot(mean_S, lw=3)
+    # ax1.set_title("N = {}".format(n))
+    ax1.set_title("(A)")
+    ax1.set_xlabel("Generations")
+    ax1.set_ylabel("Number of edges")
+
+    df = pd.read_csv("data/simplify_num_edges.dat")
+    ax2.plot(df.num_edges * 1e-8, df.time)
+    ax2.set_xlabel("Number of edges $\\times 10^8$")
+    ax2.set_ylabel("Time to simplify (s)")
+    ax2.set_title("(B)")
+
+    df = pd.read_csv("data/simplify_subsample.dat")
+    ax3.semilogx(df.subsample_size, df.time)
+    ax3.set_xlabel("Subsample size")
+    ax3.set_title("(C)")
+
+    plt.tight_layout()
+    plt.savefig("simplify-results.pdf", format='pdf')
 
 
 

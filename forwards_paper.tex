@@ -830,28 +830,25 @@ as shown in Figure~\ref{fig:simplify_complexity}.
 
 \begin{figure}
     \begin{center}
-        \includegraphics{sims/num_edges_50}
-        \includegraphics{sims/simplify_timings}
+        \includegraphics{sims/simplify-results}
     \end{center}
     \caption{
+        Time and space complexity of simplify.
         \textbf{(A)}
         Number of edges in the simplified tree sequence
-        for 50 Wright--Fisher simulations begun with no prior history,
-        as a function of number of generations.
-        Each line is one simulation, the black line gives the average,
-        and the dotted line is the upper bound of equation \eqref{eqn:edge_bound}.
-        \plr{Propose to add other figures as subfigures here; but better than this.}
+        for 10 replicate Wright--Fisher simulations with $N=50$ as a function
+        of number of generations.
+        Each line is one simulation, the heavy blue line gives the average,
+        and the dashed line is the upper bound of equation \eqref{eqn:edge_bound}.
         \textbf{(B)}
-        Time required to simplify the first $k$ edges
-        of \plr{what tree sequence?},
-        plotted against $k$.
+        Time required to simplify the first $k$ edges of a large (4.2GiB)
+        unsimplified tree sequence produced by a forwards-time simulation plotted
+        against $k$. The time scales linearly with the number of input edges.
         \textbf{(C)}
-        Time required to simplify
-        \plr{what tree sequence?}
-        down to a sample of size $n$,
-        plotted against $n$
-        (note the log scale;
-        the time scales logarithmically with $n$).
+        Time required to simplify the tree sequence resulting from a coalescent
+        simulation of 500K samples of a 200 megabase human chromosome
+        for a random sample of $n$ samples, plotted against $n$
+        (note the log scale; the time scales logarithmically with $n$).
         \label{fig:simplify_complexity}
     }
 \end{figure}
@@ -1025,10 +1022,13 @@ and the fact that these are correlated,
 sequential tree algorithms similar to those in~\citep{kelleher2016efficient}
 can do this in roughly $O(n + m \log n)$ operations.
 The \msprime{} API provides a method to compute $\pi$ among arbitrary subsets of the
-samples in a tree sequence, which took about 1.2 seconds
-applied to the example tree sequence above with 1.1 million mutations
-in 200 megabases for 500,000 samples.
-Calculating $\pi$ from the numeric genotype matrix using numpy took \plr{HOW MANY} seconds.
+samples in a tree sequence, which took about 0.7 seconds when
+applied to an example simulation of 100 megabases of human-like
+sequence for 200,000 samples ($~\sim$ 500K sites). The correspoding
+numeric genotype matrix required about 95GiB of RAM, and
+calculating $\pi$ took about 66 seconds with NumPy.
+
+% This is done by running $ python msprime-examples.py benchmark-pi
 
 Another attractive feature of this set of tools
 is that it makes it easy to incorporate \emph{prior history},
