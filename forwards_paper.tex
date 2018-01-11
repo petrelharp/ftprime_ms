@@ -943,7 +943,8 @@ are written in C or C++ out of necessity. Therefore, the simplest and most
 efficient approach would be to call the \msprime\ C library directly as part of
 the core simulation logic, in the manner outlined in Algorithm W. If designed
 in this way, the simulation engine would not need to keep copies of the node
-and edge information and would not need to infer edges;
+and edge information (and in the more flexible \simupop{} implementation, would
+not need to infer edges);
 even greater gains in computational efficiency could then be obtained. To
 facilitate this usage, a standalone, embeddable C library encompassing the core
 tree sequence functionality is planned, which should make recording and
