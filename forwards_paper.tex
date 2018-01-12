@@ -66,15 +66,17 @@
     and recording history as a \emph{succinct tree sequence} as introduced in the software package \msprime,
     on which neutral mutations can be quickly placed afterwards.
     We implement the method in two popular forwards-time simulation frameworks,
-    which speeds up large, whole-genome simulations by one or two orders of magnitude.
-    In addition to speed, we show that the method has several advantages:
+    which speeds up large, whole-genome simulations by one to orders of magnitude.
+    In addition to speed, the method has several advantages:
     (1) All marginal genealogies of the simulated individuals are recorded, rather than just genotypes.
     (2) A population of $N$ individuals with $M$ polymorphic sites
-    can be stored on $O(N \log N + M)$ space, making it feasible to store a simulation's entire final generation
+    can be stored in $O(N \log N + M)$ space, making it feasible to store a simulation's entire final generation (and its' history)
     rather than only a subset.
-    (3) A simulation can easily be initialized with prior history produced by a more efficient coalescent simulation of deep history.
+    (3) A simulation can easily be initialized with a more efficient coalescent simulation of deep history.
     To make these possible,
-    we introduce the \msprime{} Tables API, which allows for the efficient interchange of genealogical data between modular program components.
+    we introduce the \msprime{} Tables API, which allows for the efficient interchange 
+    of tree sequences between modular program components,
+    and show how to quickly simplify a tree sequence by removing history irrelevant to a given set of genomes.
 \end{abstract}
 
 % NOTE: I tend to use semantic linebreaks.
