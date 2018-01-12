@@ -57,7 +57,7 @@ for name, group in groups:
 
 ax_fwdpp.legend(loc='best',frameon=False)
 ax_fwdpp.set_title("With neutral mutations", fontsize='medium')
-ax_fwdpp_arg.set_title("With pedigree tracking", fontsize='medium')
+ax_fwdpp_arg.set_title("With pedigree recording", fontsize='medium')
 ax_fwdpp.set_ylabel("Peak RAM use (GB)")
 ax_fwdpp.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
 ax_fwdpp_arg.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
@@ -96,11 +96,11 @@ for name, group in groups:
 
 ax_fwdpp.legend(loc='upper left',frameon=False)
 ax_fwdpp.set_title("fwdpy11 with neutral mutations", fontsize='medium')
-ax_fwdpp_arg.set_title("fwdpy11 with pedigree tracking", fontsize='medium')
+ax_fwdpp_arg.set_title("fwdpy11 with pedigree recording", fontsize='medium')
 ax_simupop.set_ylabel("Peak RAM use (GB)")
 ax_fwdpp.set_ylabel("Peak RAM use (GB)")
 ax_simupop.set_title("simuPOP with neutral mutations", fontsize='medium')
-ax_simupop_arg.set_title("simuPOP with pedigree tracking", fontsize='medium')
+ax_simupop_arg.set_title("simuPOP with pedigree recording", fontsize='medium')
 ax_simupop.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
 ax_simupop_arg.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
 ax_simupop_arg.set_xticks([1e3, 1e4, 1e5])
