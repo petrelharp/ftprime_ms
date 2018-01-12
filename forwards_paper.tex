@@ -82,7 +82,7 @@
     To make these possible,
     we introduce the \msprime{} Tables API, which allows for the efficient interchange
     of tree sequences between modular program components,
-    and show how to quickly simplify a tree sequence by removing history irrelevant to a given set of genomes.
+    and provide an algorithm to quickly simplify a tree sequence by removing history irrelevant to a given set of genomes.
 \end{abstract}
 
 % NOTE: I tend to use semantic linebreaks.
@@ -178,11 +178,12 @@ to construct the genealogical tree that relates each individual to every other
 at each position on the genome.
 
 In this paper, we describe a storage method for \emph{succinct tree sequences}
-and, hence, genome sequence, as well as an algorithm for simplifying these.
+(and hence, genome sequence) as well as an algorithm for simplifying these.
 The data structure is \emph{succinct} in the sense that its' space usage is close to optimal,
 while still allowing efficient retrieval of information (see, e.g.,
 \citet{gog2014theory}).
-Both are implemented as improvements to the algorithmic tools and data structures in \msprime{}.
+The storage method and simplification algorithm are both implemented
+as improvements to the algorithmic tools and data structures in \msprime{}.
 We also describe how these tools can efficiently record,
 and later process, the embellished population pedigree from a forwards-time simulation.
 While providing substantial savings in computational time and space, our methods provide much
@@ -203,8 +204,8 @@ implemented using the forwards-time simulation library \fwdpp{} \citep{fwdpp}
 and tree sequence tools implemented in \msprime{}.
 Then, we describe the conceptual and algorithmic foundations for the method:
 (a) a format, implemented in the \msprime{} Python API,
-for recording tree sequences succinctly in several \emph{tables};
-(b) an algorithm to record these tables on the fly during a forwards-time simulation;
+for recording tree sequences efficiently in several \emph{tables};
+(b) an algorithm to record these tables during a forwards-time simulation;
 and (c) an algorithm to \emph{simplify} a tree sequence, i.e., remove redundant information.
 Finally, we analyze the run time and space complexity of our general-purpose method.
 
@@ -252,7 +253,7 @@ Importantly, runtimes are approximately linear in region size $\rho$ when pedigr
 % The reason for this behavior is that, when tracking pedigrees, the simulations are generating a constant number of new edges on average
 % each generation as the number of new recombination breakpoints is Poisson distributed with expectation $\rho$.
 In a more limited set of neutral simulations we found the same qualitative behavior,
-and a numerically larger speedup to pedigree tracking (see Appendix~\ref{ss:timing_nosel}).
+and a numerically larger speedup by using pedigree tracking (see Appendix~\ref{ss:timing_nosel}).
 
 In our implementation, simulations with pedigree recording
 used substantially more RAM than simple forward simulations (see Appendix~\ref{ss:memuse}).
@@ -317,6 +318,20 @@ we give an example in Figure~\ref{fig:example_tree_sequence}.
 This formulation is derived from the ``coalescence records'' encoding of tree
 sequences~\citep{kelleher2016efficient}, normalised to remove redundancy
 and generalised to include a more general class of tree topologies.
+
+The idea of a tree sequence is closely related to the \emph{ancestral recombination graph},
+or {ARG} \citep{griffiths1991two,griffiths1997ancestral},
+which also describes the embellished pedigree.
+The ARG has been the subject of substantial study
+under the assumptions of coalescent
+theory~\citep{wiuf1997number,wiuf1999ancestry,marjoram2006coalescent,wilton2015smc}.
+However, the properties of the ARG as a computational structure have not
+been studied and, despite several efforts to standardise a common
+format~\citep{morin2006netgen,mcgill2013graphml}, % TODO check these refs against others in msprime paper
+ARGs are rarely used in practise.
+In contrast, the algorithmic properties of tree sequence
+algorithms have been explored in detail~\citep{kelleher2016efficient},
+contributing substantially to the efficiency of the \msprime{} coalescent simulator.
 
 The \emph{nodes} of a tree sequence
 correspond to the vertices in the individual genealogies along the sequence.
@@ -384,7 +399,6 @@ For example,
 in Figure~\ref{fig:example_tree_sequence} we have two sites, one at position
 2.5 with ancestral state `A' and the other at position 7.5 with ancestral state `G'.
 If no mutations occur at a given site, all nodes inherit the ancestral state.
-
 Each mutation records three things: the site at which it occurs,
 the first node to inherit the mutation, and the derived state.
 Thus, all nodes below the mutation's node in the tree will inherit this state,
@@ -483,7 +497,7 @@ To demonstrate the flexibility provided by the Tables API and provide an
 implementation that decouples forward simulation internals from transfer of data
 to \msprime, we also implemented a version of the simulations described in
 ``Simulation benchmarks'' separately in Python, described in Appendix~\ref{ss:simupop}.
-This proof-of-concept implementation, the simulation engine (we use \simupop{}, \citet{simupop})
+In this proof-of-concept implementation, the simulation engine (we use \simupop{}, \citet{simupop})
 invokes callbacks at critical points of the simulation, and we infer nodes and edges
 from the information that is provided. Rows are appended to the tables
 one-by-one, and the tables are periodically sorted and simplified to control
@@ -537,7 +551,7 @@ information from $\Nt$ and $\Et$ irrelevant to the current population $P$.
 }
 
 \algstep{W3.}{Choose parents.}{Set $a \leftarrow \randomuniform(\{0, \dots, N - 1\})$,
-    $b \leftarrow \randomuniform(\{0, \dots, N - 1\})$ and $x \leftarrow \randomuniform([0, L))$.
+    $b \leftarrow \randomuniform(\{0, \dots, N - 1\})$ and $x \leftarrow \randomuniform((0, L))$.
 }
 
 \algstep{W4.}{Record edges.}{
@@ -602,7 +616,7 @@ Step \algref{W7} loops these steps until the required number of generations have
 This algorithm records only topological information about the simulated genealogies,
 but it is straightforward to add mutational information.
 Mutations that occur during the simulation can be recorded
-by simply recording the node in which they first occur, the derived state,
+by simply storing the node in which they first occur, the derived state,
 and (if not already present) the genomic position of the site at which it occurs.
 This allows selected mutations, that the forwards time simulation must generate,
 to be recorded in the tree sequence.
@@ -637,8 +651,7 @@ its common ancestor with 27 is redundant.
 \subsection*{Tree sequence simplification}
 \label{ss:simplify}
 
-It is desirable for many reasons to remove redundant information from a tree sequence,
-such as those produced by a forwards-time simulation.
+It is desirable for many reasons to remove redundant information from a tree sequence.
 To formalize this:
 suppose that we are only interested in a subset of the nodes of a tree sequence
 (which we refer to as our `samples'),
@@ -780,9 +793,6 @@ found that different simplification intervals affect run times by approximately
 25\%, with the lowest run time occurring when simplifying every $10^3$ generations.
 Thus, there is a memory-versus-speed tradeoff
 -- simplifying more often would keep fewer extinct nodes and edges in memory.
-The run-time costs associated
-with simplifying have to do with preparing the data to be sent to the simplification algorithm, rather than with the
-algorithm itself, which we show in the next section has linear time complexity.
 
 % As shown in the next section,
 % there is no computational advantage to simplifying more often than is necessary
@@ -966,7 +976,8 @@ requires computing allele frequencies, taking $O(nm)$ operations.
 By using the locations of the mutations on the marginal trees,
 and the fact that these are correlated,
 sequential tree algorithms similar to those in~\citep{kelleher2016efficient}
-can do this in roughly $O(n + m \log n)$ operations.
+can do this in roughly $O(n + m + t)$ operations, where
+$t$ is the number of distinct trees.
 The \msprime{} API provides a method to compute $\pi$ among arbitrary subsets of the
 samples in a tree sequence, which took about 0.7 seconds when
 applied to an example simulation of 100 megabases of human-like
@@ -994,40 +1005,30 @@ to improve performance for the ``Poisson Random Field'' family of models~\citep{
 in which mutations are unlinked and there is no effect of genetic background on fitness.
 However, thus far little attention has been paid to parallelization of more complex simulations.
 
-\paragraph{Relationship to the ARG}
-The idea of a tree sequence is closely related to the \emph{ancestral recombination graph},
-or {ARG} \citep{griffiths1991two,griffiths1997ancestral},
-which also describes the embellished pedigree.
-The ARG has been the subject of substantial study
-under the assumptions of coalescent
-theory~\citep{wiuf1997number,wiuf1999ancestry,marjoram2006coalescent,wilton2015smc}.
-However, the properties of the ARG as a computational structure have not
-been studied and, despite several efforts to standardise a common
-format~\citep{morin2006netgen,mcgill2013graphml}, % TODO check these refs against others in msprime paper
-ARGs are rarely used in practise.
-In contrast, the algorithmic properties of tree sequence
-algorithms have been explored in detail~\citep{kelleher2016efficient},
-contributing substantially to the efficiency of the \msprime{} coalescent simulator.
-
 \paragraph{Bayesian phylogenetics}
 The methods described here for efficiently storing tree sequences may prove useful in other fields.
+We have focused on the interpretation of tree sequences as the outcome of the process
+of recombination, but in principle, we can efficiently encode any
+sequence of trees which differ by subtree-prune-and-regraft
+(SPR) operations. Since each SPR operation requires a constant amount of space to encode, the total
+space required is $O(n + t)$ for $t$ trees with $n$ leaves~\citep{kelleher2016efficient}.
 For instance, the large numbers of large, correlated trees produced by
 MCMC samplers used in Bayesian phylogenetics \citep[e.g.,][]{drummond2012bayesian}
 might be compactly stored as a tree sequence,
-which would allow highly efficient computation of properties of the posterior distribution.
+which would then allow highly efficient computation of properties of the posterior distribution.
 
-
-\paragraph{Next steps.}
-While our methods result in significant performance
-gains over current simulation methods, they are far from optimal. Because
-forwards time simulation is highly CPU intensive, most simulation engines
-are written in \justc{} or \cpp{} out of necessity. Therefore, the simplest and most
-efficient approach would be to call the \msprime{} \justc{} library directly as part of
-the core simulation logic, in the manner outlined in Algorithm \algref{W}. If designed
-in this way, the simulation engine would not need to keep copies of the node and edge information.
-To facilitate this usage, we plan to release a standalone, embeddable \justc{} library encompassing the core
-tree sequence functionality, which should make recording and
-outputting tree sequences from any \justc{}/\cpp{} code straightforward.
+% JK: This needs more context. Probably not worth putting in here.
+% \paragraph{Next steps.}
+% While our methods result in significant performance
+% gains over current simulation methods, they are far from optimal. Because
+% forwards time simulation is highly CPU intensive, most simulation engines
+% are written in \justc{} or \cpp{} out of necessity. Therefore, the simplest and most
+% efficient approach would be to call the \msprime{} \justc{} library directly as part of
+% the core simulation logic, in the manner outlined in Algorithm \algref{W}. If designed
+% in this way, the simulation engine would not need to keep copies of the node and edge information.
+% To facilitate this usage, we plan to release a standalone, embeddable \justc{} library encompassing the core
+% tree sequence functionality, which should make recording and
+% outputting tree sequences from any \justc{}/\cpp{} code straightforward.
 
 \paragraph{A final note:}
 in preparing this manuscript,
