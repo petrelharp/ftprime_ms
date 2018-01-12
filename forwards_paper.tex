@@ -28,30 +28,23 @@
 \newcommand{\St}{\mathcal{S}}  % site table
 \newcommand{\Mt}{\mathcal{M}}  % mutation table
 \newcommand{\Al}{\mathcal{A}}  % list of ancestors
-\newcommand{\priorityq}[1]{\mbox{PriorityQueue}({#1})}
-\newcommand{\listnew}[1]{\mbox{List}(#1)}
-\newcommand{\pqpush}[2]{#1.\mbox{push}(#2)}
-\newcommand{\pqpop}[1]{#1.\mbox{pop}()}
-\newcommand{\listappend}[2]{#1.\mbox{append}(#2)}
-\newcommand{\ancsegment}[1]{\mbox{Segment}(#1)}
-\newcommand{\taddrow}[2]{#1.\mbox{addrow}(#2)}
+\newcommand{\priorityq}[1]{\mbox{\textbf{PriorityQueue}}({#1})}
+\newcommand{\listnew}[1]{\mbox{\textbf{List}}(#1)}
+\newcommand{\pqpush}[2]{#1.\mbox{\textbf{push}}(#2)}
+\newcommand{\pqpop}[1]{#1.\mbox{\textbf{pop}}()}
+\newcommand{\listappend}[2]{#1.\mbox{\textbf{append}}(#2)}
+\newcommand{\ancsegment}[1]{\mbox{\textbf{Segment}}(#1)}
+\newcommand{\taddrow}[2]{#1.\mbox{\textbf{addrow}}(#2)}
 \newcommand{\attrparent}[1]{#1.\mbox{parent}}
 \newcommand{\attrchild}[1]{#1.\mbox{child}}
 \newcommand{\attrleft}[1]{#1.\mbox{left}}
 \newcommand{\attrright}[1]{#1.\mbox{right}}
 \newcommand{\attrid}[1]{#1.\mbox{id}}
 % mbox to avoid hyphenating
-\newcommand{\taddnode}[1]{\mbox{\texttt{addnode}}(#1)}
-\newcommand{\taddedge}[1]{\mbox{\texttt{addedge}}(#1)}
-\newcommand{\tsimplify}[1]{\mbox{\texttt{simplify}}(#1)}
-\newcommand{\tsort}[1]{\mbox{\texttt{sort}}(#1)}
-\newcommand{\tnodetable}[1]{\mbox{\texttt{NodeTable}}(#1)}
-\newcommand{\tedgetable}[1]{\mbox{\texttt{EdgeTable}}(#1)}
-\DeclareMathOperator{\len}{length}
-\DeclareMathOperator{\add}{add} % for adding to tables
-\newcommand{\lleft}{\mathrm{left}}  % left label
-\newcommand{\lright}{\mathrm{right}}
-\newcommand{\lid}{\mathrm{id}}
+\newcommand{\tsimplify}[1]{\mbox{\textbf{simplify}}(#1)}
+\newcommand{\tsort}[1]{\mbox{\textbf{sort}}(#1)}
+\newcommand{\tnodetable}[1]{\mbox{\textbf{NodeTable}}(#1)}
+\newcommand{\tedgetable}[1]{\mbox{\textbf{EdgeTable}}(#1)}
 
 \usepackage{color}
 \newcommand{\krt}[1]{{\em \color{green} #1}}
@@ -515,11 +508,11 @@ For simplicity, we sample exactly one crossover per generation.
 
 We use $\randomuniform(A)$ to denote an element of the set $A$ chosen uniformly at random
 (and all such instances are independent).
-Given a node table $\Nt$, the function $\taddnode{\Nt, t}$
+Given a node table $\Nt$, the function $\taddrow{\Nt}{t}$
 adds a new node to the table $\Nt$ with time $t$
 and returns the ID of this new node.
-Similarly, the function $\taddedge{\Et, \ell, r, p, c}$
-adds a new edge $(\ell\mathrm{eft}, r\mathrm{ight}, p\mathrm{arent}, c\mathrm{hild})$ to the edge table $\Et$.
+Similarly, the function $\taddrow{\Et}{\ell, r, p, c}$
+adds a new edge $(\ell\mbox{eft}, r\mathrm{ight}, p\mathrm{arent}, c\mathrm{hild})$ to the edge table $\Et$.
 The function $\tsimplify{P, \Nt, \Et}$ (described below) % in section \ref{ss:simplify}
 simplifies the history stored in the tables $\Nt$ and $\Et$
 to the minimal information required to represent the genealogies of the list of node IDs $P$;
@@ -537,10 +530,10 @@ information from $\Nt$ and $\Et$ irrelevant to the current population $P$.
 \algstep{W1.}{Initialisation.}{
     Set $\Nt \leftarrow \tnodetable{}$, $\mathcal{E}
     \leftarrow \tedgetable{}$, $t \leftarrow T$, and $j \leftarrow 0$.
- For $0 \leq k < N$, set $P_k \leftarrow \taddnode{\Nt, T}$.
+ For $0 \leq k < N$, set $P_k \leftarrow \taddrow{\Nt}{T}$.
 }
 
-\algstep{W2.}{Generation loop head: new node.}{Set $u \leftarrow \taddnode{\Nt, t}$ and $P'_j \leftarrow u$.
+\algstep{W2.}{Generation loop head: new node.}{Set $u \leftarrow \taddrow{\Nt}{t}$ and $P'_j \leftarrow u$.
 }
 
 \algstep{W3.}{Choose parents.}{Set $a \leftarrow \randomuniform(\{0, \dots, N - 1\})$,
@@ -548,7 +541,7 @@ information from $\Nt$ and $\Et$ irrelevant to the current population $P$.
 }
 
 \algstep{W4.}{Record edges.}{
-Call $\taddedge{\Et, 0, x, P_a, u}$ and $\taddedge{\Et, x, L, P_b, u}$.
+Call $\taddrow{\Et}{0, x, P_a, u}$ and $\taddrow{\Et}{x, L, P_b, u}$.
 }
 
 \algstep{W5.}{Individual loop.}{Set $j \leftarrow j + 1$. If $j < N$ go to \algref{W2}.
@@ -1173,22 +1166,22 @@ on the genomic segment $[\ell, r)$.
 
 \end{taocpalg}
 
-The algorithm steps back up through the pedigree,
-since nodes are ordered by time-since-birth.
-First, for each input node $p$, we must find all ancestral segments inheriting from $p$ --
-so, for every edge $(\ell, r, p, c)$,
-Algorithm \algref{R} replaces any ancestry segment $[u, v)$ held by $c$
-with $[u,v) \setdiff [\ell, r)$
-(deleting the segment or splitting in two if necessary),
-and adding the removed segment $[u,v) \cap [\ell, r)$ to the merge queue $Q$:
+% The algorithm steps back up through the pedigree,
+% since nodes are ordered by time-since-birth.
+% First, for each input node $p$, we must find all ancestral segments inheriting from $p$ --
+% so, for every edge $(\ell, r, p, c)$,
+% Algorithm \algref{R} replaces any ancestry segment $[u, v)$ held by $c$
+% with $[u,v) \setdiff [\ell, r)$
+% (deleting the segment or splitting in two if necessary),
+% and adding the removed segment $[u,v) \cap [\ell, r)$ to the merge queue $Q$:
 
-Next we must merge the ancestry segments in $Q$,
-creating the new ancestor corresponding to input node $p$,
-adding a node and edges to the output if any segments overlap,
-which implies that an output coalescence has occurred.
-Below we index elements of an ancestral segment $z = (\ell, r, u)$
-by writing $z.\lleft = \ell$ and $z.\lright = r$ for the endpoints,
-and $z.\lid = u$ for the output node ID.
+% Next we must merge the ancestry segments in $Q$,
+% creating the new ancestor corresponding to input node $p$,
+% adding a node and edges to the output if any segments overlap,
+% which implies that an output coalescence has occurred.
+% Below we index elements of an ancestral segment $z = (\ell, r, u)$
+% by writing $z.\lleft = \ell$ and $z.\lright = r$ for the endpoints,
+% and $z.\lid = u$ for the output node ID.
 
 \section{Memory usage with selection}
 \label{ss:memuse}
