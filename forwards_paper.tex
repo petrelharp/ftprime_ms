@@ -162,7 +162,7 @@ For this reason, if one records the entire genealogical history of a population 
 simply laying down neutral mutations on top of that history afterwards
 is equivalent to having generated them during the simulation:
 it does not matter if we generate each generation's mutations during the simulation, or afterwards.
-Precisely, we need to know the genealogical trees relating all sampled individuals
+To add mutations after the fact, we need to know the genealogical trees relating all sampled individuals
 at each position along the genome.
 Combined with ancestral genotypes and the origins of new mutations,
 these trees completely specify the genomic sequence of any individual in the population at any time.
@@ -176,6 +176,29 @@ The information in this embellished pedigree is stored as a \emph{succinct tree 
 which contains all the information necessary
 to construct the genealogical tree that relates each individual to every other
 at each position on the genome.
+
+The idea of storing genealogical information to speed up simulations is not new.
+It was implemented completely in AnA-FiTS~\citep{aberer2013rapid},
+but without the critical step of discarding irrelevant genealogical information.
+\citet{padhukasahasram2008exploring} obtained impressive speedups for a Wright--Fisher simulation
+by keeping track of genealogies over the preceeding 8 generations
+and only tracking neutral genotypes for those segments having descendants across this window.
+Our approach is similar, but uses genealogies across the entire duration of the simulation.
+The embellished pedigree is equivalent to the \emph{ancestral recombination graph},
+or {ARG} \citep{griffiths1991two,griffiths1997ancestral},
+which has been the subject of substantial study
+% under the assumptions of coalescent theory
+\citep{wiuf1997number,wiuf1999ancestry,marjoram2006coalescent,wilton2015smc}.
+However, it is unclear if an ARG-based approach would share
+the computational advantages of the data structures we use here \citet{kelleher2016efficient}.
+
+% However, the properties of the ARG as a computational structure have not
+% been studied and, despite several efforts to standardise a common
+% format~\citep{morin2006netgen,mcgill2013graphml}, % TODO check these refs against others in msprime paper
+% ARGs are rarely used in practise.
+% In contrast, the algorithmic properties of tree sequence
+% algorithms have been explored in detail~\citep{kelleher2016efficient},
+% contributing substantially to the efficiency of the \msprime{} coalescent simulator.
 
 In this paper, we describe a storage method for \emph{succinct tree sequences}
 (and hence, genome sequence) as well as an algorithm for simplifying these.
@@ -304,7 +327,7 @@ if memory usage in the forwards simulation was dominated by the cost of maintain
 %%%%%%
 \subsection*{Tables for succinct tree sequences}
 
-We now explain what we actually did to achieve a $50\times$ speedup.
+We now explain what we actually did to achieve this $50\times$ speedup.
 The ``pedigree recording'' simulations above recorded information about each new individual
 in a collection of tables that together define a \emph{succinct tree sequence}
 (or, simply ``tree sequence'').
@@ -318,20 +341,6 @@ we give an example in Figure~\ref{fig:example_tree_sequence}.
 This formulation is derived from the ``coalescence records'' encoding of tree
 sequences~\citep{kelleher2016efficient}, normalised to remove redundancy
 and generalised to include a more general class of tree topologies.
-
-The idea of a tree sequence is closely related to the \emph{ancestral recombination graph},
-or {ARG} \citep{griffiths1991two,griffiths1997ancestral},
-which also describes the embellished pedigree.
-The ARG has been the subject of substantial study
-under the assumptions of coalescent
-theory~\citep{wiuf1997number,wiuf1999ancestry,marjoram2006coalescent,wilton2015smc}.
-However, the properties of the ARG as a computational structure have not
-been studied and, despite several efforts to standardise a common
-format~\citep{morin2006netgen,mcgill2013graphml}, % TODO check these refs against others in msprime paper
-ARGs are rarely used in practise.
-In contrast, the algorithmic properties of tree sequence
-algorithms have been explored in detail~\citep{kelleher2016efficient},
-contributing substantially to the efficiency of the \msprime{} coalescent simulator.
 
 The \emph{nodes} of a tree sequence
 correspond to the vertices in the individual genealogies along the sequence.
@@ -956,12 +965,6 @@ can happen independently of the details of simulation;
 for this reason, we provide a well-defined and well-tested API in Python
 for use in other code bases (a C API is also planned).
 
-The idea of storing genealogical information to speed up simulations is not new.
-It was implemented completely in AnA-FiTS~\citep{aberer2013rapid},
-but without the critical step of discarding irrelevant genealogical information.
-A similar but much more limited method for
-discarding this information also appears in \citet{padhukasahasram2008exploring}.
-
 The tree sequences produced by default by this method
 are very compact, storing genotype \emph{and} genealogical information
 in a small fraction of the space taken by a compressed VCF file.
@@ -997,20 +1000,20 @@ time of migration across the range has limited effect on modern genealogies
 \citep{wilkins2004separation},
 other than possibly changing effective population size \citep{barton2002neutral,cox2002stepping}.
 
-Simulating very large populations and entire genomes will likely require parallelization.
-The one-way nature of information flow here makes our scheme relatively easy to incorporate
-into a parallel algorithm.
-Recently, \citet{lawrie2017accelerating} used parallelization
-to improve performance for the ``Poisson Random Field'' family of models~\citep{Sawyer1992-jw},
-in which mutations are unlinked and there is no effect of genetic background on fitness.
-However, thus far little attention has been paid to parallelization of more complex simulations.
+% Simulating very large populations and entire genomes will likely require parallelization.
+% The one-way nature of information flow here makes our scheme relatively easy to incorporate
+% into a parallel algorithm.
+% Recently, \citet{lawrie2017accelerating} used parallelization
+% to improve performance for the ``Poisson Random Field'' family of models~\citep{Sawyer1992-jw},
+% in which mutations are unlinked and there is no effect of genetic background on fitness.
+% However, thus far little attention has been paid to parallelization of more complex simulations.
 
-\paragraph{Bayesian phylogenetics}
+\paragraph{Other applications}
 The methods described here for efficiently storing tree sequences may prove useful in other fields.
 We have focused on the interpretation of tree sequences as the outcome of the process
 of recombination, but in principle, we can efficiently encode any
 sequence of trees which differ by subtree-prune-and-regraft
-(SPR) operations. Since each SPR operation requires a constant amount of space to encode, the total
+operations. Since each such operation requires a constant amount of space to encode, the total
 space required is $O(n + t)$ for $t$ trees with $n$ leaves~\citep{kelleher2016efficient}.
 For instance, the large numbers of large, correlated trees produced by
 MCMC samplers used in Bayesian phylogenetics \citep[e.g.,][]{drummond2012bayesian}
