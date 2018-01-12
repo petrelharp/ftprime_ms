@@ -512,11 +512,11 @@ Given a node table $\Nt$, the function $\taddrow{\Nt}{t}$
 adds a new node to the table $\Nt$ with time $t$
 and returns the ID of this new node.
 Similarly, the function $\taddrow{\Et}{\ell, r, p, c}$
-adds a new edge $(\ell\mbox{eft}, r\mathrm{ight}, p\mathrm{arent}, c\mathrm{hild})$ to the edge table $\Et$.
+adds a new edge $(\ell\text{eft}, r\text{ight}, p\text{arent}, c\text{hild})$ to the edge table $\Et$.
 The function $\tsimplify{P, \Nt, \Et}$ (described below) % in section \ref{ss:simplify}
 simplifies the history stored in the tables $\Nt$ and $\Et$
 to the minimal information required to represent the genealogies of the list of node IDs $P$;
-after simplification the nodes appearing in $P$ are relabeled $(0, 1, \ldots, |P|)$.
+after simplification the nodes appearing in $P$ are relabeled $(0, 1, \ldots, |P|-1)$.
 A step-by-step explanation follows the pseudocode.
 
 \begin{taocpalg}{W}{Forwards-time tree sequence}
@@ -1078,26 +1078,26 @@ and XXX.
 \section{Simplification algorithm}
 \label{ss:simplify_algorithm}
 
-Here we describe the simplification algorithm. The algorithm uses a few simple structures
+Here we provide a concrete implementation of the simplification algorithm.
+The algorithm uses a few simple structures
 besides the node and edge tables discussed earlier. As the algorithm needs to track the mapping
 between input and output node IDs over specific genomic intervals, we use a $\ancsegment$
 type to track these individual mappings. Thus, a segment $x$ has three attributes:
-$\attrleft{x}$ and $\attrright{x}$ represents the genomic interval in the usual way,
-and $\attrnode{x}$ represents the output node ID that is assigned to this interval. The per-interval
-segments are assigned to input IDs via the $\Al$ mapping, which is the main state required
-by the algorithm. Each element $\Al[u]$
-is a list of ancestral segments, describing the output node ID mapped to input
-node ID $u$ over a set of intervals. For each input node, we need to find the process
-the resulting set of ancestral segments to find overlaps (and hence coalescences). We
-do this using a $\priorityq{}$ type. This priority queue maintains a list of ancestral
-segments in sorted order, such that the segements with the smallest left coordinate
-are at the start of the list. Given a priority queue $Q$, the operation
-$\pqpush{Q}{x}$ inserts the segment $x$ into the queue, and $\pqpop{Q}{x}$
-returns (and removes) the segment in $Q$ with the smallest left coordinate.
+$\attrleft{x}$ and $\attrright{x}$ represent the genomic interval in the usual way,
+and $\attrnode{x}$ represents the output node ID that is assigned to this interval.
+These output node IDs correspond to colors in the ``paint pot'' analogy.
+The per-interval segments are assigned to input IDs via the $\Al$ mapping,
+which is the main state required by the algorithm. Each element $\Al[u]$
+is a list of ancestral segments, describing the output node IDs mapped to input
+node ID $u$ over a set of intervals.
+For each input node, we need to process the ancestral segments
+to find overlaps (and hence coalescences), and to update the $\Al$.
+We do this using a $\priorityq{}$ type, which maintains a list of ancestral
+segments sorted by left coordinate. For a priority queue $Q$, the operation
+$\pqpush{Q}{x}$ inserts the segment $x$ into the queue, and $\pqpop{Q}$
+removes and returns the segment in $Q$ with the smallest left coordinate.
 To obtain the segment currently in the queue with the smallest left value we
 write $Q[0]$.
-
-A step-by-step explanation of the algorithm follows the algorithm listing.
 
 \begin{taocpalg}{S}{Simplify a tree sequence}
 {Input consists of
@@ -1118,14 +1118,14 @@ A step-by-step explanation of the algorithm follows the algorithm listing.
 }
 
 \algstep{S1.}{Select parent edges.}{
-    Set $E \leftarrow \{e: \attrparent{e} = u \mbox{ and } e \in \Et_I\}$.
-    Set $v \leftarrow -1$.
+    Set $E \leftarrow \{e \in \Et_I : \attrparent{e} = u \}$.
+    Set $v \leftarrow -1$.  If $|E| = 0$, go to \algref{S8}.
 }
 
 \algstep{S2.}{Insert edge/ancestry intersections.}{
     For each $e\in E$ and each $x \in \Al[\attrchild{e}]$,
     if $\attrright{x} > \attrleft{e}$ and $\attrright{e} > \attrleft{x}$,
-    set $\ell \leftarrow \max(\attrleft{x}, \attrright{e})$,
+    set $\ell \leftarrow \max(\attrleft{x}, \attrleft{e})$,
     $r \leftarrow \min(\attrright{x}, \attrright{e})$,
     $y \leftarrow \ancsegment{\ell, r, \attrnode{x}}$ and call
     $\pqpush{Q}{y}$.
@@ -1147,7 +1147,7 @@ A step-by-step explanation of the algorithm follows the algorithm listing.
     Go to \algref{S7}.
 }
 
-\algstep{S5.}{New output node.}{
+\algstep{S5.}{Overlap; new output node.}{
     If $v = -1$, set $v \leftarrow \taddrow{\Nt_0}{\Nt_I[u]}$.
 }
 
@@ -1167,43 +1167,56 @@ A step-by-step explanation of the algorithm follows the algorithm listing.
 
 \end{taocpalg}
 
-The algorithm begins in \algref{S1} by allocating an empty list to store ancestral
+The algorithm begins in \algref{S0} by allocating an empty list to store ancestral
 segments for each of the $|\Nt_I|$ input nodes, and then creating the initial
 state for the samples in $S$. For each input sample with node ID $u$, we
 add a row in the output node table $\Nt_O$, and create a mapping for this
 new node $v$. After this initial state has been created, we then allocate our
 priority queue $Q$, and set the current input ID $u$ to $0$.
+Recall that the function $\taddrow{\Nt}{t}$ adds a new node to the node table $\Nt$
+with birth time $t$, and returns the ID (i.e., index) of that new node in $\Nt$.
+So, the operation $v \leftarrow \taddrow{\Nt_O}{\Nt_I[u]}$ looks up the birth time
+for input node ID $u$ in $\Nt_I$, adds a new node with this time to $\Nt_O$,
+and stores the resulting (output) node ID in $v$.
 
-The algorithm steps back up through the pedigree and steps \algref{S1}--\algref{S8}
+To step back up through the pedigree, steps \algref{S1}--\algref{S8}
 consider each node $u$ in turn (note we are assuming that nodes are ordered by time-since-birth).
 In \algref{S1} we first find all edges in the input where the parent is equal to
 our current input ID $u$, and then set the corresponding output ID $v$ to $-1$.
-Then, in \algref{S2} we find all intersections between these edges and the
-mapped ancestry segments for their child nodes. For each of these intersections we
+Then, in \algref{S2} we find all intersections between these input edges and the
+mapped ancestry segments of their child nodes.
+For each of these intersections we
 create a new segment $y$ and insert it into the priority queue.
+(In the paint pot analogy,
+this stores in $Q$ all segments of color that must be transferred to the ancestor
+with input ID $u$.)
 
 After finding all overlaps and filling the priority queue with the resulting ancestry
 segments, we then need to process these segments. Steps \algref{S3}--\algref{S7}
 loop over the segments in the queue, considering each in turn until the queue is empty.
-Step \algref{S3} builds a list $X$ of all the segments that have the
-minimum left coordinate (along with some bookkeeping to keep track of where our next
+Step \algref{S3} builds a list $X$ of all segments covering the current left-most coordinate
+(along with some bookkeeping to keep track of where our next
 right coordinate $r$ is), removing them from $Q$. If there is only one element in $X$
 this means that we have no overlapping ancestral segments at this coordinate and
 we proceed to \algref{S4}.
 
-As no overlaps occur, there is no change in the mapping between input and output IDs
-and so the ancestry segment $\alpha$ is not changed (this is assigned to $\Al_u$ in \algref{S7}).
-However, there is a complication caused by other segments which may intersect with $x$,
-which have left coordinate greater then $\attrleft{x}$. If $x$ intersects with this value,
-then there are other overlaps we must consider. Therefore, we change the left coordinate
-of $x$ to this coordinate and reinsert it into $Q$ where it can be processed again
-later. After doing this, we proceed to \algref{S7}, update the ancestry mapping for
+In this case, only a single segment covers the leftmost region of the segments,
+so there is no change in the mapping between input and output IDs,
+and the ancestry segment $\alpha$ is not changed (this is assigned to $\Al_u$ in \algref{S7}).
+(The color in this segment of the offspring can simply be transferred to the parent.)
+However, if other segments in $Q$ intersect with $x$
+(since $x$ is the current left-most segment, these have left coordinate less then $\attrright{x}$),
+then we can only transfer the portion of $x$ up until it overlaps with other segments.
+Therefore, we change the left coordinate
+of $x$ to this coordinate and reinsert it into $Q$ where it will be processed again
+later, effectively cutting off (and propagating) the leftmost segment of $x$.
+After doing this, we proceed to \algref{S7}, update the ancestry mapping for
 the input node $u$, and loop back to \algref{S3} if $Q$ is not empty.
 
 On the other hand, if there is more than one segment in $X$, we know that an
-overlap among the ancestral segments has occured and we must update the output
+overlap among the ancestral segments has occurred and we must update the output
 nodes and edges accordingly. In step \algref{S5} we first allocate a new output
-node $v$ for $u$, if it has not been done already (we may have many overlapping
+node $v$ for input node $u$, if it has not been done already (we may have many overlapping
 segments along the genome). Step \algref{S6} then continues by creating a new
 ancestry segment $\alpha$ mapping the current interval to the output node $v$.
 We then iterate over all segments in $X$, adding the appropriate output edges
