@@ -1043,7 +1043,11 @@ but perhaps it will prove useful elsewhere.
 We implemented simulations and the connection to \msprime{} in \cpp{}, using \fwdpp{} library functions and
 interface code using a continuum-sites model for both mutation
 and recombination. Simulations were run using \fwdpy{} (version 0.13.a0), a Python package based
-on \fwdpp{} (version 0.5.7).
+on \fwdpp{} (version 0.5.7).  The majority of results are presented based on a single-threaded implementation.  However,
+we also implemented a parallelized version using Python's \texttt{queue.Queue} to run the simplification step in a separate Python
+thread. Our implementation allows a maxmimum of four simplification intervals to be in the queue at once. This
+parallelized version also performed fitness calculation in parallel using two threads of execution in C++.
+
 Code for all simulations and figures is available at \url{https://github.com/petrelharp/ftprime_ms}.
 These made use of the GNU Scientific Library \citep[version 1.16][]{galassi2018scientific},
 pybind11 \citep[version 2.2.1][]{pybind11},
