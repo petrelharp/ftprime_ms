@@ -28,6 +28,18 @@
 \newcommand{\St}{\mathcal{S}}  % site table
 \newcommand{\Mt}{\mathcal{M}}  % mutation table
 \newcommand{\Al}{\mathcal{A}}  % list of ancestors
+\newcommand{\priorityq}[1]{\mbox{PriorityQueue}({#1})}
+\newcommand{\listnew}[1]{\mbox{List}(#1)}
+\newcommand{\pqpush}[2]{#1.\mbox{push}(#2)}
+\newcommand{\pqpop}[1]{#1.\mbox{pop}()}
+\newcommand{\listappend}[2]{#1.\mbox{append}(#2)}
+\newcommand{\ancsegment}[1]{\mbox{Segment}(#1)}
+\newcommand{\taddrow}[2]{#1.\mbox{addrow}(#2)}
+\newcommand{\attrparent}[1]{#1.\mbox{parent}}
+\newcommand{\attrchild}[1]{#1.\mbox{child}}
+\newcommand{\attrleft}[1]{#1.\mbox{left}}
+\newcommand{\attrright}[1]{#1.\mbox{right}}
+\newcommand{\attrid}[1]{#1.\mbox{id}}
 % mbox to avoid hyphenating
 \newcommand{\taddnode}[1]{\mbox{\texttt{addnode}}(#1)}
 \newcommand{\taddedge}[1]{\mbox{\texttt{addedge}}(#1)}
@@ -1105,26 +1117,58 @@ on the genomic segment $[\ell, r)$.
 }
 
 \algstep{S0.}{Initialize.}{
-    Set $\Al[j] \leftarrow (0, L, j)$
-    and $\Nt_O[j] \leftarrow \Nt_I[S[j]]$ for $0 \le j < \len(S)$.
-    Set the current input parent index to $p=0$
-    and $M[u] \leftarrow -1$ for $0 \le u < \len(\Nt_I)$.
-}
-\krt{We need a verbal definition of $Q$}
-\algstep{S1.}{Input parent loop.}{Set $Q \leftarrow \emptyset$.
+    Set $\Al_u \leftarrow \listnew{}$ for $0 \leq u < |\Nt_I|$. Then,
+    for each $u$ in $S$, set $v \leftarrow \taddrow{\Nt_O}{\Nt_I[u]}$ and
+    call $\listappend{\Al[u]}{\ancsegment{0, L, v}}$. Then set $Q \leftarrow \priorityq{}$
+    and $u \leftarrow 0$.
 }
 
-\algstep{S2.}{Remove ancestry.}{Call Algorithm \algref{R} on each edge $(\ell, r, p, c)$ in $\Et_I$
-    corresponding to parent $p$ (which stores the resulting segments in the merge queue $Q$).
+\algstep{S1.}{Select parent edges.}{
+    Set $E \leftarrow \{e: \attrparent{e} = u \mbox{ and } e \in \Et_I\}$.
+    Set $v \leftarrow -1$.
 }
 
-\algstep{S3.}{Merge ancestors.}{Call Algorithm \algref{M} on $Q$
-    (which adds to $\Nt_O$ and $\Et_O$).
+\algstep{S2.}{Insert edge/ancestry intersections.}{
+    For each $e\in E$ and each $x \in \Al[\attrchild{e}]$,
+    if $\attrright{x} > \attrleft{e}$ and $\attrright{e} > \attrleft{x}$,
+    set $\ell \leftarrow \max(\attrleft{x}, \attrright{e})$,
+    $r \leftarrow \min(\attrright{x}, \attrright{e})$,
+    $y \leftarrow \ancsegment{\ell, r, \attrid{x}}$ and call
+    $\pqpush{Q}{y}$.
 }
 
-\algstep{S4.}{Next parent.}{Set $p \leftarrow p+1$;
-    if $p = \len(\Nt_I)$, terminate and return $\Nt_O$ and $\Et_O$;
-    otherwise, return to \algref{S1}.
+\algstep{S3.}{Find segments with minimum left coordinate.}{
+    Set $\ell \leftarrow \attrleft{Q[0]}$, $r \leftarrow L$ and $X \leftarrow \mbox{List}()$.
+    Then, while $|Q| > 0$ and $\attrleft{Q[0]} = \ell$, set $x \leftarrow \pqpop{Q}$,
+    $r \leftarrow \min(r, \attrright{x})$ and call $\listappend{X}{x}$.
+    Afterwards, if $|Q| > 0$, set $r \leftarrow \min(r, \attrleft{Q[0]})$. If
+    $|X| > 1$ go to \algref{S5}.
+}
+
+\algstep{S4.}{No overlapping segments.}{
+    Set $x \leftarrow X[0]$ and $\alpha \leftarrow x$. If $|Q| > 0$ and
+    $\attrleft{Q[0]} < \attrright{x}$, set $\alpha \leftarrow
+    \ancsegment{\attrleft{x}, \attrright{Q[0]}, \attrid{x}}$,
+    $\attrleft{x} \leftarrow \attrleft{Q[0]}$ and call $\pqpush{Q}{x}$.
+    Go to \algref{S7}.
+}
+
+\algstep{S5.}{New output node.}{
+    If $v = -1$, set $v \leftarrow \taddrow{\Nt_0}{\Nt_I[u]}$.
+}
+
+\algstep{S6.}{Record edges.}{
+    Set $\alpha \leftarrow \ancsegment{\ell, r, v}$. Then for each $x \in X$
+    call $\taddrow{\Et_O}{l, r, v, \attrid{x}}$ and, if $\attrright{x} > r$,
+    set $\attrleft{x} \leftarrow r$ and call $\pqpush{Q}{x}$.
+}
+
+\algstep{S7.}{Left coordinate loop.}{
+    Call $\listappend{\Al}{\alpha}$. If $|Q| > 0$ return to \algref{S3}.
+}
+
+\algstep{S8.}{Parent loop.}{
+    Set $u \leftarrow u + 1$. If $u < |\Nt_I|$, go to \algref{S1}.
 }
 
 \end{taocpalg}
@@ -1138,38 +1182,6 @@ with $[u,v) \setdiff [\ell, r)$
 (deleting the segment or splitting in two if necessary),
 and adding the removed segment $[u,v) \cap [\ell, r)$ to the merge queue $Q$:
 
-\begin{taocpalg}{R}{Remove ancestry}
-    {Given an edge $(\ell, r, p, c)$,
-    and a list $\Al[c]$ of the $m$ ancestral segments corresponding to $c$,
-    remove segments overlapping $[\ell, r)$ from $\Al[c]$,
-    and add those overlapping segments to $Q$.
-    }
-
-    \algstep{R0.}{Initialize.}{
-        Set $j \leftarrow 0$.
-    }
-
-    \algstep{R1.}{Segment loop.}{
-    If $j=m$, terminate; else let $(u, v, x) = \Al[c][j]$.
-    (Here $x$ is the output node that inherits from this segment.)
-    }
-
-    \algstep{R2.}{Add to merge queue.}{If $[u,v) \cap [\ell,r) = \emptyset$,
-    skip to \algref{R4}.
-    Otherwise, append $(\max(u,\ell), \min(v,r), x)$ to $Q$.
-    }
-
-    \algstep{R3.}{Remove ancestry.}{
-    Delete $\Al[c][j]$ and insert in its place
-    $(\min(u,\ell), \max(v,\ell), x)$ (if $u<\ell$)
-    and(/or) $(\min(v,r), \max(v,r), x)$ (if $r<v$).
-    }
-
-    \algstep{R4.}{Iterate.}{Set $j \leftarrow j+1$ and return to \algref{R1}.
-    }
-
-\end{taocpalg}
-
 Next we must merge the ancestry segments in $Q$,
 creating the new ancestor corresponding to input node $p$,
 adding a node and edges to the output if any segments overlap,
@@ -1177,63 +1189,6 @@ which implies that an output coalescence has occurred.
 Below we index elements of an ancestral segment $z = (\ell, r, u)$
 by writing $z.\lleft = \ell$ and $z.\lright = r$ for the endpoints,
 and $z.\lid = u$ for the output node ID.
-
-\begin{taocpalg}{M}{Merge ancestors}
-    {Merge the ancestral segments in $Q$,
-    and create the new ancestor $\Al[p]$.
-    This algorithm also appends to $\Nt_O$ and $\Et_O$,
-    and needs to know about $S$,
-    to check if input nodes are samples.
-    }
-
-    \algstep{M0.}{Initialize.}{
-        Set $z \leftarrow (0, 0, -1)$ and $d = \text{False}$.
-    }
-
-    \algstep{M1.}{Segment loop.}{If $\len(Q) = 0$, go to \algref{M9}.}
-
-    \algstep{M2.}{Find next segment overlap boundaries}{
-        Let $\ell_0 \leftarrow \min\{x.\lleft : x \in Q\}$
-        and $H \leftarrow \{x \in Q : x.\lleft = \ell_0\}$.
-        Also let $\ell_+ \leftarrow \min\{x.\lleft : x \in Q \setdiff H\}$
-        and $r = \min(\ell_+, \min\{x.\lright : x \in H\})$.
-    }
-
-    \algstep{M3.}{Copy single segment.}{
-        If $\len(H) = 1$,
-        set $\alpha \leftarrow (\ell, r, H[0].\lid)$.
-        If also $p \in S$, then
-        set $\alpha.\lid \leftarrow M[p]$ and
-        $\add(\Et_O, (\alpha.\lleft, \alpha.\lright, \Nt[p], \alpha.\lid))$.
-        Go to \algref{M7}.
-    }
-
-    \algstep{M4.}{New output node.}{
-        If $M[p] = -1$ set $M[p] \leftarrow \add(\Nt_O, \Nt_I[p])$
-        Set $\alpha \leftarrow (\ell, r, M[p])$.
-    }
-
-    \algstep{M6.}{Record edges and update $Q$.}{
-        For each $x \in H$, do $\add(\Et_O, (\ell, r, M[p], x.\lid))$.
-    }
-
-    \algstep{M7.}{Update $Q$.}{
-        Remove from $Q$ any segment $x \in H$ with $x.\lright = r$
-        and then set $x.\lleft = \ell$ for all remaining $x \in H$.
-    }
-
-    \algstep{M8.}{Add segment to ancestor.}{
-        If $z.\lright = \alpha.\lleft$ and $z.\lid = \alpha.\lid$ set $d = \text{True}$.
-        Append $\alpha$ to $\Al[p]$, set $z \leftarrow \alpha$, and return to \algref{M1}.
-    }
-
-    \algstep{M9.}{Defragment.}{
-        If $d$ is True, find and merge any adjacent segments in $\Al[p]$
-        with the same $\lid$.  Terminate.
-    }
-
-\end{taocpalg}
-\krt{I think the algo discussion is  clear.  I've not tried to implement it, which would be the real test, but I find the description fine other than needing to define $Q$ when first used.}
 
 \section{Memory usage with selection}
 \label{ss:memuse}

@@ -25,20 +25,19 @@ def simplify(S, Ni, Ei, L):
     No = msprime.NodeTable()
     Eo = msprime.EdgeTable()
     A = [[] for _ in range(len(Ni))]
-    for input_id in S:
-        output_id = No.add_row(time=Ni.time[input_id], flags=1)
-        A[output_id] = [Segment(0, L, output_id)]
+    Q = []
 
-    for input_parent in range(len(Ni)):
-        Q = []
-        for edge in [e for e in Ei if e.parent == input_parent]:
-            for seg in A[edge.child]:
-                if not (seg.right <= edge.left or edge.right <= seg.left):
-                    y = Segment(
-                            max(seg.left, edge.left),
-                            min(seg.right, edge.right), seg.id)
+    for u in S:
+        output_id = No.add_row(time=Ni.time[u], flags=1)
+        A[u] = [Segment(0, L, output_id)]
+
+    for u in range(len(Ni)):
+        for e in [e for e in Ei if e.parent == u]:
+            for x in A[e.child]:
+                if x.right > e.left and e.right > x.left:
+                    y = Segment(max(x.left, e.left), min(x.right, e.right), x.id)
                     heapq.heappush(Q, y)
-        output_parent = -1
+        v = -1
         while len(Q) > 0:
             l = Q[0].left
             r = L
@@ -58,16 +57,16 @@ def simplify(S, Ni, Ei, L):
                     x.left = Q[0].left
                     heapq.heappush(Q, x)
             else:
-                if output_parent == -1:
-                    output_parent = No.add_row(time=Ni.time[input_parent])
-                alpha = Segment(l, r, output_parent)
+                if v == -1:
+                    v = No.add_row(time=Ni.time[u])
+                alpha = Segment(l, r, v)
                 for x in X:
-                    Eo.add_row(l, r, output_parent, x.id)
+                    Eo.add_row(l, r, v, x.id)
                     if x.right > r:
                         x.left = r
                         heapq.heappush(Q, x)
 
-            A[input_parent].append(alpha)
+            A[u].append(alpha)
 
     # Sort the output edges and compact them as much as possible into
     # the output table. We can probably skip this for the algorithm listing as
