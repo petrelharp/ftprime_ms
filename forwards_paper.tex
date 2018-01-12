@@ -804,12 +804,17 @@ Thus, there is a memory-versus-speed tradeoff
 
 
 %%%%%%%%%%%%
-\subsubsection*{Estimates of run-time complexity}
+\subsubsection*{Computational complexity}
 
-The simulation results shown in Figures \ref{fig:runtimes_selection} and \ref{fig:relative_speedup_selection} show that
-pedigree tracking greatly speeds up forward-time simulations.  Further, the run times with pedigree tracking become
-near-linear in $\rho$ (Figure \ref{fig:runtimes_selection}).  In this section, we explore the run-time complexity using a
-simplified Wright-Fisher model with recombination.
+% I may need to cite my student's t-shirt for the following line.
+Figures \ref{fig:runtimes_selection} and \ref{fig:relative_speedup_selection} show that this method
+can dramatically improve simulation performance in practice --
+but, how does it perform in theory?
+% The simulation results shown in Figures \ref{fig:runtimes_selection} and \ref{fig:relative_speedup_selection} show that
+% pedigree tracking greatly speeds up forward-time simulations.  Further, the run times with pedigree tracking become
+% near-linear in $\rho$ (Figure \ref{fig:runtimes_selection}).  
+In this section, we explore the how required computational effort and storage space scale
+in a Wright-Fisher model with recombination.
 
 %% Memory reduction thanks to simplification
 Consider a simulation of a Wright-Fisher population of $2N$ haploid individuals
@@ -841,9 +846,12 @@ $6N + 32 N \log(2N)$;
 at $N=10^4$, a factor of 3,700.
 
 %% Progressive memory reduction as a function of T
-To get an idea of how required space depends on the length of time between simplification steps,
-suppose instead that we have run a simulation of $2N$ individuals for $T$ generations,
+\citet{padhukasahasram2008exploring} obtained impressive speedups relative to contemporary simulators
+by retaining only 8 generations of history.
+This begs the question: how fast does the information in the pedigree become irrelevant?
+Suppose instead that we have run a simulation of $2N$ individuals for $T$ generations,
 begun with no prior history.
+One way to answer this question is to ask:
 How many of the resulting $4NT$ edges are required after simplification?
 As above, the expected number of edges is bounded by $2N-2$ plus four times the mean marginal tree length.
 Roughly, the length of time for which a marginal tree has $k$ tips is
@@ -899,11 +907,19 @@ If we were to add mutations in forwards time
 under the infinite-sites model with total mutation rate per generation $\mu$,
 there would also be around $\mu 2NT$ mutations (and the same number of sites).
 Since mutations fall as recombinations do on the marginal trees,
-adding them after simplification results in only around $\mu 4 N \log(2N)$ mutations,
+the number of mutations is proportional to the total length of all the marginal trees,
+and so adding them after simplification results in only around $\mu 4 N \log(2N)$ mutations,
 and the same savings as we obtained from edges above,
 even without considering the
 computational burden of propagating mutations forwards across generations.
 
+Since each mutation is stored only as a single row in the mutation table,
+and at most one row in the site table, the space required for $M$ mutations is $O(M)$;
+combined with the $O(N \log N)$ storage for edges and nodes of a tree sequence above,
+this implies that the full results of a simulation of $N$ individuals
+having $M$ mutations can be stored in $O(N \log N + M)$ space.
+In simulations of whole chromosomes, the number of mutations per chromosome per generation is $O(1)$,
+so $M$ will typically be $O(N \log N)$ as well.
 
 %% simplify run time
 How does the computation \emph{time} required for simplification scale?
