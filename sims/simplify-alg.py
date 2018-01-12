@@ -27,6 +27,10 @@ class Segment(object):
         return repr((self.left, self.right, self.id))
 
 def simplify(S, Ni, Ei, L):
+    '''
+    This is an implementation of the simplify algorithm described in Appendix A
+    of the paper.
+    '''
     No = msprime.NodeTable()
     Eo = msprime.EdgeTable()
     A = [[] for _ in range(len(Ni))]
@@ -99,6 +103,10 @@ def simplify(S, Ni, Ei, L):
 
 
 def simplify_interval_tree(S, Ni, Ei, L):
+    '''
+    This is an alternative implementation of the simplify algorithm, relying on
+    operations on collections of intervals provided by IntervalTree objects.
+    '''
     No = msprime.NodeTable()
     Eo = msprime.EdgeTable()
     left = Ei.left
@@ -177,6 +185,10 @@ class Edge(object):
 
 
 def simplify_loci(S, Ni, Ei, L):
+    '''
+    This is an implementation of the simplify algorithm that works with a discrete set
+    of loci, rather than continuous intervals.
+    '''
     No = msprime.NodeTable()
     Eo = msprime.EdgeTable()
     left = Ei.left.astype(int)
@@ -241,6 +253,8 @@ def simplify_loci(S, Ni, Ei, L):
     return msprime.load_tables(nodes=No, edges=Eo)
 
 
+# Checks that simplify() does the right thing, by comparing to the implementation
+# in msprime.
 
 def verify():
     for n in [10, 100, 1000]:
