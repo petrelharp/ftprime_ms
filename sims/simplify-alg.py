@@ -10,8 +10,6 @@ import intervaltree
 
 class Segment(object):
     def __init__(self, left, right, id_):
-        if left >= right:
-            print("ERROR", left ,right)
         assert left < right
         self.left = left
         self.right = right
@@ -31,11 +29,7 @@ def simplify(S, Ni, Ei, L):
         output_id = No.add_row(time=Ni.time[input_id], flags=1)
         A[output_id] = [Segment(0, L, output_id)]
 
-    for j in range(len(Ni)):
-        print(j, "\t", A[j])
-
     for input_parent in range(len(Ni)):
-        print("input_parent = ", input_parent)
         Q = []
         for edge in [e for e in Ei if e.parent == input_parent]:
             for seg in A[edge.child]:
@@ -46,46 +40,34 @@ def simplify(S, Ni, Ei, L):
                     heapq.heappush(Q, y)
         output_parent = -1
         while len(Q) > 0:
-            l0 = Q[0].left
-            print("l0 = ", l0)
-            H = []
-            while len(Q) > 0 and Q[0].left == l0:
-                H.append(heapq.heappop(Q))
-            r = min(x.right for x in H)
-            lp = r
+            l = Q[0].left
+            r = L
+            X = []
+            while len(Q) > 0 and Q[0].left == l:
+                x = heapq.heappop(Q)
+                X.append(x)
+                r = min(r, x.right)
             if len(Q) > 0:
-                lp = Q[0].left
-            if len(H) == 1:
-                A[input_parent].append(H[0])
+                r = min(r, Q[0].left)
+
+            if len(X) == 1:
+                x = X[0]
+                alpha = x
+                if len(Q) > 0 and Q[0].left < x.right:
+                    alpha = Segment(x.left, Q[0].left, x.id)
+                    x.left = Q[0].left
+                    heapq.heappush(Q, x)
             else:
                 if output_parent == -1:
                     output_parent = No.add_row(time=Ni.time[input_parent])
-                for j, x in enumerate(H):
-                    print("COAL")
-                    print(A[input_parent])
-                    Eo.add_row(x.left, r, output_parent, x.id)
-                    if x.right != r:
-                        x.left = lp
-                        assert x.left != x.right
+                alpha = Segment(l, r, output_parent)
+                for x in X:
+                    Eo.add_row(l, r, output_parent, x.id)
+                    if x.right > r:
+                        x.left = r
                         heapq.heappush(Q, x)
-                    if j == 0:
-                        A[input_parent].append(Segment(x.left, r, output_parent))
 
-
-
-#             if len(A[input_parent][l: r]) == 0:
-#                 A[input_parent][l: r] = output_id
-#             else:
-#                 if new_output_id == -1:
-#                     new_output_id = No.add_row(time=time[input_parent], flags=0)
-#                 child_output_id = list(A[input_parent][l:r])[0].data
-#                 if child_output_id != new_output_id:
-#                     E.append(Edge(l, r, new_output_id, child_output_id))
-#                 E.append(Edge(l, r, new_output_id, output_id))
-#                 A[input_parent].remove_overlap(l, r)
-#                 A[input_parent][l: r] = new_output_id
-
-    print(Eo)
+            A[input_parent].append(alpha)
 
     # Sort the output edges and compact them as much as possible into
     # the output table. We can probably skip this for the algorithm listing as
@@ -282,8 +264,6 @@ def verify():
 
             n1 = ts1.tables.nodes
             n2 = ts2.tables.nodes
-            print(n1.time)
-            print(n2.time)
             assert np.array_equal(n1.time, n2.time)
             assert np.array_equal(n1.flags, n2.flags)
             e1 = ts1.tables.edges
