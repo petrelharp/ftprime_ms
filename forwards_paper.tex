@@ -814,12 +814,17 @@ Thus, there is a memory-versus-speed tradeoff
 
 
 %%%%%%%%%%%%
-\subsubsection*{Estimates of run-time complexity}
+\subsubsection*{Computational complexity}
 
-The simulation results shown in Figures \ref{fig:runtimes_selection} and \ref{fig:relative_speedup_selection} show that
-pedigree tracking greatly speeds up forward-time simulations.  Further, the run times with pedigree tracking become
-near-linear in $\rho$ (Figure \ref{fig:runtimes_selection}).  In this section, we explore the run-time complexity using a
-simplified Wright-Fisher model with recombination.
+% I may need to cite my student's t-shirt for the following line.
+Figures \ref{fig:runtimes_selection} and \ref{fig:relative_speedup_selection} show that this method
+can dramatically improve simulation performance in practice --
+but, how does it perform in theory?
+% The simulation results shown in Figures \ref{fig:runtimes_selection} and \ref{fig:relative_speedup_selection} show that
+% pedigree tracking greatly speeds up forward-time simulations.  Further, the run times with pedigree tracking become
+% near-linear in $\rho$ (Figure \ref{fig:runtimes_selection}).  
+In this section, we explore the how required computational effort and storage space scale
+in a Wright-Fisher model with recombination.
 
 %% Memory reduction thanks to simplification
 Consider a simulation of a Wright-Fisher population of $2N$ haploid individuals
@@ -833,27 +838,38 @@ Suppose that $T$ is large enough that all samples coalesce within the simulation
 ($T = 20N$, say).
 After simplification, we are left with the tree sequence describing the history
 of only the current generation of $2N$ individuals.
-Ignoring the possibility of coalescent events involving more than two lineages, this tree sequence has $4N-2$ edges to describe the leftmost tree;
+If no coalescent events involve more than two lineages, this tree sequence has $4N-2$ edges to describe the leftmost tree;
 and each time the marginal tree changes along the sequence,
 four edges end and four new edges begin
 (except for changes affecting the root, which require fewer; see \citet{kelleher2016efficient}).
 Coalescent theory tells us that
-the expected total length of the edges of a marginal tree is approximately $4N\log(2N)$,
-which is also equal to the mean number of ancestral recombination events that occur on a branch of the marginal tree,
-since we have taken one crossover per individual per generation.
+the expected total length of the edges of a marginal tree is approximately $4N\log(2N)$.
+Since we have taken one crossover per individual per generation (as is typical for a single chromosome),
+and we are measuring tree lengths in units of generations,
+the mean number of ancestral recombination events that occur somewhere on the marginal trees
+per unit of genetic length.
+Any such ancestral recombination might change the marginal gene tree;
+if it does, it will add four new edges.
 Not all such recombinations actually change the tree topology,
-so four times this gives us an upper bound on the expected number of additional edges.
+so at most we expect $16N\log(2N)$ new edges after those required to describe the first tree.
 Similarly, not every new edge derives from a never-before-seen node,
 but the number of nodes is at most equal to the number of edges plus the sample size.
-With $T=20N$, this reduces the initial storage of $120 N^2$ items to
+This reduces the initial storage of $120 N^2$ items to
 % 4N - 2 + 2N + 4N log(2N) * 4 * 2 = 6N + 32 N log(2N)
-$6N + 32 N \log(2N)$;
-at $N=10^4$, a factor of 3,700.
+the space required after simplification of roughly
+\begin{align}
+    6N + 32 N \log(2N) .
+\end{align}
+At $N=10^4$, this reduces the space required to store the history of the entire population
+by a factor of 3,700.
 
 %% Progressive memory reduction as a function of T
-To get an idea of how required space depends on the length of time between simplification steps,
-suppose instead that we have run a simulation of $2N$ individuals for $T$ generations,
+\citet{padhukasahasram2008exploring} obtained impressive speedups relative to contemporary simulators
+by retaining only 8 generations of history.
+This begs the question: how fast does the information in the pedigree become irrelevant?
+Suppose instead that we have run a simulation of $2N$ individuals for $T$ generations,
 begun with no prior history.
+One way to answer this question is to ask:
 How many of the resulting $4NT$ edges are required after simplification?
 As above, the expected number of edges is bounded by $2N-2$ plus four times the mean marginal tree length.
 Roughly, the length of time for which a marginal tree has $k$ tips is
@@ -906,14 +922,27 @@ as shown in Figure~\ref{fig:simplify_complexity}.
 
 %% Above was edges; same holds for memory usage savings due to mutations
 If we were to add mutations in forwards time
-under the infinite-sites model with total mutation rate per generation $\mu$,
-there would also be around $\mu 2NT$ mutations (and the same number of sites).
+under the infinite-sites model with total mutation rate per generation $\mu$ (i.e., per meiosis),
+there would also be around $\mu 2NT$ mutations, and the same number of sites,
+simply because there was a total of $2NT$ meioses.
 Since mutations fall as recombinations do on the marginal trees,
-adding them after simplification results in only around $\mu 4 N \log(2N)$ mutations,
-and the same savings as we obtained from edges above,
+the number of mutations is proportional to the total length of all the marginal trees,
+and so by the same argument as for the number of edges,
+adding them after simplification results in only around $\mu 4 N \log(2N)$ mutations.
+With $N=10^4$ and $T=20N$ as above,
+this implies that adding neutral mutations afterwards reduces the number of mutations that must be generated
+by a factor of 10,000.
+This could result in substantial time savings,
 even without considering the
 computational burden of propagating mutations forwards across generations.
 
+Since each mutation is stored only as a single row in the mutation table,
+and at most one row in the site table, the space required for $M$ mutations is $O(M)$;
+combined with the $O(N \log N)$ storage for edges and nodes of a simplified tree sequence above,
+this implies that the full results of a simulation of $N$ individuals
+having $M$ mutations can be stored in $O(N \log N + M)$ space.
+In simulations of whole chromosomes, the number of mutations per chromosome per generation is $O(1)$,
+so $M$ will typically be $O(N \log N)$ as well.
 
 %% simplify run time
 How does the computation \emph{time} required for simplification scale?
@@ -923,7 +952,7 @@ Simply because it must process each edge,
 the simplification algorithm is at least linear in the number of edges of the input tree sequence.
 Empirically the algorithm is exactly linear,
 as seen in Figure~\ref{fig:simplify_complexity}B,
-where we show shows the time required to simplify increasingly large subsets of a large tree sequence.
+which shows the time required to simplify increasingly large subsets of a large tree sequence.
 When simplifying the result of a forwards-time sequence, the number of edges is the main contributing factor.
 Suppose on the other hand we want to
 simplify an already-minimal but large tree sequence with $N$ nodes
