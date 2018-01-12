@@ -976,7 +976,7 @@ requires computing allele frequencies, taking $O(nm)$ operations.
 By using the locations of the mutations on the marginal trees,
 and the fact that these are correlated,
 sequential tree algorithms similar to those in~\citep{kelleher2016efficient}
-can do this in roughly $O(n + m + t)$ operations, where
+can do this in roughly $O(n + m + t \log n)$ operations, where
 $t$ is the number of distinct trees.
 The \msprime{} API provides a method to compute $\pi$ among arbitrary subsets of the
 samples in a tree sequence, which took about 0.7 seconds when
