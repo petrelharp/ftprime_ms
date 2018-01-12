@@ -720,7 +720,8 @@ but also is useful for extracting subsets of a tree sequence representing a very
 Our approach to simplification is based on Hudson's algorithm for simulating
 the coalescent with recombination~\citep{hudson1983properties},
 paralleling the implementation in \msprime{} \citep{kelleher2016efficient};
-an implementation in pseudocode is provided in Appendix~\ref{ss:simplify_algorithm}.
+an implementation in pseudocode is provided in Appendix~\ref{ss:simplify_algorithm},
+and a python implementation as supplementary information.
 Conceptually, this works by
 (a) beginning by painting the chromosome in each sample a distinct color;
 (b) moving back through history,
@@ -1393,5 +1394,12 @@ it is received by an instance of \texttt{RecombCollector}.
 %     \item \simupop{} 1.1.8.3
 %     \item python 3.5
 % \end{enumerate}
+
+\newpage
+
+\section*{Python implementation of simplify (supplementary information)}
+
+\lstinputlisting[language=python]{sims/simplify-alg.py}
+
 
 \end{document}
