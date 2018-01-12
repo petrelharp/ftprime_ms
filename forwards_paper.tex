@@ -458,8 +458,10 @@ and suitable encodings can be chosen on a per-column basis~\citep{abadi2006integ
 A particular advantage of this approach is that it enables very
 efficient copying of data, and in principle zero-copy data access
 (where a data consumer reads directly from the memory of a producer) is possible.
-Our implementation uses the NumPy C API~\citep{walt2011numpy} to efficiently copy
-data from Python into the low-level C library used to manipulate tree sequences.
+Our implementation 
+% uses the NumPy C API~\citep{walt2011numpy} to efficiently copy
+efficiently copies data from Python as a NumPy array \citep{walt2011numpy} 
+into the low-level C library used to manipulate tree sequences.
 This architecture allows for data transfer rates of gigabytes per second
 (impossible under any text-based approach), while retaining excellent portability.
 NumPy's array interface provides a great deal of flexibility and efficiency,
