@@ -67,7 +67,7 @@
     and recording history as a \emph{succinct tree sequence} as introduced in the software package \msprime,
     on which neutral mutations can be quickly placed afterwards.
     We implement the method in two popular forwards-time simulation frameworks,
-    which speeds up large, whole-genome simulations by one to orders of magnitude.
+    which speeds up large, whole-genome simulations by one to two orders of magnitude.
     In addition to speed, the method has several advantages:
     (1) All marginal genealogies of the simulated individuals are recorded, rather than just genotypes.
     (2) A population of $N$ individuals with $M$ polymorphic sites
@@ -75,7 +75,7 @@
     rather than only a subset.
     (3) A simulation can easily be initialized with a more efficient coalescent simulation of deep history.
     To make these possible,
-    we introduce the \msprime{} Tables API, which allows for the efficient interchange 
+    we introduce the \msprime{} Tables API, which allows for the efficient interchange
     of tree sequences between modular program components,
     and show how to quickly simplify a tree sequence by removing history irrelevant to a given set of genomes.
 \end{abstract}
@@ -166,13 +166,13 @@ the complete history of parent-offspring relationships of an entire population
 going back to a remote time -- and the genetic outcomes of each ancestral meiosis,
 periodically discarding all information irrelevant to the genetic history
 of the extant population.
-The information in this embellished pedigree is stored as a \emph{succinct tree sequence} 
+The information in this embellished pedigree is stored as a \emph{succinct tree sequence}
 (or, for brevity, ``tree sequence''),
 which contains all the information necessary
 to construct the genealogical tree that relates each individual to every other
 at each position on the genome.
 
-In this paper, we describe a storage method for \emph{succinct tree sequences} 
+In this paper, we describe a storage method for \emph{succinct tree sequences}
 and, hence, genome sequence, as well as an algorithm for simplifying these.
 The data structure is \emph{succinct} in the sense that its' space usage is close to optimal,
 while still allowing efficient retrieval of information.
@@ -206,7 +206,7 @@ Finally, we analyze the run time and space complexity of our general-purpose met
 %%%%%%
 \subsection*{Simulation benchmarks}
 
-To measure the performance gains from recording the pedigree we ran simulations 
+To measure the performance gains from recording the pedigree we ran simulations
 both with and without recording.
 (Although we record more than just the parent--offspring relationships of the pedigree,
 for brevity we refer to the method as ``pedigree recording''.)
@@ -214,14 +214,14 @@ All simulations used \fwdpp{} to implement a discrete-time Wright-Fisher populat
 simulated for $10N$ generations (details below).
 Simulations without pedigree recording introduced neutral mutations at a rate
 equal to the recombination rate,
-so $\mu = r$, where $\mu$ and $r$ are the expected per-generation number of mutations per gamete 
+so $\mu = r$, where $\mu$ and $r$ are the expected per-generation number of mutations per gamete
 and recombination breakpoints per diploid, respectively.
 Simulations with pedigree recording introduced neutral mutations at the same rate
 retrospectively, as described below, resulting in statistically identical simulation results.
 % Both mutations and recombinations occur as Poisson processes with respective means $\mu$ and $r$,
 % and we used the infinitely-many sites mutation model \citep{Kimura1969-uc}.
 We ran simulations with different values of $N$ and varied the size of the genomic region according to the scaled recombination
-parameter $\rho = 4Nr$.  
+parameter $\rho = 4Nr$.
 %% this was said already:
 % When simulating neutral mutations, we kept the scaled mutation parameter, $\theta = 4N\mu$, equal to $\rho$.
 
@@ -233,10 +233,10 @@ frequencies.  The case of many mutations with selection is a non-trivial violati
 coalescent \citep{Neuhauser1997-nn}.  Therefore, these selected mutations must be explicitly tracked in our forward simulation
 and the time savings due to pedigree recording come from not having to record \textit{neutral} mutations.
 
-% When tracking neutral mutations (instead of the pedigree), run times increase dramatically with increasing region size ($4Nr = 4Nu$ for these simulations).  
+% When tracking neutral mutations (instead of the pedigree), run times increase dramatically with increasing region size ($4Nr = 4Nu$ for these simulations).
 Pedigree tracking dramatically reduced runtimes, as shown in Figure~\ref{fig:runtimes_selection},
 producing a relative speedup of up to $\approx 50$ fold relative to standard simulations that track neutral mutations
-(Figure~\ref{fig:relative_speedup_selection}). 
+(Figure~\ref{fig:relative_speedup_selection}).
 Pedigree tracking results in greater relative speedups for larger $N$
 and we observe increasing relative speedups as $4Nr$ increases for a given $N$
 (Figure~\ref{fig:relative_speedup_selection}).
@@ -248,7 +248,7 @@ Importantly, runtimes are approximately linear in region size $\rho$ when pedigr
 In a more limited set of neutral simulations we found the same qualitative behavior,
 and a numerically larger speedup to pedigree tracking (see Appendix~\ref{ss:timing_nosel}).
 
-In our implementation, simulations with pedigree recording 
+In our implementation, simulations with pedigree recording
 used substantially more RAM than simple forward simulations (see Appendix~\ref{ss:memuse}).
 This is unsurprising:
 unsimplified tree sequences grow quickly, and so storing history can use arbitrarily much memory.
@@ -263,13 +263,13 @@ if memory usage in the forwards simulation was dominated by the cost of maintain
     \caption{
         \label{fig:runtimes_selection}
     Total run time per single simulation replicate as a function of region length.
-    % measured as the scaled recombination parameter $\rho = 4Nr$. 
-    Line color represents different diploid population sizes ($N$). 
-    The left figure shows run times for standard simulations including neutral mutations. 
+    % measured as the scaled recombination parameter $\rho = 4Nr$.
+    Line color represents different diploid population sizes ($N$).
+    The left figure shows run times for standard simulations including neutral mutations.
     The right column of panels shows run times of simulations that recorded the pedigree
     and added neutral mutations afterwards.
-    The dashed line in the right panel shows results for an implementation using \fwdpy{} 
-    where the pedigree simplification steps were handled in a separate thread of execution 
+    The dashed line in the right panel shows results for an implementation using \fwdpy{}
+    where the pedigree simplification steps were handled in a separate thread of execution
     and fitness calculations were parallelized.
     Simulations with $N=5 \times 10^4$ timed out for region sizes larger than $10^3$.
     }
@@ -280,10 +280,10 @@ if memory usage in the forwards simulation was dominated by the cost of maintain
     \includegraphics[]{sims/speedup}
     \caption{
         \label{fig:relative_speedup_selection}
-        Relative speedup of simulations due to pedigree recording. 
-        Each line shows the ratio of total run times of standard simulations to 
-        those of simulations with pedigree recording. 
-        Data points are taken from Figure~\ref{fig:runtimes_selection} 
+        Relative speedup of simulations due to pedigree recording.
+        Each line shows the ratio of total run times of standard simulations to
+        those of simulations with pedigree recording.
+        Data points are taken from Figure~\ref{fig:runtimes_selection}
         for simulations that ran to completion in both cases.
     }
 \end{figure}
@@ -307,7 +307,7 @@ Tree sequences are efficient because branches that are shared by adjacent trees 
 rather than repeatedly for each tree.
 The topology of a tree sequence is defined via its \emph{nodes} and \emph{edges},
 while information about variants is recorded as \emph{sites} and \emph{mutations};
-we give an example in Figure~\ref{fig:example_tree_sequence}. 
+we give an example in Figure~\ref{fig:example_tree_sequence}.
 This formulation is derived from the ``coalescence records'' encoding of tree
 sequences~\citep{kelleher2016efficient}, normalised to remove redundancy
 and generalised to include a more general class of tree topologies.
@@ -373,10 +373,10 @@ of the highly correlated nature of nearby trees~\citep{kelleher2016efficient}.
 
 Given the topology defined by the nodes and edges, \emph{sites} and \emph{mutations}
 encode the sequence information for each sample in an efficient way. Each site
-records two things: its position on the genome and an ancestral state. 
+records two things: its position on the genome and an ancestral state.
 For example,
 in Figure~\ref{fig:example_tree_sequence} we have two sites, one at position
-2.5 with ancestral state `A' and the other at position 7.5 with ancestral state `G'. 
+2.5 with ancestral state `A' and the other at position 7.5 with ancestral state `G'.
 If no mutations occur at a given site, all nodes inherit the ancestral state.
 
 Each mutation records three things: the site at which it occurs,
@@ -451,9 +451,9 @@ and suitable encodings can be chosen on a per-column basis~\citep{abadi2006integ
 A particular advantage of this approach is that it enables very
 efficient copying of data, and in principle zero-copy data access
 (where a data consumer reads directly from the memory of a producer).
-Our implementation 
+Our implementation
 % uses the NumPy C API~\citep{walt2011numpy} to efficiently copy
-efficiently copies data from Python as a NumPy array \citep{walt2011numpy} 
+efficiently copies data from Python as a NumPy array \citep{walt2011numpy}
 into the low-level C library used to manipulate tree sequences.
 This architecture allows for data transfer rates of gigabytes per second
 (impossible under any text-based approach), while retaining excellent portability.
@@ -477,7 +477,7 @@ To demonstrate the flexibility provided by the Tables API and provide an
 implementation that decouples forward simulation internals from transfer of data
 to \msprime, we also implemented a version of the simulations described in
 ``Simulation benchmarks'' separately in Python, described in Appendix~\ref{ss:simupop}.
-This proof-of-concept implementation, the simulation engine (we use \simupop{}, \citet{simupop}) 
+This proof-of-concept implementation, the simulation engine (we use \simupop{}, \citet{simupop})
 invokes callbacks at critical points of the simulation, and we infer nodes and edges
 from the information that is provided. Rows are appended to the tables
 one-by-one, and the tables are periodically sorted and simplified to control
@@ -507,7 +507,7 @@ adds a new node to the table $\Nt$ with time $t$
 and returns the ID of this new node.
 Similarly, the function $\taddedge{\Et, \ell, r, p, c}$
 adds a new edge $(\ell\mathrm{eft}, r\mathrm{ight}, p\mathrm{arent}, c\mathrm{hild})$ to the edge table $\Et$.
-The function $\tsimplify{P, \Nt, \Et}$ (described below) % in section \ref{ss:simplify} 
+The function $\tsimplify{P, \Nt, \Et}$ (described below) % in section \ref{ss:simplify}
 simplifies the history stored in the tables $\Nt$ and $\Et$
 to the minimal information required to represent the genealogies of the list of node IDs $P$;
 after simplification the nodes appearing in $P$ are relabeled $(0, 1, \ldots, |P|)$.
@@ -555,9 +555,9 @@ We begin in~\algref{W1} by creating new node and edge tables, and setting
 our population $P$ (a vector of $N$ node IDs) to the initial population.
 This initial population is a set of $N$ nodes with birth time $T$ generations
 ago. We also initialise our generation clock $t$ and individual index $j$.
-Step~\algref{W2} replaces the $j^\text{th}$ individual (with node ID $P_j$) 
+Step~\algref{W2} replaces the $j^\text{th}$ individual (with node ID $P_j$)
 by creating a new node with birth time $t$ (and ID $u$).
-In step~\algref{W3} we determine the new node's ancestry 
+In step~\algref{W3} we determine the new node's ancestry
 by choosing two indexes $a$ and $b$ uniformly,
 giving us parental IDs $P_a$ and $P_b$,
 and choose a chromosomal breakpoint $x$.
@@ -595,7 +595,7 @@ Step \algref{W7} loops these steps until the required number of generations have
 
 This algorithm records only topological information about the simulated genealogies,
 but it is straightforward to add mutational information.
-Mutations that occur during the simulation can be recorded 
+Mutations that occur during the simulation can be recorded
 by simply recording the node in which they first occur, the derived state,
 and (if not already present) the genomic position of the site at which it occurs.
 This allows selected mutations, that the forwards time simulation must generate,
@@ -641,7 +641,7 @@ to the smallest one that still completely describes the history of the specified
 having the following properties:
 \begin{enumerate}
 
-\item All marginal trees must match the subtree 
+\item All marginal trees must match the subtree
         of the corresponding tree in the input tree sequence
         that is induced by the samples.
 
@@ -666,7 +666,7 @@ having the following properties:
         \textbf{(A)} The augmented pedigree diagram on the left
         relates the ten homologous chromosomes of five diploid individuals (BC, DE, FG, HI, and JK)
         to each other and to a common ancestral chromosome (A);
-        dotted lines connect the two chromosomes of each individual, 
+        dotted lines connect the two chromosomes of each individual,
         and solid lines lead to the products of their meioses.
         The corresponding tables (right) have 11 node records (one for each chromosome)
         and 15 edge records (one for each distinctly inherited segment).
@@ -768,12 +768,12 @@ Second, the simulation can
 be \emph{begun} with a tree sequence produced by some other method -- for
 instance, by a coalescent simulation with \msprime,
 providing an easy, efficient way to specify prior history.
-A natural question is now: how often should simplification occur?  
+A natural question is now: how often should simplification occur?
 Limited testing (described in Appendix~\ref{ss:gcinterval})
 found that different simplification intervals affect run times by approximately
-25\%, with the lowest run time occurring when simplifying every $10^3$ generations.  
-Thus, there is a memory-versus-speed tradeoff 
--- simplifying more often would keep fewer extinct nodes and edges in memory.  
+25\%, with the lowest run time occurring when simplifying every $10^3$ generations.
+Thus, there is a memory-versus-speed tradeoff
+-- simplifying more often would keep fewer extinct nodes and edges in memory.
 The run-time costs associated
 with simplifying have to do with preparing the data to be sent to the simplification algorithm, rather than with the
 algorithm itself, which we show in the next section has linear time complexity.
@@ -989,7 +989,7 @@ in which mutations are unlinked and there is no effect of genetic background on 
 However, thus far little attention has been paid to parallelization of more complex simulations.
 
 \paragraph{Relationship to the ARG}
-The idea of a tree sequence is closely related to the \emph{ancestral recombination graph}, 
+The idea of a tree sequence is closely related to the \emph{ancestral recombination graph},
 or {ARG} \citep{griffiths1991two,griffiths1997ancestral},
 which also describes the embellished pedigree.
 The ARG has been the subject of substantial study
@@ -998,14 +998,14 @@ theory~\citep{wiuf1997number,wiuf1999ancestry,marjoram2006coalescent,wilton2015s
 However, the properties of the ARG as a computational structure have not
 been studied and, despite several efforts to standardise a common
 format~\citep{morin2006netgen,mcgill2013graphml}, % TODO check these refs against others in msprime paper
-ARGs are rarely used in practise. 
+ARGs are rarely used in practise.
 In contrast, the algorithmic properties of tree sequence
 algorithms have been explored in detail~\citep{kelleher2016efficient},
 contributing substantially to the efficiency of the \msprime{} coalescent simulator.
 
 \paragraph{Bayesian phylogenetics}
 The methods described here for efficiently storing tree sequences may prove useful in other fields.
-For instance, the large numbers of large, correlated trees produced by 
+For instance, the large numbers of large, correlated trees produced by
 MCMC samplers used in Bayesian phylogenetics \citep[e.g.,][]{drummond2012bayesian}
 might be compactly stored as a tree sequence,
 which would allow highly efficient computation of properties of the posterior distribution.
@@ -1059,10 +1059,10 @@ and the Linux \texttt{time} command to record run time and peak memory usage of 
 %%%%%%%%%%%%%%%%%%%%%%
 \section*{Acknowledgements}
 Thanks to Jared Galloway, Brad Shaffer, and Evan McCartney--Melstad for useful discussions.
-Work on this project was supported by funding from 
+Work on this project was supported by funding from
 the Sloan Foundation and the NSF (under DBI-1262645) to PR;
+the Wellcome Trust (grant 100956/Z/13/Z to Gil McVean);
 and XXX.
-
 
 \bibliography{references}
 
@@ -1240,7 +1240,7 @@ and $z.\lid = u$ for the output node ID.
 \setcounter{figure}{0}
 
 The peak RAM use in gigabytes (GB) is shown for the simulations with selection in Figure~\ref{sfig:ramsel}.  For our parameters, which involved simplifying every
-$10^3$ generations, simulation while recording pedigrees uses more RAM than a standard simulation. 
+$10^3$ generations, simulation while recording pedigrees uses more RAM than a standard simulation.
 This is because with pedigree recording, a non-recombinant
 individual still requires one new edge and two new nodes to be allocated.  Without pedigree recording, no new memory is allocated for such an offspring by \fwdpp{}.
 Thus, pedigree recording accumulates a large amount of data in RAM until
@@ -1265,7 +1265,7 @@ stored in RAM.  In practice, the RAM consumption can be minimized by simplifying
 \renewcommand{\thefigure}{C\arabic{figure}}
 
 We performed a limited set of simulations to explore the effect of the simplification interval on run times and memory
-use. Figure~\ref{sfig:gctime} shows that run times increase for simplification intervals less than 100 generations.  
+use. Figure~\ref{sfig:gctime} shows that run times increase for simplification intervals less than 100 generations.
 For intervals longer than 100 generations, run times are very similar, with no appreciable difference between $10^3$ and $10^4$
 generations.  As expected, the simplification interval has a near-linear effect on peak RAM use
 (Figure~\ref{sfig:gcmem}).  Taken together Figures~\ref{sfig:gctime} and~\ref{sfig:gcmem} suggest that one can tune the
@@ -1307,7 +1307,7 @@ and~\ref{sfig:speedup_nosel}.
 For \simupop{}, the results show a qualitatively similar pattern but (1) the
 simulations for $N = 10000$ or greater did no finish in the 72 hour limit or
 exceed memory limits (more than 500 GB), and (2) the magnitude of the speedup is much less.
-The total RAM use for 
+The total RAM use for
 simulations without selection is shown in Figure~\ref{sfig:ramnosel}.
 % Pedigree recording again used more RAM with \fwdpp{} and less
 % RAM with \simupop{}. The reason for reduced RAM use with \simupop{} is unclear;
@@ -1344,7 +1344,7 @@ We implemented simulations in a Python script, usable as a command-line utility,
 taking input parameters for population size $N$ and scaled recombination rate $\rho$.
 As for the \fwdpp{} simulations above, we set scaled mutation rate $\theta=\rho$,
 used a simplify interval of 1000 generations and simulated for $T=10N$ generations in each
-simulation. 
+simulation.
 % introducing deleterious mutations at a rate of $\rho/100$ per generation.
 % Because \simupop{} requires explicit locations for loci, we set the number of
 % loci $n=\rho / (4Nr)$ and for these simulations without selection marked $0$ of
@@ -1390,9 +1390,9 @@ it is received by an instance of \texttt{RecombCollector}.
 % Its requirements are encoded in an \texttt{environment.yml} file, compatible
 % with conda, but \msprime{} must be updated to the version listed below via pip
 % from GitHub \jda{TODO add command?}.
-% 
+%
 % In brief the requirements are:
-% 
+%
 % \begin{enumerate}
 %     \item \msprime{} 0.5.0
 %     \item \simupop{} 1.1.8.3
