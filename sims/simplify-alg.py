@@ -1,5 +1,10 @@
 """
 Set-theoretic algorithm implementation of Algorithm S.
+
+The example works by generating an initial TreeSequence
+for a sample of 10 haplotypes using msprime.  We then
+simplify the node/edge table in that TreeSequence with
+respect to the first three samples.
 """
 import numpy as np
 
@@ -194,6 +199,7 @@ def verify():
 if __name__ == "__main__":
     verify()
 
+    # Generate initial TreeSequence
     ts = msprime.simulate(10, recombination_rate=2, random_seed=1)
     nodes= ts.tables.nodes
     edges = ts.tables.edges
@@ -207,6 +213,9 @@ if __name__ == "__main__":
     #     edges.add_row(
     #         breakpoint_map[e.left], breakpoint_map[e.right], e.parent, e.child)
 
+    # Simplify nodes, edges 
+    # with respect to
+    # the following samples:
     sample = [0, 1, 2]
     ts1 = simplify(sample, nodes, edges, ts.sequence_length)
     # ts1 = simplify_loci(sample, nodes, edges, len(breakpoint_map) - 1)
