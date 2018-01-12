@@ -2,12 +2,98 @@
 Set-theoretic algorithm implementation of Algorithm S.
 """
 import numpy as np
+import heapq
 
 import msprime
 import intervaltree
 
 
+class Segment(object):
+    def __init__(self, left, right, id_):
+        assert left < right
+        self.left = left
+        self.right = right
+        self.id = id_
+
+    def __lt__(self, other):
+        return (self.left, self.right, self.id) < (other.left, other.right, other.id)
+
+    def __repr__(self):
+        return repr((self.left, self.right, self.id))
+
 def simplify(S, Ni, Ei, L):
+    No = msprime.NodeTable()
+    Eo = msprime.EdgeTable()
+    A = [[] for _ in range(len(Ni))]
+    Q = []
+
+    for u in S:
+        output_id = No.add_row(time=Ni.time[u], flags=1)
+        A[u] = [Segment(0, L, output_id)]
+
+    for u in range(len(Ni)):
+        for e in [e for e in Ei if e.parent == u]:
+            for x in A[e.child]:
+                if x.right > e.left and e.right > x.left:
+                    y = Segment(max(x.left, e.left), min(x.right, e.right), x.id)
+                    heapq.heappush(Q, y)
+        v = -1
+        while len(Q) > 0:
+            l = Q[0].left
+            r = L
+            X = []
+            while len(Q) > 0 and Q[0].left == l:
+                x = heapq.heappop(Q)
+                X.append(x)
+                r = min(r, x.right)
+            if len(Q) > 0:
+                r = min(r, Q[0].left)
+
+            if len(X) == 1:
+                x = X[0]
+                alpha = x
+                if len(Q) > 0 and Q[0].left < x.right:
+                    alpha = Segment(x.left, Q[0].left, x.id)
+                    x.left = Q[0].left
+                    heapq.heappush(Q, x)
+            else:
+                if v == -1:
+                    v = No.add_row(time=Ni.time[u])
+                alpha = Segment(l, r, v)
+                for x in X:
+                    Eo.add_row(l, r, v, x.id)
+                    if x.right > r:
+                        x.left = r
+                        heapq.heappush(Q, x)
+
+            A[u].append(alpha)
+
+    # Sort the output edges and compact them as much as possible into
+    # the output table. We can probably skip this for the algorithm listing as
+    # it's pretty mundane.
+    E = list(Eo)
+    Eo.clear()
+    E.sort(key=lambda e: (e.parent, e.child, e.right, e.left))
+    start = 0
+    for j in range(1, len(E)):
+        condition = (
+            E[j - 1].right != E[j].left or
+            E[j - 1].parent != E[j].parent or
+            E[j - 1].child != E[j].child)
+        if condition:
+            Eo.add_row(E[start].left, E[j - 1].right, E[j - 1].parent, E[j - 1].child)
+            start = j
+    j = len(E)
+    Eo.add_row(E[start].left, E[j - 1].right, E[j - 1].parent, E[j - 1].child)
+
+    return msprime.load_tables(nodes=No, edges=Eo)
+
+
+
+
+
+
+def simplify_interval_tree(S, Ni, Ei, L):
     No = msprime.NodeTable()
     Eo = msprime.EdgeTable()
     left = Ei.left
@@ -18,9 +104,7 @@ def simplify(S, Ni, Ei, L):
     # TODO Should be an interval tree for each ID.
     A = [intervaltree.IntervalTree() for _ in range(len(Ni))]
     for input_id in S:
-        # TODO update node table to return ID of new row.
-        output_id = len(No)
-        No.add_row(time=time[input_id], flags=1)
+        output_id = No.add_row(time=time[input_id], flags=1)
         A[output_id] = intervaltree.IntervalTree([intervaltree.Interval(0, L, input_id)])
 
     E = []
@@ -47,8 +131,7 @@ def simplify(S, Ni, Ei, L):
                 A[input_parent][l: r] = output_id
             else:
                 if new_output_id == -1:
-                    new_output_id = len(No)
-                    No.add_row(time=time[input_parent], flags=0)
+                    new_output_id = No.add_row(time=time[input_parent], flags=0)
                 child_output_id = list(A[input_parent][l:r])[0].data
                 if child_output_id != new_output_id:
                     E.append(Edge(l, r, new_output_id, child_output_id))
@@ -209,6 +292,7 @@ if __name__ == "__main__":
 
     sample = [0, 1, 2]
     ts1 = simplify(sample, nodes, edges, ts.sequence_length)
+    # ts1 = simplify_interval_tree(sample, nodes, edges, ts.sequence_length)
     # ts1 = simplify_loci(sample, nodes, edges, len(breakpoint_map) - 1)
 
     print(ts1.tables)
