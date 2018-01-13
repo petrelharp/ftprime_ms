@@ -1,50 +1,56 @@
 """
-Set-theoretic algorithm implementation of Algorithm S.
+Python implementation of Algorithm S.
 
 The example works by generating an initial TreeSequence
 for a sample of 10 haplotypes using msprime.  We then
 simplify the node/edge table in that TreeSequence with
 respect to the first three samples.
 """
-import numpy as np
 import heapq
+import numpy as np
 
 import msprime
-import intervaltree
 
 
 class Segment(object):
-    def __init__(self, left, right, id_):
+    """
+    An ancestral segment mapping a given node ID to a half-open genomic
+    interval [left, right).
+    """
+    def __init__(self, left, right, node):
         assert left < right
         self.left = left
         self.right = right
-        self.id = id_
+        self.node = node
 
     def __lt__(self, other):
-        return (self.left, self.right, self.id) < (other.left, other.right, other.id)
+        # We implement the < operator so that we can use the heapq directly.
+        # We are only interested in the left coordinate.
+        return self.left < other.left
 
     def __repr__(self):
-        return repr((self.left, self.right, self.id))
+        return repr((self.left, self.right, self.node))
+
 
 def simplify(S, Ni, Ei, L):
-    '''
+    """
     This is an implementation of the simplify algorithm described in Appendix A
     of the paper.
-    '''
+    """
     No = msprime.NodeTable()
     Eo = msprime.EdgeTable()
     A = [[] for _ in range(len(Ni))]
     Q = []
 
     for u in S:
-        output_id = No.add_row(time=Ni.time[u], flags=1)
-        A[u] = [Segment(0, L, output_id)]
+        v = No.add_row(time=Ni.time[u], flags=1)
+        A[u] = [Segment(0, L, v)]
 
     for u in range(len(Ni)):
         for e in [e for e in Ei if e.parent == u]:
             for x in A[e.child]:
                 if x.right > e.left and e.right > x.left:
-                    y = Segment(max(x.left, e.left), min(x.right, e.right), x.id)
+                    y = Segment(max(x.left, e.left), min(x.right, e.right), x.node)
                     heapq.heappush(Q, y)
         v = -1
         while len(Q) > 0:
@@ -62,7 +68,7 @@ def simplify(S, Ni, Ei, L):
                 x = X[0]
                 alpha = x
                 if len(Q) > 0 and Q[0].left < x.right:
-                    alpha = Segment(x.left, Q[0].left, x.id)
+                    alpha = Segment(x.left, Q[0].left, x.node)
                     x.left = Q[0].left
                     heapq.heappush(Q, x)
             else:
@@ -70,7 +76,7 @@ def simplify(S, Ni, Ei, L):
                     v = No.add_row(time=Ni.time[u])
                 alpha = Segment(l, r, v)
                 for x in X:
-                    Eo.add_row(l, r, v, x.id)
+                    Eo.add_row(l, r, v, x.node)
                     if x.right > r:
                         x.left = r
                         heapq.heappush(Q, x)
@@ -78,8 +84,8 @@ def simplify(S, Ni, Ei, L):
             A[u].append(alpha)
 
     # Sort the output edges and compact them as much as possible into
-    # the output table. We can probably skip this for the algorithm listing as
-    # it's pretty mundane.
+    # the output table. We skip this for the algorithm listing as it's pretty mundane.
+    # TODO replace this with a calls to squash_edges() and sort_tables()
     E = list(Eo)
     Eo.clear()
     E.sort(key=lambda e: (e.parent, e.child, e.right, e.left))
@@ -99,32 +105,20 @@ def simplify(S, Ni, Ei, L):
 
 
 
-
-# Checks that simplify() does the right thing, by comparing to the implementation
-# in msprime.
-
 def verify():
+    """
+    Checks that simplify() does the right thing, by comparing to the implementation
+    in msprime.
+    """
     for n in [10, 100, 1000]:
         ts = msprime.simulate(n, recombination_rate=1, random_seed=1)
-        nodes= ts.tables.nodes
+        nodes = ts.tables.nodes
         edges = ts.tables.edges
         print("simulated for ", n)
 
-        # # convert left and right to breakpoints
-        # breakpoints = np.unique(np.hstack([edges.left, edges.right]))
-        # breakpoint_map = dict(zip(breakpoints, range(breakpoints.shape[0])))
-        # # Build a new edge table
-        # edges = msprime.EdgeTable()
-        # for e in ts.edges():
-        #     edges.add_row(
-        #         breakpoint_map[e.left], breakpoint_map[e.right], e.parent, e.child)
-
         for N in range(2, 10):
             sample = list(range(N))
-
-            # ts1 = simplify_loci(sample, nodes, edges, len(breakpoint_map) - 1)
             ts1 = simplify(sample, nodes, edges, ts.sequence_length)
-
             ts2 = ts.simplify(sample)
 
             n1 = ts1.tables.nodes
@@ -135,37 +129,19 @@ def verify():
             e2 = ts2.tables.edges
             assert np.array_equal(e1.left, e2.left)
             assert np.array_equal(e1.right, e2.right)
-            # assert np.array_equal(breakpoints[e1.left.astype(int)], e2.left)
-            # assert np.array_equal(breakpoints[e1.right.astype(int)], e2.right)
             assert np.array_equal(e1.parent, e1.parent)
             assert np.array_equal(e1.child, e1.child)
+
 
 if __name__ == "__main__":
     verify()
 
     # Generate initial TreeSequence
     ts = msprime.simulate(10, recombination_rate=2, random_seed=1)
-    nodes= ts.tables.nodes
+    nodes = ts.tables.nodes
     edges = ts.tables.edges
 
-    # convert left and right to breakpoints
-    # breakpoints = np.unique(np.hstack([edges.left, edges.right]))
-    # breakpoint_map = dict(zip(breakpoints, range(breakpoints.shape[0])))
-    # Build a new edge table
-    # edges = msprime.EdgeTable()
-    # for e in ts.edges():
-    #     edges.add_row(
-    #         breakpoint_map[e.left], breakpoint_map[e.right], e.parent, e.child)
-
-    # Simplify nodes, edges 
-    # with respect to
-    # the following samples:
+    # Simplify nodes and edges with respect to the following samples:
     sample = [0, 1, 2]
     ts1 = simplify(sample, nodes, edges, ts.sequence_length)
-    # ts1 = simplify_interval_tree(sample, nodes, edges, ts.sequence_length)
-    # ts1 = simplify_loci(sample, nodes, edges, len(breakpoint_map) - 1)
-
     print(ts1.tables)
-
-
-
