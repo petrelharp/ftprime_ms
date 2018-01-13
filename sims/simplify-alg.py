@@ -10,7 +10,6 @@ import numpy as np
 import heapq
 
 import msprime
-import intervaltree
 
 
 class Segment(object):
