@@ -178,7 +178,7 @@ to construct the genealogical tree that relates each individual to every other
 at each position on the genome.
 
 The idea of storing genealogical information to speed up simulations is not new.
-It was implemented completely in AnA-FiTS~\citep{aberer2013rapid},
+It was implemented in AnA-FiTS~\citep{aberer2013rapid},
 but without the critical step of discarding irrelevant genealogical information.
 \citet{padhukasahasram2008exploring} obtained impressive speedups for a Wright--Fisher simulation
 by keeping track of genealogies over the preceeding 8 generations
@@ -190,7 +190,7 @@ which has been the subject of substantial study
 % under the assumptions of coalescent theory
 \citep{wiuf1997number,wiuf1999ancestry,marjoram2006coalescent,wilton2015smc}.
 However, it is unclear if an ARG-based approach would share
-the computational advantages of the data structures we use here \citet{kelleher2016efficient}.
+the computational advantages of the data structures we use here~\citep{kelleher2016efficient}.
 
 % However, the properties of the ARG as a computational structure have not
 % been studied and, despite several efforts to standardise a common
@@ -823,45 +823,41 @@ but, how does it perform in theory?
 % The simulation results shown in Figures \ref{fig:runtimes_selection} and \ref{fig:relative_speedup_selection} show that
 % pedigree tracking greatly speeds up forward-time simulations.  Further, the run times with pedigree tracking become
 % near-linear in $\rho$ (Figure \ref{fig:runtimes_selection}).
-In this section, we explore the how required computational effort and storage space scale
+In this section, we explore how the required computational effort and storage space scale
 in a Wright-Fisher model with recombination.
 
 %% Memory reduction thanks to simplification
-Consider a simulation of a Wright-Fisher population of $2N$ haploid individuals
+Consider a simulation of a Wright-Fisher population of $N$ haploid individuals
 using Algorithm~\algref{W} for $T$ generations,
 with simplify interval $s = 1$ so that redundant information is removed after every generation.
 Since every chromosome inherits material from both parents,
 without simplification this would produce tables of
-$2NT$ nodes and
-$4NT$ edges.
-Suppose that $T$ is large enough that all samples coalesce within the simulation with high probability,
-($T = 20N$, say).
+$NT$ nodes and
+$2NT$ edges.
+Suppose that $T$ is large enough that all samples coalesce within the simulation with high probability
+($T = 20N$, say, giving a total space requirement of $60N^2$).
 After simplification, we are left with the tree sequence describing the history
-of only the current generation of $2N$ individuals.
-If no coalescent events involve more than two lineages, this tree sequence has $4N-2$ edges to describe the leftmost tree;
+of only the current generation of $N$ individuals.
+If no coalescent events involve more than two lineages, this tree sequence has $2N-2$ edges to describe the leftmost tree;
 and each time the marginal tree changes along the sequence,
 four edges end and four new edges begin
 (except for changes affecting the root, which require fewer; see \citet{kelleher2016efficient}).
 Coalescent theory tells us that
-the expected total length of the edges of a marginal tree is approximately $4N\log(2N)$.
+the expected total length of the edges of a marginal tree is approximately $2N\log(N)$.
 Since we have taken one crossover per individual per generation (as is typical for a single chromosome),
 and we are measuring tree lengths in units of generations,
-the mean number of ancestral recombination events that occur somewhere on the marginal trees
-per unit of genetic length.
+this is the mean number of ancestral recombination events that occur somewhere on the marginal trees.
 Any such ancestral recombination might change the marginal gene tree;
 if it does, it will add four new edges.
 Not all such recombinations actually change the tree topology,
-so at most we expect $16N\log(2N)$ new edges after those required to describe the first tree.
+so at most we expect $8N\log(N)$ new edges after those required to describe the first tree.
 Similarly, not every new edge derives from a never-before-seen node,
 but the number of nodes is at most equal to the number of edges plus the sample size.
-This reduces the initial storage of $120 N^2$ items to
-% 4N - 2 + 2N + 4N log(2N) * 4 * 2 = 6N + 32 N log(2N)
-the space required after simplification of roughly
-\begin{align}
-    6N + 32 N \log(2N) .
-\end{align}
-At $N=10^4$, this reduces the space required to store the history of the entire population
-by a factor of 3,700.
+The space complexity after simplification is therefore $O(N + N\log N)$, since
+we need $O(N)$ space to store the first marginal tree, and $O(1)$ space
+for each of the $O(N \log N)$ trees that follow. Thus, we need $O(N^2)$ space
+to store the complete history of the simulation, but only $O(N + N \log N)$
+space to store the history that is relevant to the extant population.
 
 %% Progressive memory reduction as a function of T
 \citet{padhukasahasram2008exploring} obtained impressive speedups relative to contemporary simulators
