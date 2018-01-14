@@ -825,6 +825,24 @@ but, how does it perform in theory?
 % near-linear in $\rho$ (Figure \ref{fig:runtimes_selection}).
 In this section, we explore how the required computational effort and storage space scale
 in a Wright-Fisher model with recombination.
+Each edge in a tree sequence represents a segment of genome
+that has been inherited across a certain number of generations, given by the length of the edge.
+Each inheritance of each segment of genome across a generation
+provides an opportunity for mutation and for recombination (which changes the tree).
+For this reason, the key quantity we use is the total ``area'' of the tree sequence,
+i.e., the product of segment length (left minus right coordinates) 
+and edge length (difference in birth times between parent and child),
+summed across all edges.
+This area is also equal to the sum of the total lengths of all marginal trees
+(i.e., the trees describing inheritance at each position on the genome),
+so we can compute total area as sequence length
+multiplied by the mean area of a given marginal tree,
+which is well-described by coalescent theory.
+Similar arguments to those below go back to \citet{watterson1975number},
+who explicitly addresses smaller order corrections relevant to whole-population genealogies
+of the Wright-Fisher model.
+For more on coalescent theory, see \citet{wakeley2005coalescent}.
+
 
 %% Memory reduction thanks to simplification
 Consider a simulation of a Wright-Fisher population of $N$ haploid individuals
@@ -832,8 +850,7 @@ using Algorithm~\algref{W} for $T$ generations,
 with simplify interval $s = 1$ so that redundant information is removed after every generation.
 Since every chromosome inherits material from both parents,
 without simplification this would produce tables of
-$NT$ nodes and
-$2NT$ edges.
+$NT$ nodes and $2NT$ edges.
 Suppose that $T$ is large enough that all samples coalesce within the simulation with high probability
 ($T = 20N$, say, giving a total space requirement of $60N^2$).
 After simplification, we are left with the tree sequence describing the history
@@ -854,9 +871,9 @@ so at most we expect $8N\log(N)$ new edges after those required to describe the 
 Similarly, not every new edge derives from a never-before-seen node,
 but the number of nodes is at most equal to the number of edges plus the sample size.
 The space complexity after simplification is therefore $O(N + N\log N)$, since
-we need $O(N)$ space to store the first marginal tree, and $O(1)$ space
+we need $O(N)$ space to store the first marginal tree, and a constant amount of space
 for each of the $O(N \log N)$ trees that follow. Thus, we need $O(N^2)$ space
-to store the complete history of the simulation, but only $O(N + N \log N)$
+to store the complete history of the simulation, but only $O(N \log N)$ % $O(N + N \log N)$
 space to store the history that is relevant to the extant population.
 
 %% Progressive memory reduction as a function of T
@@ -867,12 +884,22 @@ Suppose instead that we have run a simulation of $2N$ individuals for $T$ genera
 begun with no prior history.
 One way to answer this question is to ask:
 How many of the resulting $4NT$ edges are required after simplification?
-As above, the expected number of edges is bounded by $2N-2$ plus four times the mean marginal tree length.
-Roughly, the length of time for which a marginal tree has $k$ tips is
-$2N/(k(k-1)) = 2N(1/(k-1) - 1/k)$ generations,
-and so the time to go from $N$ to $n$ tips is $2N(1/(n-1) - 1/(N-1))$.
-This implies that after running for time $T$ we expect to
-have around $n(T)$ roots, where $n(T) \approx 1 + 2N/(T+2)$.
+As above, the expected number of edges is bounded by $2N-2$
+plus four times the sum of the lengths of all marginal trees,
+because new edges appear with most recombinations that occur on any marginal tree.
+Therefore, we need to compute the mean total length of all branches in a coalescent tree
+up until time $T$ (or the common ancestor, whichever comes first).
+Since $k$ lineages coalesce at rate $\binom{k}{2}/N$,
+the expected length of time for which a marginal tree has $k$ branches is
+$2N/(k(k-1)) = 2N(1/(k-1) - 1/k)$ generations.
+Since there are $k$ branches for this time,
+this period is expected to contribute $2N/(k-1)$ generations to the total tree length.
+By summing over $n < k \le N$,
+the $N$ tips of a tree are expected to descend from only $n$ lineages
+around $2N(1/(n-1) - 1/(N-1))$ generations ago.
+Inverting this relationship between time and number of roots
+implies that a marginal tree cut $T$ units of time ago
+is expected to have around $n(T)$ roots, where $n(T) \approx 1 + 2N/(T+2)$.
 The total tree length over this time is
 $2 N \sum_{k=n(T)+1}^{N-1} 1/k$, which
 % is approximately
@@ -937,8 +964,8 @@ and at most one row in the site table, the space required for $M$ mutations is $
 combined with the $O(N \log N)$ storage for edges and nodes of a simplified tree sequence above,
 this implies that the full results of a simulation of $N$ individuals
 having $M$ mutations can be stored in $O(N \log N + M)$ space.
-In simulations of whole chromosomes, the number of mutations per chromosome per generation is $O(1)$,
-so $M$ will typically be $O(N \log N)$ as well.
+In simulations of whole chromosomes, there are typically a small, bounded number of mutations per chromosome per generation,
+so $M$ will be $O(N \log N)$ as well.
 
 %% simplify run time
 How does the computation \emph{time} required for simplification scale?
@@ -1049,8 +1076,9 @@ which would then allow highly efficient computation of properties of the posteri
 In this article, we applied our methods for storing trees to the problem of pedigree recording in a forward-time
 simulation.  However, the method applies to any simulation scheme generating nodes and edges.  For example, one could
 use the methods described here to generate succinct tree sequences under coalescent processes not currently implemented
-in \msprime{}, such as the coalescent with gene conversion \citep{Wiuf2000-rc} or using the structured coalescent to
-model various forms of natural selection \citep{Kaplan1988-in,Kaplan1989-rt,Braverman1995-gn}.  For such models, one
+in \msprime{}, such as the coalescent with gene conversion \citep{Wiuf2000-rc}, using the structured coalescent to
+model various forms of natural selection \citep{Kaplan1988-in,Kaplan1989-rt,Braverman1995-gn},
+or the coalescent within a known pedigree.  For such models, one
 could in principle generate tables of nodes and edges to be simpified in \msprime{}.  The resulting succinct tree
 sequence object would be in the same format as those generated by \msprime{}'s built-in simulate function, and therefore
 compatible with exising methods for downstream analyses.
