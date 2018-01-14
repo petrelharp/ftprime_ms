@@ -890,21 +890,23 @@ because new edges appear with most recombinations that occur on any marginal tre
 Therefore, we need to compute the mean total length of all branches in a coalescent tree
 up until time $T$ (or the common ancestor, whichever comes first).
 Since $k$ lineages coalesce at rate $\binom{k}{2}/N$,
-the expected length of time for which a marginal tree has $k$ branches is
-$N/(k(k-1)) = N(1/(k-1) - 1/k)$ generations.
-Since there are $k$ branches for this time,
-this period is expected to contribute $N/(k-1)$ generations to the total tree length.
+the expected length of time for which the coalescent process has $k$ lineages is
+$2N/(k(k-1)) = 2N(1/(k-1) - 1/k)$ generations.
+Since this is the time period over which the tree has $k$ branches,
+this period is expected to contribute $2N/(k-1)$ generations to the total tree length.
 By summing over $n < k \le N$,
 the $N$ tips of a tree are expected to descend from only $n$ lineages
-around $N(1/(n-1) - 1/(N-1))$ generations ago.
+around $2N(1/n - 1/N)$ generations ago.
 Inverting this relationship between time and number of roots
 implies that a marginal tree cut $T$ units of time ago
-is expected to have around $n(T)$ roots, where $n(T) \approx 1 + N/(T+2)$.
+% since 2N(1/n - 1/N) = 2(N/n-1) = T implies
+%    N/n = (T+2)/2 and so n = 2N/(T+2)
+is expected to have around $n(T)$ roots, where $n(T) \approx 2N/(T+2)$.
 The total tree length over this time is
-$N \sum_{k=n(T)+1}^{N-1} 1/k$, which
+$2N \sum_{k=N}^{n(T)+1} 1/(k-1)$, which
 % is approximately
 % \begin{align*}
-%     N \log\left( \frac{N/2}{1 + N/(T+2)} \right) .
+%     2 N \left\{ \log(N-1) - \log(n(T)) \} = 2 N \log( ((T+2)(N-1))/2N ) \approx 2 N \log( (T+2)/2 )
 % \end{align*}
 leads to an upper bound on the number of edges of
 \begin{align}

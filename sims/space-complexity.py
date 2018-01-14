@@ -63,7 +63,8 @@ def total_length(nodes, edges):
 def ub(T, N):
     # 2 N \left( 1 + 4 \log\left( \frac{NT}{T + 2 N} \right)\right) .
     # return 2 * (N - 1) + 8 * N * np.log(N/(1+2*N/(T+2)))
-    return 2 * N * (1 + 4 * np.log(N * T / (T + 2 * N)))
+    # return 2 * N * (1 + 4 * np.log(N * T / (T + 2 * N)))
+    return 2 * N * np.log( (T + 2) / 2 )
 
 
 def get_mean_edges_per_transition(ts):
