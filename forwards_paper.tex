@@ -880,36 +880,36 @@ space to store the history that is relevant to the extant population.
 \citet{padhukasahasram2008exploring} obtained impressive speedups relative to contemporary simulators
 by retaining only 8 generations of history.
 This begs the question: how fast does the information in the pedigree become irrelevant?
-Suppose instead that we have run a simulation of $2N$ individuals for $T$ generations,
+Suppose instead that we have run a simulation of $N$ individuals for $T$ generations,
 begun with no prior history.
 One way to answer this question is to ask:
-How many of the resulting $4NT$ edges are required after simplification?
-As above, the expected number of edges is bounded by $2N-2$
+How many of the resulting $2NT$ edges are required after simplification?
+As above, the expected number of edges is bounded by $N-2$
 plus four times the sum of the lengths of all marginal trees,
 because new edges appear with most recombinations that occur on any marginal tree.
 Therefore, we need to compute the mean total length of all branches in a coalescent tree
 up until time $T$ (or the common ancestor, whichever comes first).
 Since $k$ lineages coalesce at rate $\binom{k}{2}/N$,
 the expected length of time for which a marginal tree has $k$ branches is
-$2N/(k(k-1)) = 2N(1/(k-1) - 1/k)$ generations.
+$N/(k(k-1)) = N(1/(k-1) - 1/k)$ generations.
 Since there are $k$ branches for this time,
-this period is expected to contribute $2N/(k-1)$ generations to the total tree length.
+this period is expected to contribute $N/(k-1)$ generations to the total tree length.
 By summing over $n < k \le N$,
 the $N$ tips of a tree are expected to descend from only $n$ lineages
-around $2N(1/(n-1) - 1/(N-1))$ generations ago.
+around $N(1/(n-1) - 1/(N-1))$ generations ago.
 Inverting this relationship between time and number of roots
 implies that a marginal tree cut $T$ units of time ago
-is expected to have around $n(T)$ roots, where $n(T) \approx 1 + 2N/(T+2)$.
+is expected to have around $n(T)$ roots, where $n(T) \approx 1 + N/(T+2)$.
 The total tree length over this time is
-$2 N \sum_{k=n(T)+1}^{N-1} 1/k$, which
+$N \sum_{k=n(T)+1}^{N-1} 1/k$, which
 % is approximately
 % \begin{align*}
-%     2 N \log\left( \frac{N}{1 + 2 N/(T+2)} \right) .
+%     N \log\left( \frac{N/2}{1 + N/(T+2)} \right) .
 % \end{align*}
 leads to an upper bound on the number of edges of
 \begin{align}
     \label{eqn:edge_bound}
-    2 N \left( 1 + 4 \log\left( \frac{NT}{T + 2 N} \right)\right) .
+    N \left( 1 + 4 \log\left( \frac{NT}{2(T + N)} \right)\right) .
 \end{align}
 These calculations hold up quite well in practice,
 as shown in Figure~\ref{fig:simplify_complexity}.
@@ -926,7 +926,7 @@ as shown in Figure~\ref{fig:simplify_complexity}.
         Time and space complexity of simplify.
         \textbf{(A)}
         Number of edges in the simplified tree sequence
-        for 10 replicate Wright--Fisher simulations with $N=50$ as a function
+        for 10 replicate Wright--Fisher simulations with $N=100$ as a function
         of number of generations.
         Each line is one simulation, the heavy blue line gives the average,
         and the dashed line is the upper bound of equation \eqref{eqn:edge_bound}.
@@ -946,13 +946,13 @@ as shown in Figure~\ref{fig:simplify_complexity}.
 %% Above was edges; same holds for memory usage savings due to mutations
 If we were to add mutations in forwards time
 under the infinite-sites model with total mutation rate per generation $\mu$ (i.e., per meiosis),
-there would also be around $\mu 2NT$ mutations, and the same number of sites,
-simply because there was a total of $2NT$ meioses.
+there would also be around $\mu NT$ mutations, and the same number of sites,
+simply because there was a total of $NT$ meioses.
 Since mutations fall as recombinations do on the marginal trees,
 the number of mutations is proportional to the total length of all the marginal trees,
 and so by the same argument as for the number of edges,
-adding them after simplification results in only around $\mu 4 N \log(2N)$ mutations.
-With $N=10^4$ and $T=20N$ as above,
+adding them after simplification results in only around $\mu 2 N \log(N)$ mutations.
+With $N=2 \times 10^4$ and $T=10N$ as above,
 this implies that adding neutral mutations afterwards reduces the number of mutations that must be generated
 by a factor of 10,000.
 This could result in substantial time savings,
