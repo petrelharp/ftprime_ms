@@ -816,109 +816,138 @@ Thus, there is a memory-versus-speed tradeoff
 %%%%%%%%%%%%
 \subsubsection*{Computational complexity}
 
-% I may need to cite my student's t-shirt for the following line.
+% I may need to cite my student's t-shirt for the following line:
+%  "that's all very good in practice, but how does it hold up in theory?"
 Figures \ref{fig:runtimes_selection} and \ref{fig:relative_speedup_selection} show that this method
 can dramatically improve simulation performance in practice --
 but, how does it perform in theory?
 % The simulation results shown in Figures \ref{fig:runtimes_selection} and \ref{fig:relative_speedup_selection} show that
 % pedigree tracking greatly speeds up forward-time simulations.  Further, the run times with pedigree tracking become
 % near-linear in $\rho$ (Figure \ref{fig:runtimes_selection}).
-In this section, we explore how the required computational effort and storage space scale
-in a Wright-Fisher model with recombination.
-Each edge in a tree sequence represents a segment of genome
-that has been inherited across a certain number of generations, given by the length of the edge.
-Each inheritance of each segment of genome across a generation
-provides an opportunity for mutation and for recombination (which changes the tree).
-For this reason, the key quantity we use is the total ``area'' of the tree sequence,
-i.e., the product of segment length (left minus right coordinates) 
+Both computational time and storage space are depend mostly
+on the number of \emph{mutations} and \emph{edges} in the tree sequence.
+% Each edge represents a segment of genome
+% that has been inherited across a number of generations equal to the length of the edge.
+% Each of these generations provided
+% an opportunity for mutation and for recombination
+% (which changes the tree, thus usually introducing a new edge).
+% For this reason, 
+The key quantity to understand for this will be the total ``area'' of the tree sequence,
+i.e., the product of segment length (left minus right coordinates)
 and edge length (difference in birth times between parent and child),
 summed across all edges.
 This area is also equal to the sum of the total lengths of all marginal trees
-(i.e., the trees describing inheritance at each position on the genome),
-so we can compute total area as sequence length
-multiplied by the mean area of a given marginal tree,
-which is well-described by coalescent theory.
-Similar arguments to those below go back to \citet{watterson1975number},
-who explicitly addresses smaller order corrections relevant to whole-population genealogies
-of the Wright-Fisher model.
-For more on coalescent theory, see \citet{wakeley2005coalescent}.
+(i.e., the trees describing inheritance at each position on the genome).
+Therefore, the total area of a tree sequence is equal to the sequence length
+multiplied by the mean area of a marginal tree.
+Since we analyze tree sequences arising from a Wright--Fisher model,
+statistical properties of a marginal tree are well-described by coalescent theory.
+Similar arguments to those below go back at least to \citet{watterson1975number},
+who also explicitly computed smaller order corrections relevant to whole-population genealogies
+of the Wright--Fisher model.
+For an introduction to coalescent theory, see \citet{wakeley2005coalescent}.
 
 
 %% Memory reduction thanks to simplification
-Consider a simulation of a Wright-Fisher population of $N$ haploid individuals
-using Algorithm~\algref{W} for $T$ generations,
-with simplify interval $s = 1$ so that redundant information is removed after every generation.
+First: how much memory do simplified tree sequences require?
+Consider a simulation of a Wright--Fisher population of $N$ haploid individuals
+using Algorithm~\algref{W} for $T$ generations.
 Since every chromosome inherits material from both parents,
 without simplification this would produce tables of
 $NT$ nodes and $2NT$ edges.
-Suppose that $T$ is large enough that all samples coalesce within the simulation with high probability
-($T = 20N$, say, giving a total space requirement of $60N^2$).
 After simplification, we are left with the tree sequence describing the history
-of only the current generation of $N$ individuals.
-If no coalescent events involve more than two lineages, this tree sequence has $2N-2$ edges to describe the leftmost tree;
-and each time the marginal tree changes along the sequence,
+of only the current generation of $N$ individuals, back to either $T$ generations ago,
+or their common ancestor, whichever comes first.
+The tree sequence must store edges describing the leftmost marginal tree,
+which requires at most $N-2$ edges.
+Then, each time the marginal tree changes along the sequence,
 four edges end and four new edges begin
 (except for changes affecting the root, which require fewer; see \citet{kelleher2016efficient}).
-Coalescent theory tells us that
-the expected total length of the edges of a marginal tree is approximately $2N\log(N)$.
-Since we have taken one crossover per individual per generation (as is typical for a single chromosome),
-and we are measuring tree lengths in units of generations,
-this is the mean number of ancestral recombination events that occur somewhere on the marginal trees.
-Any such ancestral recombination might change the marginal gene tree;
-if it does, it will add four new edges.
-Not all such recombinations actually change the tree topology,
-so at most we expect $8N\log(N)$ new edges after those required to describe the first tree.
-Similarly, not every new edge derives from a never-before-seen node,
+Suppose that $T_x$ is the marginal tree describing how each of the present-day population
+descends from their most recent common ancestor
+at a particular genomic position $x$ on the chromosome,
+and write $|T_x|$ for the total length of the tree,
+i.e., the number of ancestors 
+from which some but not all of the present-day population has inherited at position $x$
+(including the population itself).
+For the tree at nearby position $x + dx$ to be different,
+there must have been a crossing-over between $x$ and $x + dx$
+in one of the $|T_x|$ meioses that gave birth to those individuals.
+(Recall that these ``individuals'' are haploid.)
+Since we measure distance along the genome
+so that length is equal to the expected number of crossing-overs per generation,
+the expected distance until the next crossing-over is $1/|T_x|$.
+If every crossing-over changed the marginal tree,
+then this would imply, for consistency, 
+that the expected total number of times that the marginal tree changes along the genome
+is equal to the total area of the tree sequence (as defined above).
+Not every such crossing-over changes the marginal tree, but most do,
+so the total area of the tree sequence,
+multiplied by four,
+gives an upper bound on the expected number of edges in the tree sequence 
+beyond those describing the leftmost tree.
+Since we are considering a chromosome of length 1,
+the expected total area is equal to the mean marginal tree length, as above.
+
+If $T$ is large enough that all samples coalesce within the simulation with high probability
+-- $T = 20N$, say --
+then coalescent theory tells us that
+the expected total length of the branches of a marginal tree back to the most recent common ancestor
+is approximately $2N\log(N)$.
+Therefore, the tree sequence describing the entire population
+is expected to need no more than $2N + 8N\log(N)$ edges.
+Not every new edge derives from a never-before-seen node,
 but the number of nodes is at most equal to the number of edges plus the sample size.
-The space complexity after simplification is therefore $O(N + N\log N)$, since
-we need $O(N)$ space to store the first marginal tree, and a constant amount of space
-for each of the $O(N \log N)$ trees that follow. Thus, we need $O(N^2)$ space
-to store the complete history of the simulation, but only $O(N \log N)$ % $O(N + N \log N)$
-space to store the history that is relevant to the extant population.
+Therefore, 
+we would need $O(N^2)$ space to store the complete history of the simulation, 
+but only $O(N \log N)$ % $O(N + N \log N)$
+to store the history that is relevant to the extant population.
+
 
 %% Progressive memory reduction as a function of T
-\citet{padhukasahasram2008exploring} obtained impressive speedups relative to contemporary simulators
-by retaining only 8 generations of history.
-This begs the question: how fast does the information in the pedigree become irrelevant?
-Suppose instead that we have run a simulation of $N$ individuals for $T$ generations,
-begun with no prior history.
-One way to answer this question is to ask:
-How many of the resulting $2NT$ edges are required after simplification?
-As above, the expected number of edges is bounded by $N-2$
-plus four times the sum of the lengths of all marginal trees,
-because new edges appear with most recombinations that occur on any marginal tree.
-Therefore, we need to compute the mean total length of all branches in a coalescent tree
+What if $T$ is smaller: 
+how many of the resulting $2NT$ edges are required after simplification?
+In other words, how fast does the information in the pedigree become irrelevant?
+% \citet{padhukasahasram2008exploring} obtained impressive speedups relative to contemporary simulators
+% by retaining only 8 generations of history.
+% This begs the question: how fast does the information in the pedigree become irrelevant?
+Now, we need to compute the expected total length of all branches in a coalescent tree
 up until time $T$ (or the common ancestor, whichever comes first).
-Since $k$ lineages coalesce at rate $\binom{k}{2}/N$,
-the expected length of time for which the coalescent process has $k$ lineages is
-$2N/(k(k-1)) = 2N(1/(k-1) - 1/k)$ generations.
-Since this is the time period over which the tree has $k$ branches,
-this period is expected to contribute $2N/(k-1)$ generations to the total tree length.
+Again, coalescent theory tells us that
+the expected length of time for which a coalescent tree has $k$ lineages 
+is $2N/(k(k-1)) = 2N(1/(k-1) - 1/k)$ generations.
+Since the tree has $k$ branches over this period,
+it is expected to contribute $2N/(k-1)$ to the total tree length.
 By summing over $n < k \le N$,
 the $N$ tips of a tree are expected to descend from only $n$ lineages
-around $2N(1/n - 1/N)$ generations ago.
+around $2(N/n - 1)$ generations ago.
 Inverting this relationship between time and number of roots
 implies that a marginal tree cut $T$ units of time ago
 % since 2N(1/n - 1/N) = 2(N/n-1) = T implies
 %    N/n = (T+2)/2 and so n = 2N/(T+2)
-is expected to have around $n(T)$ roots, where $n(T) \approx 2N/(T+2)$.
+is expected to have around $r(T)$ roots, where $r(T) \approx 2N/(T+2)$.
 The total tree length over this time is
-$2N \sum_{k=N}^{n(T)+1} 1/(k-1)$, which
-% is approximately
+$2N \sum_{k=N}^{r(T)+1} 1/(k-1) \approx 2 N \log(N/r(T))$.
+This is a crude estimate for several reasons:
+first, we should not count the branch leading to the root of the tree (i.e., when $r(T)=1$),
+and second, this does not account for the discrete nature of the Wright--Fisher model.
+% which is approximately
 % \begin{align*}
-%     2 N \left\{ \log(N-1) - \log(n(T)) \} = 2 N \log( ((T+2)(N-1))/2N ) \approx 2 N \log( (T+2)/2 )
+%     2N - 2 + 8 N \left\{ \log(N-1) - \log(r(T)) \} 
+%        = 2N - 2 + 8 N \log( (T+2)(N-1)/2N ) 
+%        \approx 2 N (1 + 4 \log( (T+2)/2 ))
 % \end{align*}
-leads to an upper bound on the number of edges of
+Nonetheless, this leads as above to an upper bound on the number of edges of
 \begin{align}
     \label{eqn:edge_bound}
-    N \left( 1 + 4 \log\left( \frac{NT}{2(T + N)} \right)\right) .
+    2 N \left( 1 + 4 \log\left( \min\left(N, \frac{T+2}{2}\right) \right)\right) .
 \end{align}
-These calculations hold up quite well in practice,
+This implies that the number of edges required to store the last $T$ generations
+of history for the entire chromosome of a population of size $N$
+grows as $O(N \log T)$ -- proportionally to $N$ at first but rapidly tapering off.
+The bound holds up reasonably well in practice,
 as shown in Figure~\ref{fig:simplify_complexity}.
-% by comparison to
-% the number of edges actually required for 50 independent Wright--Fisher simulations,
-% as a function of time (obtained from Algorithm~\algref{W} with $s=1$)
-% is shown in Figure~\ref{fig:simplify_complexity}, compared to this prediction.
+
 
 \begin{figure}
     \begin{center}
@@ -946,15 +975,16 @@ as shown in Figure~\ref{fig:simplify_complexity}.
 \end{figure}
 
 %% Above was edges; same holds for memory usage savings due to mutations
+What about mutations?
 If we were to add mutations in forwards time
-under the infinite-sites model with total mutation rate per generation $\mu$ (i.e., per meiosis),
-there would also be around $\mu NT$ mutations, and the same number of sites,
-simply because there was a total of $NT$ meioses.
+under the infinite-sites model with total mutation rate per generation $\mu$,
+there would also be around $\mu N T$ mutations, and the same number of sites.
+% simply because there was a total of $N T$ meioses.
 Since mutations fall as recombinations do on the marginal trees,
 the number of mutations is proportional to the total length of all the marginal trees,
 and so by the same argument as for the number of edges,
 adding them after simplification results in only around $\mu 2 N \log(N)$ mutations.
-With $N=2 \times 10^4$ and $T=10N$ as above,
+With $N=2 \times 10^4$ and $T=10N$,
 this implies that adding neutral mutations afterwards reduces the number of mutations that must be generated
 by a factor of 10,000.
 This could result in substantial time savings,
