@@ -923,7 +923,8 @@ implies that a marginal tree cut $T$ units of time ago
 %    N/n = (T+2)/2 and so n = 2N/(T+2)
 is expected to have around $r(T)$ roots, where $r(T) = 2N/(T+2)$.
 The total tree length over this time is
-$2N \sum_{k=r(T)+1}^N 1/(k-1) \approx 2 N \log(N/r(T))$.
+$2N \sum_{k=r(T)+1}^N 1/(k-1) \approx 2 N \log(N/r(T))$,
+since $\sum_{k=1}^x \approx \log(x) + \gamma$.
 This is a crude estimate for several reasons:
 first, we should not count the branch leading to the root of the tree (i.e., when $r(T)=1$),
 and second, this does not account for the discrete nature of the Wright--Fisher model.
