@@ -65,7 +65,7 @@ def ub(T, N):
     # return 2 * (N - 1) + 8 * N * np.log(N/(1+2*N/(T+2)))
     # return 2 * N * (1 + 4 * np.log(N * T / (T + 2 * N)))
     # return 2 * N * (1 + 4 * np.log(N * T / (2 * T + 2 * N)))
-    return 2 * N * (1 - (1 / N) + 4 * np.log(min(N,  (T + 2) / 2 )))
+    return 2 * N * (1 + 4 * np.log(min(N,  (T + 2) / 2 )))
 
 
 def get_mean_edges_per_transition(ts):

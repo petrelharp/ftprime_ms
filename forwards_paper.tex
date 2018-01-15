@@ -860,7 +860,7 @@ After simplification, we are left with the tree sequence describing the history
 of only the current generation of $N$ individuals, back to either $T$ generations ago,
 or their common ancestor, whichever comes first.
 The tree sequence must store edges describing the leftmost marginal tree,
-which requires at most $N-2$ edges.
+which requires at most $2N-2$ edges.
 Then, each time the marginal tree changes along the sequence,
 four edges end and four new edges begin
 (except for changes affecting the root, which require fewer; see \citet{kelleher2016efficient}).
@@ -921,9 +921,9 @@ Inverting this relationship between time and number of roots
 implies that a marginal tree cut $T$ units of time ago
 % since 2N(1/n - 1/N) = 2(N/n-1) = T implies
 %    N/n = (T+2)/2 and so n = 2N/(T+2)
-is expected to have around $r(T)$ roots, where $r(T) \approx 2N/(T+2)$.
+is expected to have around $r(T)$ roots, where $r(T) = 2N/(T+2)$.
 The total tree length over this time is
-$2N \sum_{k=N}^{r(T)+1} 1/(k-1) \approx 2 N \log(N/r(T))$.
+$2N \sum_{k=r(T)+1}^N 1/(k-1) \approx 2 N \log(N/r(T))$.
 This is a crude estimate for several reasons:
 first, we should not count the branch leading to the root of the tree (i.e., when $r(T)=1$),
 and second, this does not account for the discrete nature of the Wright--Fisher model.
