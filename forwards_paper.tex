@@ -671,15 +671,16 @@ a simulator must record:
         adding also to the Site Table if the site is previously unmutated.
 \end{itemize}
 Recall that here we mean ``\emph{haploid} individual'', i.e., gamete.
-Before simplification, time must be translated to ``time ago'' if it is not already,
-and the tables must be sorted.
-Algorithm~\algref{W} avoided both of these details since $t$ denotes
-``time until the end of the simulation'',
-and nonoverlapping generations ensure that the tables will be already sorted.
-Finally, since $\tsimplify{P', \Nt, \Et}$ results in the $N$ individuals in $P'$
+Before simplification, time must be translated to ``time ago'' if it is not already.
+which was avoided in Algorithm~\algref{W} since there $t$ denoted
+``time until the end of the simulation''.
+Furthermore, since $\tsimplify{P', \Nt, \Et}$ results in the $N$ individuals in $P'$
 being relabeled in \msprime{}'s tables as $0, 1, \ldots, N-1$,
 there must be bookkeeping that keeps in sync the individual IDs as recorded by the simulator
 with the node IDs recorded in the tables.
+% Finally, the first step in simplification is to \emph{sort} the tables
+% according to several criteria, for algorithmic efficiency,
+% as described in the documentation.
 
 %%%%%%
 \subsection*{Tree sequence simplification}
