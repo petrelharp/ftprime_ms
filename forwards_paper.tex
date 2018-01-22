@@ -361,9 +361,12 @@ who were born one and two units of time in the past, respectively.
     \end{center}
     \caption{
         An example tree sequence with three samples over a chromosome of length 10.
-        The left-hand panel shows the tree sequence pictorially in two different ways:
-        (top) as a sequence of tree topologies
-        and (bottom) the spatial extent of the edges that define these topologies.
+        The left-hand panels show the tree sequence pictorially in two different ways:
+        (top) a sequence of tree topologies; the first tree extends from genomic position 0 to 5,
+        and the second from 5 to 10; and
+        (bottom) the edges that define these topologies,
+        displayed over their corresponding genomic segment
+        (for instance, the edge from node 2 to node 4 is present only on the interval from 0 to 5).
         The right-hand panels show the specific encoding
         of this tree sequence in the four tables (nodes, edges, sites and mutations)
         defined by \msprime.
@@ -546,8 +549,10 @@ A step-by-step explanation follows the pseudocode.
 {Simulates a randomly mating population of $N$ haploid individuals with
 chromosome of length $L$ for $T$ generations, and returns the node
 and edge tables ($\Nt$ and $\Et$) recording the simulated history.
+In each generation, the current population is stored in $P$,
+while produced offspring are placed in $P'$.
 The tables are simplified every $s$ generations, removing genealogical
-information from $\Nt$ and $\Et$ irrelevant to the current population $P$.
+information from $\Nt$ and $\Et$ irrelevant to the current population.
 }
 
 \algstep{W1.}{Initialisation.}{
@@ -656,6 +661,27 @@ Node 26 in Figure~\ref{fig:wf-trees}a, for example, leaves no
 ancestors in the current population, and so the entire path tracing back to
 its common ancestor with 27 is redundant.
 
+\paragraph{Essential steps in tree sequence recording}
+To record a tree sequence, including mutations,
+a simulator must record:
+\begin{itemize}
+    \item the birth time of each individual in the Node Table,
+    \item the genetic segments each individual inherits from her parents in the Edge Table, and
+    \item the individual each new mutation occurs in, and the derived state in the Mutation Table,
+        adding also to the Site Table if the site is previously unmutated.
+\end{itemize}
+Recall that here we mean ``\emph{haploid} individual'', i.e., gamete.
+Before simplification, time must be translated to ``time ago'' if it is not already.
+which was avoided in Algorithm~\algref{W} since there $t$ denoted
+``time until the end of the simulation''.
+Furthermore, since $\tsimplify{P', \Nt, \Et}$ results in the $N$ individuals in $P'$
+being relabeled in \msprime{}'s tables as $0, 1, \ldots, N-1$,
+there must be bookkeeping that keeps in sync the individual IDs as recorded by the simulator
+with the node IDs recorded in the tables.
+% Finally, the first step in simplification is to \emph{sort} the tables
+% according to several criteria, for algorithmic efficiency,
+% as described in the documentation.
+
 %%%%%%
 \subsection*{Tree sequence simplification}
 \label{ss:simplify}
@@ -704,7 +730,7 @@ having the following properties:
         $B$, $C$, $D$, and $E$ inherit clonally from $A$.
         \textbf{(B)} The five distinct trees
         found across the chromosome (blue numbers denote locations on the chromosome).
-        Labels after simplification are shown in red.
+        Labels after simplification are shown in red (see text).
         \textbf{(C)} Tables recording the tree sequence after simplification
         with nodes $J$ and $K$ as samples.
         The mapping from labels in the forwards time simulation to nodes in the tree sequence
@@ -749,6 +775,11 @@ Figure~\ref{fig:method_diagram} shows an example tree sequence,
 before and after simplification,
 and Figure~\ref{fig:simplify_state} depicts the ``paint pot'' state of the algorithm
 during the process of simplifying this tree sequence.
+Since the method begins with the samples and moves back through time,
+in the output tree sequence, the $n$ samples will be numbered $0, 1, \ldots, n-1$
+and subsequent nodes will be ordered by time since birth.
+This is seen in the red labels of Figure~\ref{fig:method_diagram}.
+
 
 \begin{figure}
     \begin{center}
@@ -756,14 +787,23 @@ during the process of simplifying this tree sequence.
     \end{center}
     \caption{
         A depiction of the state of the simplification algorithm
-        at each point in time,
+        as it moves up through the embellished pedigree
         in the example of Figure~\ref{fig:method_diagram}A.
-        Ancestral material from J (red) and K (blue) are traced up through the pedigree
-        until they coalesce;
-        the smaller colored chromosomes on either side of each solid arrow show the bits inherited from each of the two parental chromosomes;
-        each time two colors overlap, a coalescence occurs, and two edges are output.
+        Following the ``paint pot'' description in the text,
+        we begin by coloring J and K's genomes in red and blue respectively,
+        then trace how these colors were inherited back up through the pedigree
+        until they coalesce.
+        To aid in this,
+        the smaller colored chromosomes on either side of each solid arrow
+        show the bits inherited from each of the two parental chromosomes,
+        with genomic position 0.0 on the bottom and 1.0 at the top.
+        Each time a red and a blue segment overlap, a coalescence occurs, two edges are output,
+        and we stop propagating that segment.
         For instance, both J and K inherit from H between 0.5 and 0.9,
         which resulted in the first two edges of the simplified table of Figure~\ref{fig:method_diagram}C.
+        Later, both inherit from E between 0.2 and 0.5,
+        along the paths J-H-G-E and K-I-E respectively,
+        resulting in the next two edges.
         \label{fig:simplify_state}
     }
 \end{figure}
