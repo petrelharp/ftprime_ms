@@ -1245,6 +1245,11 @@ $\pqpush{Q}{x}$ inserts the segment $x$ into the queue, and $\pqpop{Q}$
 removes and returns the segment in $Q$ with the smallest left coordinate.
 To obtain the segment currently in the queue with the smallest left value we
 write $Q[0]$.
+Finally, note that to keep the exposition simple,
+the algorithm described here requires that the input node table
+is sorted by time since the parent's birth;
+but the version implemented in \msprime{} makes different sortedness assumptions
+(described in the documentation).
 
 \begin{taocpalg}{S}{Simplify a tree sequence}
 {Input consists of
