@@ -361,13 +361,13 @@ who were born one and two units of time in the past, respectively.
     \end{center}
     \caption{
         An example tree sequence with three samples over a chromosome of length 10.
-        The left-hand panels show the tree sequence pictorially in two different ways:
+        The leftmost panels show the tree sequence pictorially in two different ways:
         (top) a sequence of tree topologies; the first tree extends from genomic position 0 to 5,
         and the second from 5 to 10; and
         (bottom) the edges that define these topologies,
         displayed over their corresponding genomic segment
         (for instance, the edge from node 2 to node 4 is present only on the interval from 0 to 5).
-        The right-hand panels show the specific encoding
+        The remaining panels show the specific encoding
         of this tree sequence in the four tables (nodes, edges, sites and mutations)
         defined by \msprime.
         \label{fig:example_tree_sequence}
@@ -666,14 +666,14 @@ To record a tree sequence, including mutations,
 a simulator must record:
 \begin{itemize}
     \item the birth time of each individual in the Node Table,
-    \item the genetic segments each individual inherits from her parents in the Edge Table, and
+    \item the genetic segments each individual inherits from its parents in the Edge Table, and
     \item the individual each new mutation occurs in, and the derived state in the Mutation Table,
         adding also to the Site Table if the site is previously unmutated.
 \end{itemize}
 Recall that here we mean ``\emph{haploid} individual'', i.e., gamete.
 Before simplification, time must be translated to ``time ago'' if it is not already.
-which was avoided in Algorithm~\algref{W} since there $t$ denoted
-``time until the end of the simulation''.
+(This was avoided in Algorithm~\algref{W} since there $t$ denoted
+``time until the end of the simulation''.)
 Furthermore, since $\tsimplify{P', \Nt, \Et}$ results in the $N$ individuals in $P'$
 being relabeled in \msprime{}'s tables as $0, 1, \ldots, N-1$,
 there must be bookkeeping that keeps in sync the individual IDs as recorded by the simulator
@@ -786,7 +786,7 @@ This is seen in the red labels of Figure~\ref{fig:method_diagram}.
         \includegraphics{simplify-state-diagram}
     \end{center}
     \caption{
-        A depiction of the state of the simplification algorithm
+        A depiction of each state of the simplification algorithm
         as it moves up through the embellished pedigree
         in the example of Figure~\ref{fig:method_diagram}A.
         Following the ``paint pot'' description in the text,
@@ -1215,7 +1215,8 @@ Thanks to Gil McVean, Jared Galloway, Brad Shaffer, and Evan McCartney--Melstad 
 Work on this project was supported by funding from
 the Sloan Foundation and the NSF (under DBI-1262645) to PR;
 the Wellcome Trust (grant 100956/Z/13/Z) to Gil McVean;
-the NIH (R01GM115564) to KRT.
+the NIH (R01GM115564) to KRT;
+and the USF\&WS to H.\ Bradley Shaffer.
 
 \bibliography{references}
 
