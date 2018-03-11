@@ -3,22 +3,31 @@ SHELL := /bin/bash
 
 .PHONY : sim_ts_gifs ne_walkthrough sm_walkthrough simp_walkthrough
 
-broad_12_mar_2018.slides.html : file_size.png example_tree_sequence.png sim_ts.anim.gif sim_wf.anim.gif sim_wf_simplified.anim.gif ne_walkthrough sm_walkthrough simp_walkthrough
+broad_12_mar_2018.slides.html : file_size.png example_tree_sequence.png sim_ts.anim.gif sim_wf.anim.gif sim_wf_unlabeled.anim.gif sim_wf_simplified.anim.gif ne_walkthrough sm_walkthrough simp_walkthrough
 
-sim_ts/done sim_wf/done : make_figs.py
+sim_ts/done sim_wf/done sim_wf_unlabeled/done sim_wf_simplified/done : make_figs.py
 	python3 make_figs.py
 
-sim_ts_gifs : $(patsubst %.svg,%.gif,$(wildcard sim_ts/*.svg)) sim_ts/done
+run_sim : sim_ts/done sim_wf/done sim_wf_unlabeled/done sim_wf_simplified/done
 
-sim_wf_gifs : $(patsubst %.svg,%.gif,$(wildcard sim_wf/*.svg)) sim_wf/done
+sim_ts_gifs = $(wildcard sim_ts/*.svg)
+sim_ts_svgs = $(patsubst %.svg,%.gif,$(sim_ts_gifs))
+sim_wf_gifs = $(wildcard sim_wf/*.svg)
+sim_wf_svgs = $(patsubst %.svg,%.gif,$(sim_wf_gifs))
+sim_wf_ul_gifs = $(wildcard sim_wf_unlabeled/*.svg)
+sim_wf_ul_svgs = $(patsubst %.svg,%.gif,$(sim_wf_ul_gifs))
+sim_wf_simp_gifs = $(wildcard sim_wf_simplified/*.svg)
+sim_wf_simp_svgs = $(patsubst %.svg,%.gif,$(sim_wf_simp_gifs))
 
-sim_wf_simp_gifs : $(patsubst %.svg,%.gif,$(wildcard sim_wf_simplified/*.svg)) sim_wf_simplified/done
+$(sim_ts_svg) s $(sim_wf_svg) s $(sim_wf_ul_svg) s $(sim_wf_simp_svgs) : run_sim
 
-sim_ts.anim.gif : sim_ts_gifs
-	
-sim_wf.anim.gif : sim_wf_gifs
+sim_ts.anim.gif : $(sim_ts_gifs)
 
-sim_wf_simplified.anim.gif : sim_wf_simp_gifs
+sim_wf.anim.gif : $(sim_wf_gifs)
+
+sim_wf_unlabeled.anim.gif : $(sim_wf_unl_gifs)
+
+sim_wf_simplified.anim.gif : $(sim_wf_simp_gifs)
 
 ne_walkthrough : nodes_edges_walkthrough/nodes_edges_walkthrough.0.png nodes_edges_walkthrough/nodes_edges_walkthrough.1.png nodes_edges_walkthrough/nodes_edges_walkthrough.2.png nodes_edges_walkthrough/nodes_edges_walkthrough.3.png nodes_edges_walkthrough/nodes_edges_walkthrough.4.png nodes_edges_walkthrough/nodes_edges_walkthrough.5.png nodes_edges_walkthrough/nodes_edges_walkthrough.6.png
 
@@ -125,4 +134,4 @@ SLIDES_OPTS = $(REVEALJS_OPTS)
 
 # animated gif
 %.anim.gif : $(wildcard %/*.gif)
-	convert -loop 1 -delay 10 -coalesce -fuzz 2% -layers optimize $$(ls $*/*.gif) $@
+	convert -loop 0 -delay 10 -coalesce -fuzz 2% -layers optimize $$(ls $*/*.gif) $@

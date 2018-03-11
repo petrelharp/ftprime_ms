@@ -426,6 +426,10 @@ to the history of the *samples*:
 
 ![Wright-Fisher tree sequence](sim_wf.anim.gif)
 
+## Another example: before simplification
+
+![Wright-Fisher tree sequence](sim_wf_unlabeled.anim.gif)
+
 ## ... and after simplification
 
 ![Simplified Wright-Fisher tree sequence](sim_wf_simplified.anim.gif)
