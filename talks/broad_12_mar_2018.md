@@ -422,9 +422,13 @@ to the history of the *samples*:
 ![Simplify example](simplify_walkthrough/simplify_walkthrough.15.png){ width="100%" }
 
 
-## Another example
+## Another example: before simplification
 
-example from code
+![Wright-Fisher tree sequence](sim_wf.anim.gif)
+
+## ... and after simplification
+
+![Simplified Wright-Fisher tree sequence](sim_wf_simplified.anim.gif)
 
 
 ## *Revised* tree recording strategy

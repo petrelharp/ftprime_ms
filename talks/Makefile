@@ -3,20 +3,28 @@ SHELL := /bin/bash
 
 .PHONY : sim_ts_gifs ne_walkthrough sm_walkthrough simp_walkthrough
 
-sim_ts/done : make_figs.py
+broad_12_mar_2018.slides.html : file_size.png example_tree_sequence.png sim_ts.anim.gif sim_wf.anim.gif sim_wf_simplified.anim.gif ne_walkthrough sm_walkthrough simp_walkthrough
+
+sim_ts/done sim_wf/done : make_figs.py
 	python3 make_figs.py
 
 sim_ts_gifs : $(patsubst %.svg,%.gif,$(wildcard sim_ts/*.svg)) sim_ts/done
 
+sim_wf_gifs : $(patsubst %.svg,%.gif,$(wildcard sim_wf/*.svg)) sim_wf/done
+
+sim_wf_simp_gifs : $(patsubst %.svg,%.gif,$(wildcard sim_wf_simplified/*.svg)) sim_wf_simplified/done
+
 sim_ts.anim.gif : sim_ts_gifs
+	
+sim_wf.anim.gif : sim_wf_gifs
+
+sim_wf_simplified.anim.gif : sim_wf_simp_gifs
 
 ne_walkthrough : nodes_edges_walkthrough/nodes_edges_walkthrough.0.png nodes_edges_walkthrough/nodes_edges_walkthrough.1.png nodes_edges_walkthrough/nodes_edges_walkthrough.2.png nodes_edges_walkthrough/nodes_edges_walkthrough.3.png nodes_edges_walkthrough/nodes_edges_walkthrough.4.png nodes_edges_walkthrough/nodes_edges_walkthrough.5.png nodes_edges_walkthrough/nodes_edges_walkthrough.6.png
 
 sm_walkthrough : sites_muts_walkthrough/sites_muts_walkthrough.0.png sites_muts_walkthrough/sites_muts_walkthrough.1.png sites_muts_walkthrough/sites_muts_walkthrough.2.png sites_muts_walkthrough/sites_muts_walkthrough.3.png sites_muts_walkthrough/sites_muts_walkthrough.4.png
 
 simp_walkthrough : simplify_walkthrough.png simplify_walkthrough/simplify_walkthrough.0.png simplify_walkthrough/simplify_walkthrough.1.png simplify_walkthrough/simplify_walkthrough.2.png simplify_walkthrough/simplify_walkthrough.3.png simplify_walkthrough/simplify_walkthrough.4.png simplify_walkthrough/simplify_walkthrough.5.png simplify_walkthrough/simplify_walkthrough.6.png simplify_walkthrough/simplify_walkthrough.7.png simplify_walkthrough/simplify_walkthrough.8.png simplify_walkthrough/simplify_walkthrough.9.png simplify_walkthrough/simplify_walkthrough.10.png simplify_walkthrough/simplify_walkthrough.11.png simplify_walkthrough/simplify_walkthrough.12.png simplify_walkthrough/simplify_walkthrough.13.png simplify_walkthrough/simplify_walkthrough.14.png simplify_walkthrough/simplify_walkthrough.15.png 
-
-broad_12_mar_2018.slides.html : file_size.png example_tree_sequence.png sim_ts.anim.gif ne_walkthrough sm_walkthrough simp_walkthrough
 
 ####### ink.svg figures
 
@@ -116,5 +124,5 @@ SLIDES_OPTS = $(REVEALJS_OPTS)
 	inkscape $< --export-pdf=$@
 
 # animated gif
-%.anim.gif : $$(wildcard %/*.gif)
+%.anim.gif : $(wildcard %/*.gif)
 	convert -loop 1 -delay 10 -coalesce -fuzz 2% -layers optimize $$(ls $*/*.gif) $@
