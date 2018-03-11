@@ -70,14 +70,16 @@
 </section>
 <section><section id="the-tree-sequence" class="title-slide slide level1"><h1>The tree sequence</h1></section><section id="history-is-just-a-sequence-of-trees" class="slide level2">
 <h2>History is just a sequence of trees</h2>
-<p>animated gif of trees along a chromosome</p>
+<figure>
+<img data-src="sim_ts.anim.gif" alt="Trees along a chromosome" /><figcaption>Trees along a chromosome</figcaption>
+</figure>
 </section><section id="arg" class="slide level2">
 <h2>ARG?</h2>
 <div class="incremental">
 <ol type="1">
 <li><p>The <em>pedigree</em> (parental relationships) and crossover locations would give us the tree sequence for <em>everyone, ever</em>.</p></li>
 <li><p>Much less can fully describe the history relevant to a <em>sample</em> of genomes.</p></li>
-<li><p>This is also known as the Ancestral Recombination Graph (ARG) (but, is that the data structure? the coalescent-analog process?).</p></li>
+<li><p>The information is equivalent to the Ancestral Recombination Graph (ARG).</p></li>
 <li><p>ARGs are <em>hard</em>, to infer from data, or to work with analytically.</p></li>
 </ol>
 </div>
@@ -114,13 +116,13 @@
 </ul>
 </div>
 </div>
-</section><section id="tree-sequence-example" class="slide level2">
-<h2>Tree sequence example</h2>
+</section><section id="example-three-samples-two-trees-two-variant-sites" class="slide level2">
+<h2>Example: three samples; two trees; two variant sites</h2>
 <figure>
 <img data-src="example_tree_sequence.png" alt="Example tree sequence" /><figcaption>Example tree sequence</figcaption>
 </figure>
-</section><section id="what-they-mean" class="slide level2">
-<h2>What they mean</h2>
+</section><section id="nodes-and-edges" class="slide level2">
+<h2>Nodes and edges</h2>
 <dl>
 <dt>Edges</dt>
 <dd><p>Common ancestor (i.e., coalescent) events.</p>
@@ -133,6 +135,41 @@
 </dl>
 </section><section class="slide level2">
 
+<figure>
+<img data-src="nodes_edges_walkthrough/nodes_edges_walkthrough.0.png" alt="Building a tree sequence" /><figcaption>Building a tree sequence</figcaption>
+</figure>
+</section><section class="slide level2">
+
+<figure>
+<img data-src="nodes_edges_walkthrough/nodes_edges_walkthrough.1.png" alt="Building a tree sequence" /><figcaption>Building a tree sequence</figcaption>
+</figure>
+</section><section class="slide level2">
+
+<figure>
+<img data-src="nodes_edges_walkthrough/nodes_edges_walkthrough.2.png" alt="Building a tree sequence" /><figcaption>Building a tree sequence</figcaption>
+</figure>
+</section><section class="slide level2">
+
+<figure>
+<img data-src="nodes_edges_walkthrough/nodes_edges_walkthrough.3.png" alt="Building a tree sequence" /><figcaption>Building a tree sequence</figcaption>
+</figure>
+</section><section class="slide level2">
+
+<figure>
+<img data-src="nodes_edges_walkthrough/nodes_edges_walkthrough.4.png" alt="Building a tree sequence" /><figcaption>Building a tree sequence</figcaption>
+</figure>
+</section><section class="slide level2">
+
+<figure>
+<img data-src="nodes_edges_walkthrough/nodes_edges_walkthrough.5.png" alt="Building a tree sequence" /><figcaption>Building a tree sequence</figcaption>
+</figure>
+</section><section class="slide level2">
+
+<figure>
+<img data-src="nodes_edges_walkthrough/nodes_edges_walkthrough.6.png" alt="Building a tree sequence" /><figcaption>Building a tree sequence</figcaption>
+</figure>
+</section><section id="sites-and-mutations" class="slide level2">
+<h2>Sites and mutations</h2>
 <dl>
 <dt>Mutations</dt>
 <dd><p>When state changes along the tree.</p>
@@ -143,18 +180,37 @@
 <p>Records: genomic position; ancestral (root) state.</p>
 </dd>
 </dl>
-</section><section id="nodes-and-edges" class="slide level2">
-<h2>Nodes and edges</h2>
-<p>figure</p>
-</section><section id="sites-and-mutations" class="slide level2">
-<h2>Sites and mutations</h2>
-<p>another figure</p>
+</section><section class="slide level2">
+
+<figure>
+<img data-src="sites_muts_walkthrough/sites_muts_walkthrough.0.png" alt="Adding mutations" /><figcaption>Adding mutations</figcaption>
+</figure>
+</section><section class="slide level2">
+
+<figure>
+<img data-src="sites_muts_walkthrough/sites_muts_walkthrough.1.png" alt="Adding mutations" /><figcaption>Adding mutations</figcaption>
+</figure>
+</section><section class="slide level2">
+
+<figure>
+<img data-src="sites_muts_walkthrough/sites_muts_walkthrough.2.png" alt="Adding mutations" /><figcaption>Adding mutations</figcaption>
+</figure>
+</section><section class="slide level2">
+
+<figure>
+<img data-src="sites_muts_walkthrough/sites_muts_walkthrough.3.png" alt="Adding mutations" /><figcaption>Adding mutations</figcaption>
+</figure>
+</section><section class="slide level2">
+
+<figure>
+<img data-src="sites_muts_walkthrough/sites_muts_walkthrough.4.png" alt="Adding mutations" /><figcaption>Adding mutations</figcaption>
+</figure>
 </section><section id="succinct-tables" class="slide level2">
 <h2>Succinct tables</h2>
 <p>A <em>tree sequence</em> is the data structure encoding this sequence of trees (with mutations).</p>
 <p>A tree sequence can be stored <em>succinctly</em> using the four tables: <em>nodes</em>, <em>edges</em>, <em>sites</em>, and <em>mutations</em>.</p>
 <div class="fragment">
-<p>These are stored efficiently (hdf5) with a column for metadata.</p>
+<p>These are stored efficiently (hdf5) on disk with a column for metadata.</p>
 <!-- 2. advertise tskit (1min) -->
 </div>
 </section></section>
@@ -165,7 +221,7 @@
 <li>Read in: tables <span class="math inline">\(\rightarrow\)</span> tree sequence</li>
 <li>Write out: tree sequence <span class="math inline">\(\rightarrow\)</span> tables</li>
 <li>Iterate over trees,</li>
-<li>while computing some statistic.</li>
+<li>while computing some statistic (AFS, <span class="math inline">\(\pi\)</span>, <span class="math inline">\(f_4\)</span>, LD, )</li>
 <li>Simplify (i.e., subset).</li>
 </ol>
 <div class="fragment">
@@ -229,13 +285,23 @@
 <div class="incremental">
 <ol type="1">
 <li>add each gamete to the Node Table,</li>
-<li>add entries to the Edge Table recording which parent each gamete inherited each bit of genome from</li>
+<li>add entries to the Edge Table recording which parent each gamete inherited each bit of genome from, and</li>
 <li>add any new mutations to the Mutation Table and (if necessary) their locations to the Site Table.</li>
 </ol>
 </div>
 <div class="fragment">
+<div class="columns">
+<div class="column" style="width:15%;">
+<figure>
+<img data-src="finger_right.png" alt="Rightarrow" style="width:100.0%" /><figcaption>Rightarrow</figcaption>
+</figure>
+</div><div class="column" style="width:5%;">
+
+</div><div class="column" style="width:75%;">
 <p>This is <em>not</em> a good idea.<br />
-It produces waaaaay too much data.</p>
+It produces <strong>waaaaay</strong> too much data.</p>
+</div>
+</div>
 </div>
 </section><section id="simplification" class="slide level2">
 <h2>Simplification</h2>
@@ -260,7 +326,89 @@ It produces waaaaay too much data.</p>
 </ol>
 </section><section id="an-example" class="slide level2">
 <h2>An example</h2>
-<p>conceptual figure</p>
+<figure>
+<img data-src="simplify_walkthrough.png" alt="Simplify example" style="width:100.0%" /><figcaption>Simplify example</figcaption>
+</figure>
+</section><section class="slide level2">
+
+<figure>
+<img data-src="simplify_walkthrough/simplify_walkthrough.0.png" alt="Simplify example" style="width:100.0%" /><figcaption>Simplify example</figcaption>
+</figure>
+</section><section class="slide level2">
+
+<figure>
+<img data-src="simplify_walkthrough/simplify_walkthrough.1.png" alt="Simplify example" style="width:100.0%" /><figcaption>Simplify example</figcaption>
+</figure>
+</section><section class="slide level2">
+
+<figure>
+<img data-src="simplify_walkthrough/simplify_walkthrough.2.png" alt="Simplify example" style="width:100.0%" /><figcaption>Simplify example</figcaption>
+</figure>
+</section><section class="slide level2">
+
+<figure>
+<img data-src="simplify_walkthrough/simplify_walkthrough.3.png" alt="Simplify example" style="width:100.0%" /><figcaption>Simplify example</figcaption>
+</figure>
+</section><section class="slide level2">
+
+<figure>
+<img data-src="simplify_walkthrough/simplify_walkthrough.4.png" alt="Simplify example" style="width:100.0%" /><figcaption>Simplify example</figcaption>
+</figure>
+</section><section class="slide level2">
+
+<figure>
+<img data-src="simplify_walkthrough/simplify_walkthrough.5.png" alt="Simplify example" style="width:100.0%" /><figcaption>Simplify example</figcaption>
+</figure>
+</section><section class="slide level2">
+
+<figure>
+<img data-src="simplify_walkthrough/simplify_walkthrough.6.png" alt="Simplify example" style="width:100.0%" /><figcaption>Simplify example</figcaption>
+</figure>
+</section><section class="slide level2">
+
+<figure>
+<img data-src="simplify_walkthrough/simplify_walkthrough.7.png" alt="Simplify example" style="width:100.0%" /><figcaption>Simplify example</figcaption>
+</figure>
+</section><section class="slide level2">
+
+<figure>
+<img data-src="simplify_walkthrough/simplify_walkthrough.8.png" alt="Simplify example" style="width:100.0%" /><figcaption>Simplify example</figcaption>
+</figure>
+</section><section class="slide level2">
+
+<figure>
+<img data-src="simplify_walkthrough/simplify_walkthrough.9.png" alt="Simplify example" style="width:100.0%" /><figcaption>Simplify example</figcaption>
+</figure>
+</section><section class="slide level2">
+
+<figure>
+<img data-src="simplify_walkthrough/simplify_walkthrough.10.png" alt="Simplify example" style="width:100.0%" /><figcaption>Simplify example</figcaption>
+</figure>
+</section><section class="slide level2">
+
+<figure>
+<img data-src="simplify_walkthrough/simplify_walkthrough.11.png" alt="Simplify example" style="width:100.0%" /><figcaption>Simplify example</figcaption>
+</figure>
+</section><section class="slide level2">
+
+<figure>
+<img data-src="simplify_walkthrough/simplify_walkthrough.12.png" alt="Simplify example" style="width:100.0%" /><figcaption>Simplify example</figcaption>
+</figure>
+</section><section class="slide level2">
+
+<figure>
+<img data-src="simplify_walkthrough/simplify_walkthrough.13.png" alt="Simplify example" style="width:100.0%" /><figcaption>Simplify example</figcaption>
+</figure>
+</section><section class="slide level2">
+
+<figure>
+<img data-src="simplify_walkthrough/simplify_walkthrough.14.png" alt="Simplify example" style="width:100.0%" /><figcaption>Simplify example</figcaption>
+</figure>
+</section><section class="slide level2">
+
+<figure>
+<img data-src="simplify_walkthrough/simplify_walkthrough.15.png" alt="Simplify example" style="width:100.0%" /><figcaption>Simplify example</figcaption>
+</figure>
 </section><section id="another-example" class="slide level2">
 <h2>Another example</h2>
 <p>example from code</p>

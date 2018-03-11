@@ -18,19 +18,19 @@ date: "12 March 2018"
 
 ## History is just a sequence of trees
 
-animated gif of trees along a chromosome
+![Trees along a chromosome](sim_ts.anim.gif)
+
 
 ## ARG?
 
-::: incremental
+::: {.incremental}
 
 1. The *pedigree* (parental relationships) and crossover locations
     would give us the tree sequence for *everyone, ever*.
 
 2. Much less can fully describe the history relevant to a *sample* of genomes.
 
-3. This is also known as the Ancestral Recombination Graph (ARG)
-    (but, is that the data structure? the coalescent-analog process?).
+3. The information is equivalent to the Ancestral Recombination Graph (ARG).
 
 4. ARGs are *hard*, to infer from data, or to work with analytically.
 
@@ -73,11 +73,11 @@ to make a fast coalescent simulator.
 :::
 :::::::
 
-## Tree sequence example
+## Example: three samples; two trees; two variant sites
 
 ![Example tree sequence](example_tree_sequence.png)
 
-## What they mean
+## Nodes and edges
 
 Edges 
 
@@ -91,7 +91,41 @@ Nodes
 
     Records: time (of birth); ID (implicit).
 
-------------------
+-------------------
+
+![Building a tree sequence](nodes_edges_walkthrough/nodes_edges_walkthrough.0.png)
+
+-------------------
+
+
+![Building a tree sequence](nodes_edges_walkthrough/nodes_edges_walkthrough.1.png)
+
+-------------------
+
+
+![Building a tree sequence](nodes_edges_walkthrough/nodes_edges_walkthrough.2.png)
+
+-------------------
+
+
+![Building a tree sequence](nodes_edges_walkthrough/nodes_edges_walkthrough.3.png)
+
+-------------------
+
+
+![Building a tree sequence](nodes_edges_walkthrough/nodes_edges_walkthrough.4.png)
+
+-------------------
+
+
+![Building a tree sequence](nodes_edges_walkthrough/nodes_edges_walkthrough.5.png)
+
+-------------------
+
+![Building a tree sequence](nodes_edges_walkthrough/nodes_edges_walkthrough.6.png)
+
+
+## Sites and mutations
 
 Mutations
 
@@ -106,13 +140,25 @@ Sites
     Records: genomic position; ancestral (root) state.
 
 
-## Nodes and edges
+------------------
 
-figure
+![Adding mutations](sites_muts_walkthrough/sites_muts_walkthrough.0.png)
 
-## Sites and mutations
+------------------
 
-another figure
+![Adding mutations](sites_muts_walkthrough/sites_muts_walkthrough.1.png)
+
+------------------
+
+![Adding mutations](sites_muts_walkthrough/sites_muts_walkthrough.2.png)
+
+------------------
+
+![Adding mutations](sites_muts_walkthrough/sites_muts_walkthrough.3.png)
+
+------------------
+
+![Adding mutations](sites_muts_walkthrough/sites_muts_walkthrough.4.png)
 
 
 ## Succinct tables
@@ -125,7 +171,7 @@ the four tables: *nodes*, *edges*, *sites*, and *mutations*.
 
 . . .
 
-These are stored efficiently (hdf5)
+These are stored efficiently (hdf5) on disk
 with a column for metadata.
 
 
@@ -139,7 +185,7 @@ We can do these things "very fast":
 1. Read in: tables $\rightarrow$ tree sequence
 2. Write out: tree sequence $\rightarrow$ tables
 3. Iterate over trees,
-4. while computing some statistic.
+4. while computing some statistic (AFS, $\pi$, $f_4$, LD, \ldots)
 5. Simplify (i.e., subset).
 
 . . .
@@ -241,7 +287,7 @@ every time an individual is born, we must:
 
 1. add each gamete to the Node Table,
 2. add entries to the Edge Table
-    recording which parent each gamete inherited each bit of genome from
+    recording which parent each gamete inherited each bit of genome from, and
 3. add any new mutations to the Mutation Table 
     and (if necessary) their locations to the Site Table.
 
@@ -249,9 +295,22 @@ every time an individual is born, we must:
 
 . . .
 
-This is *not* a good idea.  
-It produces waaaaay too much data.
+::: {.columns}
+:::::: {.column width=15%}
 
+![Rightarrow](finger_right.png){width="100%"}
+
+:::
+:::::: {.column width=5%}
+
+:::
+:::::: {.column width=75%}
+
+This is *not* a good idea.  
+It produces **waaaaay** too much data.
+
+:::
+::::::
 
 ## Simplification
 
@@ -294,9 +353,74 @@ to the history of the *samples*:
 4. Once all colors have coalesced in a given segment,
     stop propagating it.
 
-## An example
+## An example: simplify these to J and K
 
-conceptual figure
+![Simplify example](simplify_walkthrough.png){ width="100%" }
+
+-------------------
+
+![Simplify example](simplify_walkthrough/simplify_walkthrough.0.png){ width="100%" }
+
+-------------------
+
+![Simplify example](simplify_walkthrough/simplify_walkthrough.1.png){ width="100%" }
+
+-------------------
+
+![Simplify example](simplify_walkthrough/simplify_walkthrough.2.png){ width="100%" }
+
+-------------------
+
+![Simplify example](simplify_walkthrough/simplify_walkthrough.3.png){ width="100%" }
+
+-------------------
+
+![Simplify example](simplify_walkthrough/simplify_walkthrough.4.png){ width="100%" }
+
+-------------------
+
+![Simplify example](simplify_walkthrough/simplify_walkthrough.5.png){ width="100%" }
+
+-------------------
+
+![Simplify example](simplify_walkthrough/simplify_walkthrough.6.png){ width="100%" }
+
+-------------------
+
+![Simplify example](simplify_walkthrough/simplify_walkthrough.7.png){ width="100%" }
+
+-------------------
+
+![Simplify example](simplify_walkthrough/simplify_walkthrough.8.png){ width="100%" }
+
+-------------------
+
+![Simplify example](simplify_walkthrough/simplify_walkthrough.9.png){ width="100%" }
+
+-------------------
+
+![Simplify example](simplify_walkthrough/simplify_walkthrough.10.png){ width="100%" }
+
+-------------------
+
+![Simplify example](simplify_walkthrough/simplify_walkthrough.11.png){ width="100%" }
+
+-------------------
+
+![Simplify example](simplify_walkthrough/simplify_walkthrough.12.png){ width="100%" }
+
+-------------------
+
+![Simplify example](simplify_walkthrough/simplify_walkthrough.13.png){ width="100%" }
+
+-------------------
+
+![Simplify example](simplify_walkthrough/simplify_walkthrough.14.png){ width="100%" }
+
+-------------------
+
+![Simplify example](simplify_walkthrough/simplify_walkthrough.15.png){ width="100%" }
+
 
 ## Another example
 
