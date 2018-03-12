@@ -3,6 +3,11 @@ SHELL := /bin/bash
 
 .PHONY : sim_ts_gifs ne_walkthrough sm_walkthrough simp_walkthrough
 
+# gh-pages version
+../docs/broad_12_mar_2018.slides.html : broad_12_mar_2018.md broad_12_mar_2018.slides.html
+	pandoc -o $@ $(SLIDES_OPTS) --standalone --self-contained $<
+
+# local version
 broad_12_mar_2018.slides.html : file_size.png example_tree_sequence.png sim_ts.anim.gif sim_wf.anim.gif sim_wf_unlabeled.anim.gif sim_wf_simplified.anim.gif ne_walkthrough sm_walkthrough simp_walkthrough
 
 sim_ts/done sim_wf/done sim_wf_unlabeled/done sim_wf_simplified/done : make_figs.py
