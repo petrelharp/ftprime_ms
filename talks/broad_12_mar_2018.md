@@ -4,11 +4,13 @@ author: "Jerome Kelleher, Kevin Thornton, Jaime Ashander, and Peter Ralph (*me*)
 date: "12 March 2018 :: [bioRxiv](https://www.biorxiv.org/content/early/2018/01/16/248500)"
 ---
 
-This talk: [slides here](https://petrelharp.github.io/ftprime_ms/broad_12_mar_2018.slides.html)
+This talk:
 
 1. what are tree sequences and what are they good for
 2. explain application to forwards simulation recording
 3. display impressive speedups
+
+slides at [github: petrelharp/ftprime_ms/docs](https://petrelharp.github.io/fprime_ms/broad_12_mar_2018.slides.html)
 
 
 <!-- 1. explain tree sequences and why they are so efficient (5min) -->
