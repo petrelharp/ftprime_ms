@@ -1,55 +1,60 @@
 ---
 title: "Efficient pedigree recording for fast population genetics simulation"
 author: "Jerome Kelleher, Kevin Thornton, Jaime Ashander, and Peter Ralph (*me*)"
-date: "12 March 2018"
+date: "12 March 2018 :: [bioRxiv](https://www.biorxiv.org/content/early/2018/01/16/248500)"
 ---
 
+This talk: [slides here](https://petrelharp.github.io/ftprime_ms/broad_12_mar_2018.slides.html)
 
-1. explain tree sequences and why they are so efficient (5min)
-2. advertise tskit (1min)
-3. recall uses for fwds sims (2min)
-4. explain application to fwds sim recording (5min)
-5. display impressive speedups 2min)
-6. advertise other reasons to have output in tree sequences (2min)
+1. what are tree sequences and what are they good for
+2. explain application to forwards simulation recording
+3. display impressive speedups
 
 
 <!-- 1. explain tree sequences and why they are so efficient (5min) -->
 # The tree sequence
 
-## History is just a sequence of trees
+## History is a sequence of trees
+
+For a set of sampled chromosomes,
+at each position along the genome there is a genealogical tree
+that says how they are related.
 
 ![Trees along a chromosome](sim_ts.anim.gif)
 
 
-## ARG?
+----------------------
 
-::: {.incremental}
+A **tree sequence** describes this, er, sequence of trees.
 
-1. The *pedigree* (parental relationships) and crossover locations
+. . .
+
+*Observations:*
+
+1. The *pedigree* (parental relationships) plus crossover locations
     would give us the tree sequence for *everyone, ever*.
 
 2. Much less can fully describe the history relevant to a *sample* of genomes.
 
-3. The information is equivalent to the Ancestral Recombination Graph (ARG).
+3. This information is equivalent to the Ancestral Recombination Graph (ARG).
 
-4. ARGs are *hard*, to infer from data, or to work with analytically.
-
-:::
 
 -------------
 
 [Kelleher, Etheridge, and McVean](http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004842) 
 introduced the **tree sequence** data structure
-to make a fast coalescent simulator.
+for a fast coalescent simulator, [msprime](https://github.com/jeromekelleher/msprime).
 
 - stores genealogical *and* variation data **very** compactly
 
 - efficient algorithms available:
 
+    * subsetting
     * calculation of allele frequencies in arbitrary cohorts
     * linkage disequilibrium
-    * subsetting
     * log-time haplotype matching
+
+- tree-based sequence storage closely related to haplotype-matching compression
 
 
 ## Simulated file sizes
@@ -65,7 +70,7 @@ to make a fast coalescent simulator.
 - HapMap chr1 genetic map (250Mb)
 - Gutenkunst et al out-of-Africa model (3 pops)
 - mutation rate $2 \times 10^{-8}$ per gen
-- $n=10^7$ 
+- at $n=10^7$ 
 
     * about 17 million variants
     * VCF size: 318 TiB (250,000$\times$ larger)
@@ -76,6 +81,18 @@ to make a fast coalescent simulator.
 ## Example: three samples; two trees; two variant sites
 
 ![Example tree sequence](example_tree_sequence.png)
+
+-----------------------
+
+Storing a tree sequence in
+the four tables - *nodes*, *edges*, *sites*, and *mutations* -
+is *succinct* (no redundancy).
+
+. . .
+
+These are stored efficiently (hdf5) on disk
+with a bit more information (e.g., metadata).
+
 
 ## Nodes and edges
 
@@ -89,7 +106,7 @@ Nodes
 
 :   The ancestors those happen in.
 
-    Records: time (of birth); ID (implicit).
+    Records: time ago (of birth); ID (implicit).
 
 -------------------
 
@@ -131,13 +148,13 @@ Mutations
 
 :   When state changes along the tree.
 
-    Records: site it occured at; resulting state; ID (implicit).
+    Records: site it occured at; derived state.
 
 Sites 
 
 :   Where mutations fall on the genome.
 
-    Records: genomic position; ancestral (root) state.
+    Records: genomic position; ancestral (root) state; ID (implicit).
 
 
 ------------------
@@ -161,57 +178,42 @@ Sites
 ![Adding mutations](sites_muts_walkthrough/sites_muts_walkthrough.4.png)
 
 
-## Succinct tables
-
-A *tree sequence* is the data structure encoding
-this sequence of trees (with mutations).
-
-A tree sequence can be stored *succinctly* using
-the four tables: *nodes*, *edges*, *sites*, and *mutations*.
-
-. . .
-
-These are stored efficiently (hdf5) on disk
-with a column for metadata.
-
 
 <!-- 2. advertise tskit (1min) -->
-# tskit
+# tskit : a toolkit for tree sequences
 
 ## Tree sequence operations
 
-We can do these things "very fast":
+Tools in `msprime`
+can do these things "very fast":
 
 1. Read in: tables $\rightarrow$ tree sequence
 2. Write out: tree sequence $\rightarrow$ tables
 3. Iterate over trees,
-4. while computing some statistic (AFS, $\pi$, $f_4$, LD, \ldots)
+4. while computing some statistic (AFS, $\pi$, $f_4$, LD, \ldots).
 5. Simplify (i.e., subset).
 
 . . .
 
-*Upcoming:* tools for dealing with tree sequences
-will be part of [*tskit*](https://github.com/tskit-dev/tskit).
+*Upcoming:* will be moved to [*tskit*](https://github.com/tskit-dev/tskit).
 
 
-## tsinfer
+## tsinfer :: real data in tree sequences
 
-What about *real* data?
+In progress: *tsinfer* (Kelleher, McVean)
+infers tree sequences from real genomic data.
 
-Also in progress: *tsinfer* (Kelleher, McVean)
-to infer tree sequences from real data.
-
-Video:
+Watch Jerome's talk:
 [Simulating, storing & processing genetic variation data w/millions of samples](https://www.youtube.com/watch?v=MH2b9iU4oUA)
 
 
 <!-- 3. recall uses for fwds sims (2min) -->
-# Forwards simulations are useful
+# Forwards simulations
 
 ## Why forwards simulations?
 
 Coalescent simulations are *much faster*
-than forwards-time simulations
+than forwards-time, individual-based simulations
 
 . . .
 
@@ -221,9 +223,9 @@ only the ancestors of your sample.
 . . .
 
 **But:** selection, or sufficient geographic structure,
-break the assumptions that coalescent simulations rely on.
+break the assumptions of coalescent theory.
 
-## Geography, and selection
+## Geography or selection break coalescent theory
 
 So, if you
 
@@ -233,7 +235,7 @@ So, if you
 
 then you have to do forwards-time, individual-based simulations.
 
-## Whole genomes?
+---------------------------
 
 To model linked selection,
 we need chromosome-scale simulations.
@@ -245,14 +247,15 @@ Even at neutral sites!
 
 . . .
 
-Bummer.
+**Bummer.**
 
 . . .
 
-*Or not?*
+*But wait...*
+
 
 <!-- 4. explain application to fwds sim recording (5min) -->
-# Tree sequence recording
+# Forwards-time tree sequence recording
 
 ## The main idea
 
@@ -269,9 +272,7 @@ this is *equivalent* to having kept track of them throughout.
 
 ------------
 
-This will have us recording the entire genetic history of everyone in the population,
-ever,
-as we go along.
+This means recording the entire genetic history of **everyone** in the population, **ever**.
 
 .  . .
 
@@ -280,15 +281,14 @@ It is *not* clear this is a good idea.
 
 ## Tree recording strategy
 
-To record a tree sequence in real time,
-every time an individual is born, we must:
+Every time an individual is born, we must:
 
 ::: incremental
 
 1. add each gamete to the Node Table,
 2. add entries to the Edge Table
     recording which parent each gamete inherited each bit of genome from, and
-3. add any new mutations to the Mutation Table 
+3. add any new selected mutations to the Mutation Table 
     and (if necessary) their locations to the Site Table.
 
 :::
@@ -306,11 +306,24 @@ every time an individual is born, we must:
 :::
 :::::: {.column width=75%}
 
-This is *not* a good idea.  
-It produces **waaaaay** too much data.
+This produces **waaaaay** too much data.
 
 :::
 ::::::
+
+-------------------
+
+We won't end up needing the *entire* history
+of *everyone ever*,
+
+. . .
+
+but we won't know *what* we'll need until later.
+
+. . .
+
+How do we get rid of the extra stuff?
+
 
 ## Simplification
 
@@ -328,9 +341,9 @@ we want a new tree sequence for which:
 1. All marginal trees match the corresponding subtree 
     in the input tree sequence.
 
-2. Every non-sample vertex in marginal trees have at least two children.
+2. Every non-sample node in marginal trees have at least two children.
 
-3. All nodes and edges ancestral at least one sample.
+3. All nodes and edges are ancestral to at least one sample.
 
 4. No adjacent redundant edges 
     (e.g., $(\ell, x, p, c) + (x, r, p, c) \rightarrow (\ell, r, p, c)$).
@@ -422,11 +435,11 @@ to the history of the *samples*:
 ![Simplify example](simplify_walkthrough/simplify_walkthrough.15.png){ width="100%" }
 
 
-## Another example: before simplification
+## Wright-Fisher, N=10: before simplification
 
 ![Wright-Fisher tree sequence](sim_wf.anim.gif)
 
-## Another example: before simplification
+## Wright-Fisher, N=10: before simplification
 
 ![Wright-Fisher tree sequence](sim_wf_unlabeled.anim.gif)
 
@@ -437,8 +450,7 @@ to the history of the *samples*:
 
 ## *Revised* tree recording strategy
 
-To record a tree sequence in real time,
-every time an individual is born, we must:
+Every time an individual is born, we must:
 
 
 1. add each gamete to the Node Table,
@@ -447,9 +459,10 @@ every time an individual is born, we must:
 3. add any new mutations to the Mutation Table 
     and (if necessary) their locations to the Site Table.
 
+... and,
 
-4. Every so often, *simplify* the tables stored in memory.
-
+4. Every so often, *simplify* the tables so far,
+    retaining the history of the current generation.
 
 
 <!-- 5. display impressive speedups 2min) -->
@@ -462,12 +475,16 @@ every time an individual is born, we must:
 
 - Simulation: [`fwdpp`](https://github.com/molpopgen/fwdpp), by Kevin Thornton (in `C++`) ([code](https://github.com/molpopgen/fwdpy11_arg_example))
 
-- Glue: [`pybind11`](https://github.com/pybind/pybind11/)
+- Glue: [`pybind11`](https://github.com/pybind/pybind11/) and [`numpy`](http://www.numpy.org/)
+
+- Machine: Ubuntu / 2x 2.6 GHz Intel E5-2650 CPU
 
 . . .
 
-*Also:* a pure `python` implementation,
-interfacing with [`simuPOP`](https://github.com/BoPeng/simuPOP).
+*Other implementations:* 
+
+- pure `python`, interfacing with [`simuPOP`](https://github.com/BoPeng/simuPOP)
+- [cython](https://github.com/molpopgen/tutorials/blob/cython_cpp_tutorial/notebooks/wfcython.ipynb)
 
 ## Simulation parameters
 
@@ -484,16 +501,6 @@ if we recorded tree sequences ("pedigree recording")
 then the neutral mutation rate was *zero*
 but neutral mutations were added *afterwards*.
 
-------------------
-
-To compare simulations,
-the key parameter is the expected *total* number of crossovers per generation,
-or:
-$$\begin{aligned}
-    \rho = 4 N r ,
-\end{aligned}$$
-since this gives the expected number of *distinct trees* in the tree sequence.
-
 
 --------------------------
 
@@ -507,7 +514,7 @@ since this gives the expected number of *distinct trees* in the tree sequence.
 
 ## Memory use
 
-RAM use is kept down by simplifying as often as you need to.
+RAM requirements are determined by how often you simplify.
 
 
 <!-- 6. advertise other reasons to have output in tree sequences (2min) -->
@@ -524,7 +531,8 @@ RAM use is kept down by simplifying as often as you need to.
 
 3. can be output during a forwards-time simulation,
 
-4. which makes much larger simulations feasible.
+4. which not only gets you trees in the end,
+    but also makes much larger simulations possible.
 
 
 ## Future uses

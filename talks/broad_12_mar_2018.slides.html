@@ -4,7 +4,6 @@
   <meta charset="utf-8">
   <meta name="generator" content="pandoc">
   <meta name="author" content="Jerome Kelleher, Kevin Thornton, Jaime Ashander, and Peter Ralph (me)">
-  <meta name="dcterms.date" content="2018-03-12">
   <title>Efficient pedigree recording for fast population genetics simulation</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -53,48 +52,49 @@
 <section id="title-slide">
   <h1 class="title">Efficient pedigree recording for fast population genetics simulation</h1>
   <p class="author">Jerome Kelleher, Kevin Thornton, Jaime Ashander, and Peter Ralph (<em>me</em>)</p>
-  <p class="date">12 March 2018</p>
+  <p class="date">12 March 2018 :: <a href="https://www.biorxiv.org/content/early/2018/01/16/248500">bioRxiv</a></p>
 </section>
 
 <section class="slide level2">
 
+<p>This talk: <a href="https://petrelharp.github.io/ftprime_ms/broad_12_mar_2018.slides.html">slides here</a></p>
 <ol type="1">
-<li>explain tree sequences and why they are so efficient (5min)</li>
-<li>advertise tskit (1min)</li>
-<li>recall uses for fwds sims (2min)</li>
-<li>explain application to fwds sim recording (5min)</li>
-<li>display impressive speedups 2min)</li>
-<li>advertise other reasons to have output in tree sequences (2min)</li>
+<li>what are tree sequences and what are they good for</li>
+<li>explain application to forwards simulation recording</li>
+<li>display impressive speedups</li>
 </ol>
 <!-- 1. explain tree sequences and why they are so efficient (5min) -->
 </section>
-<section><section id="the-tree-sequence" class="title-slide slide level1"><h1>The tree sequence</h1></section><section id="history-is-just-a-sequence-of-trees" class="slide level2">
-<h2>History is just a sequence of trees</h2>
+<section><section id="the-tree-sequence" class="title-slide slide level1"><h1>The tree sequence</h1></section><section id="history-is-a-sequence-of-trees" class="slide level2">
+<h2>History is a sequence of trees</h2>
+<p>For a set of sampled chromosomes, at each position along the genome there is a genealogical tree that says how they are related.</p>
 <figure>
 <img data-src="sim_ts.anim.gif" alt="Trees along a chromosome" /><figcaption>Trees along a chromosome</figcaption>
 </figure>
-</section><section id="arg" class="slide level2">
-<h2>ARG?</h2>
-<div class="incremental">
+</section><section class="slide level2">
+
+<p>A <strong>tree sequence</strong> describes this, er, sequence of trees.</p>
+<div class="fragment">
+<p><em>Observations:</em></p>
 <ol type="1">
-<li><p>The <em>pedigree</em> (parental relationships) and crossover locations would give us the tree sequence for <em>everyone, ever</em>.</p></li>
+<li><p>The <em>pedigree</em> (parental relationships) plus crossover locations would give us the tree sequence for <em>everyone, ever</em>.</p></li>
 <li><p>Much less can fully describe the history relevant to a <em>sample</em> of genomes.</p></li>
-<li><p>The information is equivalent to the Ancestral Recombination Graph (ARG).</p></li>
-<li><p>ARGs are <em>hard</em>, to infer from data, or to work with analytically.</p></li>
+<li><p>This information is equivalent to the Ancestral Recombination Graph (ARG).</p></li>
 </ol>
 </div>
 </section><section class="slide level2">
 
-<p><a href="http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004842">Kelleher, Etheridge, and McVean</a> introduced the <strong>tree sequence</strong> data structure to make a fast coalescent simulator.</p>
+<p><a href="http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004842">Kelleher, Etheridge, and McVean</a> introduced the <strong>tree sequence</strong> data structure for a fast coalescent simulator, <a href="https://github.com/jeromekelleher/msprime">msprime</a>.</p>
 <ul>
 <li><p>stores genealogical <em>and</em> variation data <strong>very</strong> compactly</p></li>
 <li><p>efficient algorithms available:</p>
 <ul>
+<li>subsetting</li>
 <li>calculation of allele frequencies in arbitrary cohorts</li>
 <li>linkage disequilibrium</li>
-<li>subsetting</li>
 <li>log-time haplotype matching</li>
 </ul></li>
+<li><p>tree-based sequence storage closely related to haplotype-matching compression</p></li>
 </ul>
 </section><section id="simulated-file-sizes" class="slide level2">
 <h2>Simulated file sizes</h2>
@@ -108,7 +108,7 @@
 <li>HapMap chr1 genetic map (250Mb)</li>
 <li>Gutenkunst et al out-of-Africa model (3 pops)</li>
 <li>mutation rate <span class="math inline">\(2 \times 10^{-8}\)</span> per gen</li>
-<li><p><span class="math inline">\(n=10^7\)</span></p>
+<li><p>at <span class="math inline">\(n=10^7\)</span></p>
 <ul>
 <li>about 17 million variants</li>
 <li>VCF size: 318 TiB (250,000<span class="math inline">\(\times\)</span> larger)</li>
@@ -121,6 +121,12 @@
 <figure>
 <img data-src="example_tree_sequence.png" alt="Example tree sequence" /><figcaption>Example tree sequence</figcaption>
 </figure>
+</section><section class="slide level2">
+
+<p>Storing a tree sequence in the four tables - <em>nodes</em>, <em>edges</em>, <em>sites</em>, and <em>mutations</em> - is <em>succinct</em> (no redundancy).</p>
+<div class="fragment">
+<p>These are stored efficiently (hdf5) on disk with a bit more information (e.g., metadata).</p>
+</div>
 </section><section id="nodes-and-edges" class="slide level2">
 <h2>Nodes and edges</h2>
 <dl>
@@ -130,7 +136,7 @@
 </dd>
 <dt>Nodes</dt>
 <dd><p>The ancestors those happen in.</p>
-<p>Records: time (of birth); ID (implicit).</p>
+<p>Records: time ago (of birth); ID (implicit).</p>
 </dd>
 </dl>
 </section><section class="slide level2">
@@ -173,11 +179,11 @@
 <dl>
 <dt>Mutations</dt>
 <dd><p>When state changes along the tree.</p>
-<p>Records: site it occured at; resulting state; ID (implicit).</p>
+<p>Records: site it occured at; derived state.</p>
 </dd>
 <dt>Sites</dt>
 <dd><p>Where mutations fall on the genome.</p>
-<p>Records: genomic position; ancestral (root) state.</p>
+<p>Records: genomic position; ancestral (root) state; ID (implicit).</p>
 </dd>
 </dl>
 </section><section class="slide level2">
@@ -205,67 +211,59 @@
 <figure>
 <img data-src="sites_muts_walkthrough/sites_muts_walkthrough.4.png" alt="Adding mutations" /><figcaption>Adding mutations</figcaption>
 </figure>
-</section><section id="succinct-tables" class="slide level2">
-<h2>Succinct tables</h2>
-<p>A <em>tree sequence</em> is the data structure encoding this sequence of trees (with mutations).</p>
-<p>A tree sequence can be stored <em>succinctly</em> using the four tables: <em>nodes</em>, <em>edges</em>, <em>sites</em>, and <em>mutations</em>.</p>
-<div class="fragment">
-<p>These are stored efficiently (hdf5) on disk with a column for metadata.</p>
 <!-- 2. advertise tskit (1min) -->
-</div>
 </section></section>
-<section><section id="tskit" class="title-slide slide level1"><h1>tskit</h1></section><section id="tree-sequence-operations" class="slide level2">
+<section><section id="tskit-a-toolkit-for-tree-sequences" class="title-slide slide level1"><h1>tskit : a toolkit for tree sequences</h1></section><section id="tree-sequence-operations" class="slide level2">
 <h2>Tree sequence operations</h2>
-<p>We can do these things “very fast”:</p>
+<p>Tools in <code>msprime</code> can do these things “very fast”:</p>
 <ol type="1">
 <li>Read in: tables <span class="math inline">\(\rightarrow\)</span> tree sequence</li>
 <li>Write out: tree sequence <span class="math inline">\(\rightarrow\)</span> tables</li>
 <li>Iterate over trees,</li>
-<li>while computing some statistic (AFS, <span class="math inline">\(\pi\)</span>, <span class="math inline">\(f_4\)</span>, LD, )</li>
+<li>while computing some statistic (AFS, <span class="math inline">\(\pi\)</span>, <span class="math inline">\(f_4\)</span>, LD, ).</li>
 <li>Simplify (i.e., subset).</li>
 </ol>
 <div class="fragment">
-<p><em>Upcoming:</em> tools for dealing with tree sequences will be part of <a href="https://github.com/tskit-dev/tskit"><em>tskit</em></a>.</p>
+<p><em>Upcoming:</em> will be moved to <a href="https://github.com/tskit-dev/tskit"><em>tskit</em></a>.</p>
 </div>
-</section><section id="tsinfer" class="slide level2">
-<h2>tsinfer</h2>
-<p>What about <em>real</em> data?</p>
-<p>Also in progress: <em>tsinfer</em> (Kelleher, McVean) to infer tree sequences from real data.</p>
-<p>Video: <a href="https://www.youtube.com/watch?v=MH2b9iU4oUA">Simulating, storing &amp; processing genetic variation data w/millions of samples</a></p>
+</section><section id="tsinfer-real-data-in-tree-sequences" class="slide level2">
+<h2>tsinfer :: real data in tree sequences</h2>
+<p>In progress: <em>tsinfer</em> (Kelleher, McVean) infers tree sequences from real genomic data.</p>
+<p>Watch Jerome’s talk: <a href="https://www.youtube.com/watch?v=MH2b9iU4oUA">Simulating, storing &amp; processing genetic variation data w/millions of samples</a></p>
 <!-- 3. recall uses for fwds sims (2min) -->
 </section></section>
-<section><section id="forwards-simulations-are-useful" class="title-slide slide level1"><h1>Forwards simulations are useful</h1></section><section id="why-forwards-simulations" class="slide level2">
+<section><section id="forwards-simulations" class="title-slide slide level1"><h1>Forwards simulations</h1></section><section id="why-forwards-simulations" class="slide level2">
 <h2>Why forwards simulations?</h2>
-<p>Coalescent simulations are <em>much faster</em> than forwards-time simulations</p>
+<p>Coalescent simulations are <em>much faster</em> than forwards-time, individual-based simulations</p>
 <div class="fragment">
 <p>because they don’t have to keep track of <em>everyone</em>, only the ancestors of your sample.</p>
 </div>
 <div class="fragment">
-<p><strong>But:</strong> selection, or sufficient geographic structure, break the assumptions that coalescent simulations rely on.</p>
+<p><strong>But:</strong> selection, or sufficient geographic structure, break the assumptions of coalescent theory.</p>
 </div>
-</section><section id="geography-and-selection" class="slide level2">
-<h2>Geography, and selection</h2>
+</section><section id="geography-or-selection-break-coalescent-theory" class="slide level2">
+<h2>Geography or selection break coalescent theory</h2>
 <p>So, if you</p>
 <ol type="1">
 <li>have more than a couple of loci under selection, and/or</li>
 <li>have fine enough scale geography that demographic fluctuations are important (e.g., continuous space)</li>
 </ol>
 <p>then you have to do forwards-time, individual-based simulations.</p>
-</section><section id="whole-genomes" class="slide level2">
-<h2>Whole genomes?</h2>
+</section><section class="slide level2">
+
 <p>To model linked selection, we need chromosome-scale simulations.</p>
 <div class="fragment">
 <p>Then every individual needs to carry around her genotype (somehow). Even at neutral sites!</p>
 </div>
 <div class="fragment">
-<p>Bummer.</p>
+<p><strong>Bummer.</strong></p>
 </div>
 <div class="fragment">
-<p><em>Or not?</em></p>
+<p><em>But wait…</em></p>
 <!-- 4. explain application to fwds sim recording (5min) -->
 </div>
 </section></section>
-<section><section id="tree-sequence-recording" class="title-slide slide level1"><h1>Tree sequence recording</h1></section><section id="the-main-idea" class="slide level2">
+<section><section id="forwards-time-tree-sequence-recording" class="title-slide slide level1"><h1>Forwards-time tree sequence recording</h1></section><section id="the-main-idea" class="slide level2">
 <h2>The main idea</h2>
 <p>If we <em>record the tree sequence</em> that relates everyone to everyone else,</p>
 <p>after the simulation is over we can put neutral mutations down on the trees.</p>
@@ -275,18 +273,18 @@
 </div>
 </section><section class="slide level2">
 
-<p>This will have us recording the entire genetic history of everyone in the population, ever, as we go along.</p>
+<p>This means recording the entire genetic history of <strong>everyone</strong> in the population, <strong>ever</strong>.</p>
 <div class="fragment">
 <p>It is <em>not</em> clear this is a good idea.</p>
 </div>
 </section><section id="tree-recording-strategy" class="slide level2">
 <h2>Tree recording strategy</h2>
-<p>To record a tree sequence in real time, every time an individual is born, we must:</p>
+<p>Every time an individual is born, we must:</p>
 <div class="incremental">
 <ol type="1">
 <li>add each gamete to the Node Table,</li>
 <li>add entries to the Edge Table recording which parent each gamete inherited each bit of genome from, and</li>
-<li>add any new mutations to the Mutation Table and (if necessary) their locations to the Site Table.</li>
+<li>add any new selected mutations to the Mutation Table and (if necessary) their locations to the Site Table.</li>
 </ol>
 </div>
 <div class="fragment">
@@ -298,10 +296,18 @@
 </div><div class="column" style="width:5%;">
 
 </div><div class="column" style="width:75%;">
-<p>This is <em>not</em> a good idea.<br />
-It produces <strong>waaaaay</strong> too much data.</p>
+<p>This produces <strong>waaaaay</strong> too much data.</p>
 </div>
 </div>
+</div>
+</section><section class="slide level2">
+
+<p>We won’t end up needing the <em>entire</em> history of <em>everyone ever</em>,</p>
+<div class="fragment">
+<p>but we won’t know <em>what</em> we’ll need until later.</p>
+</div>
+<div class="fragment">
+<p>How do we get rid of the extra stuff?</p>
 </div>
 </section><section id="simplification" class="slide level2">
 <h2>Simplification</h2>
@@ -311,8 +317,8 @@ It produces <strong>waaaaay</strong> too much data.</p>
 <p>Concretely, given an input tree sequence and a subset of its nodes we call the <em>samples</em>, we want a new tree sequence for which:</p>
 <ol type="1">
 <li><p>All marginal trees match the corresponding subtree in the input tree sequence.</p></li>
-<li><p>Every non-sample vertex in marginal trees have at least two children.</p></li>
-<li><p>All nodes and edges ancestral at least one sample.</p></li>
+<li><p>Every non-sample node in marginal trees have at least two children.</p></li>
+<li><p>All nodes and edges are ancestral to at least one sample.</p></li>
 <li><p>No adjacent redundant edges (e.g., <span class="math inline">\((\ell, x, p, c) + (x, r, p, c) \rightarrow (\ell, r, p, c)\)</span>).</p></li>
 </ol>
 </section><section class="slide level2">
@@ -409,13 +415,13 @@ It produces <strong>waaaaay</strong> too much data.</p>
 <figure>
 <img data-src="simplify_walkthrough/simplify_walkthrough.15.png" alt="Simplify example" style="width:100.0%" /><figcaption>Simplify example</figcaption>
 </figure>
-</section><section id="another-example-before-simplification" class="slide level2">
-<h2>Another example: before simplification</h2>
+</section><section id="wright-fisher-n10-before-simplification" class="slide level2">
+<h2>Wright-Fisher, N=10: before simplification</h2>
 <figure>
 <img data-src="sim_wf.anim.gif" alt="Wright-Fisher tree sequence" /><figcaption>Wright-Fisher tree sequence</figcaption>
 </figure>
-</section><section id="another-example-before-simplification-1" class="slide level2">
-<h2>Another example: before simplification</h2>
+</section><section id="wright-fisher-n10-before-simplification-1" class="slide level2">
+<h2>Wright-Fisher, N=10: before simplification</h2>
 <figure>
 <img data-src="sim_wf_unlabeled.anim.gif" alt="Wright-Fisher tree sequence" /><figcaption>Wright-Fisher tree sequence</figcaption>
 </figure>
@@ -426,12 +432,15 @@ It produces <strong>waaaaay</strong> too much data.</p>
 </figure>
 </section><section id="revised-tree-recording-strategy" class="slide level2">
 <h2><em>Revised</em> tree recording strategy</h2>
-<p>To record a tree sequence in real time, every time an individual is born, we must:</p>
+<p>Every time an individual is born, we must:</p>
 <ol type="1">
 <li>add each gamete to the Node Table,</li>
 <li>add entries to the Edge Table recording which parent each gamete inherited each bit of genome from</li>
-<li><p>add any new mutations to the Mutation Table and (if necessary) their locations to the Site Table.</p></li>
-<li><p>Every so often, <em>simplify</em> the tables stored in memory.</p></li>
+<li>add any new mutations to the Mutation Table and (if necessary) their locations to the Site Table.</li>
+</ol>
+<p>… and,</p>
+<ol start="4" type="1">
+<li>Every so often, <em>simplify</em> the tables so far, retaining the history of the current generation.</li>
 </ol>
 <!-- 5. display impressive speedups 2min) -->
 </section></section>
@@ -440,10 +449,15 @@ It produces <strong>waaaaay</strong> too much data.</p>
 <ul>
 <li><p>Recording, simplifying, and output of tables: <code>C</code> code in <code>msprime</code>. (soon: <code>tskit</code>)</p></li>
 <li><p>Simulation: <a href="https://github.com/molpopgen/fwdpp"><code>fwdpp</code></a>, by Kevin Thornton (in <code>C++</code>) (<a href="https://github.com/molpopgen/fwdpy11_arg_example">code</a>)</p></li>
-<li><p>Glue: <a href="https://github.com/pybind/pybind11/"><code>pybind11</code></a></p></li>
+<li><p>Glue: <a href="https://github.com/pybind/pybind11/"><code>pybind11</code></a> and <a href="http://www.numpy.org/"><code>numpy</code></a></p></li>
+<li><p>Machine: Ubuntu / 2x 2.6 GHz Intel E5-2650 CPU</p></li>
 </ul>
 <div class="fragment">
-<p><em>Also:</em> a pure <code>python</code> implementation, interfacing with <a href="https://github.com/BoPeng/simuPOP"><code>simuPOP</code></a>.</p>
+<p><em>Other implementations:</em></p>
+<ul>
+<li>pure <code>python</code>, interfacing with <a href="https://github.com/BoPeng/simuPOP"><code>simuPOP</code></a></li>
+<li><a href="https://github.com/molpopgen/tutorials/blob/cython_cpp_tutorial/notebooks/wfcython.ipynb">cython</a></li>
+</ul>
 </div>
 </section><section id="simulation-parameters" class="slide level2">
 <h2>Simulation parameters</h2>
@@ -458,11 +472,6 @@ It produces <strong>waaaaay</strong> too much data.</p>
 </div>
 </section><section class="slide level2">
 
-<p>To compare simulations, the key parameter is the expected <em>total</em> number of crossovers per generation, or: <span class="math display">\[\begin{aligned}
-    \rho = 4 N r ,
-\end{aligned}\]</span> since this gives the expected number of <em>distinct trees</em> in the tree sequence.</p>
-</section><section class="slide level2">
-
 <figure>
 <img data-src="rawspeed.png" alt="Total run time per single simulation as a function of region length." style="width:80.0%" /><figcaption>Total run time per single simulation as a function of region length.</figcaption>
 </figure>
@@ -473,7 +482,7 @@ It produces <strong>waaaaay</strong> too much data.</p>
 </figure>
 </section><section id="memory-use" class="slide level2">
 <h2>Memory use</h2>
-<p>RAM use is kept down by simplifying as often as you need to.</p>
+<p>RAM requirements are determined by how often you simplify.</p>
 <!-- 6. advertise other reasons to have output in tree sequences (2min) -->
 </section></section>
 <section><section id="moving-forward" class="title-slide slide level1"><h1>Moving forward</h1></section><section id="tree-sequences" class="slide level2">
@@ -482,7 +491,7 @@ It produces <strong>waaaaay</strong> too much data.</p>
 <li><p>are compact, useful ways to store population history <em>including</em> genome sequence.</p></li>
 <li><p>can be succinctly encoded in a set of tables, which we provide tools for using.</p></li>
 <li><p>can be output during a forwards-time simulation,</p></li>
-<li><p>which makes much larger simulations feasible.</p></li>
+<li><p>which not only gets you trees in the end, but also makes much larger simulations possible.</p></li>
 </ol>
 </section><section id="future-uses" class="slide level2">
 <h2>Future uses</h2>
