@@ -211,25 +211,6 @@
 <figure>
 <img data-src="sites_muts_walkthrough/sites_muts_walkthrough.4.png" alt="Adding mutations" /><figcaption>Adding mutations</figcaption>
 </figure>
-<!-- 2. advertise tskit (1min) -->
-</section></section>
-<section><section id="tskit-a-toolkit-for-tree-sequences" class="title-slide slide level1"><h1>tskit : a toolkit for tree sequences</h1></section><section id="tree-sequence-operations" class="slide level2">
-<h2>Tree sequence operations</h2>
-<p>Tools in <code>msprime</code> can do these things “very fast”:</p>
-<ol type="1">
-<li>Read in: tables <span class="math inline">\(\rightarrow\)</span> tree sequence</li>
-<li>Write out: tree sequence <span class="math inline">\(\rightarrow\)</span> tables</li>
-<li>Iterate over trees,</li>
-<li>while computing some statistic (AFS, <span class="math inline">\(\pi\)</span>, <span class="math inline">\(f_4\)</span>, LD, ).</li>
-<li>Simplify (i.e., subset).</li>
-</ol>
-<div class="fragment">
-<p><em>Upcoming:</em> will be moved to <a href="https://github.com/tskit-dev/tskit"><em>tskit</em></a>.</p>
-</div>
-</section><section id="tsinfer-real-data-in-tree-sequences" class="slide level2">
-<h2>tsinfer :: real data in tree sequences</h2>
-<p>In progress: <em>tsinfer</em> (Kelleher, McVean) infers tree sequences from real genomic data.</p>
-<p>Watch Jerome’s talk: <a href="https://www.youtube.com/watch?v=MH2b9iU4oUA">Simulating, storing &amp; processing genetic variation data w/millions of samples</a></p>
 <!-- 3. recall uses for fwds sims (2min) -->
 </section></section>
 <section><section id="forwards-simulations" class="title-slide slide level1"><h1>Forwards simulations</h1></section><section id="why-forwards-simulations" class="slide level2">
@@ -317,7 +298,7 @@
 <p>Concretely, given an input tree sequence and a subset of its nodes we call the <em>samples</em>, we want a new tree sequence for which:</p>
 <ol type="1">
 <li><p>All marginal trees match the corresponding subtree in the input tree sequence.</p></li>
-<li><p>Every non-sample node in marginal trees have at least two children.</p></li>
+<li><p>Every non-sample node in marginal trees has at least two children.</p></li>
 <li><p>All nodes and edges are ancestral to at least one sample.</p></li>
 <li><p>No adjacent redundant edges (e.g., <span class="math inline">\((\ell, x, p, c) + (x, r, p, c) \rightarrow (\ell, r, p, c)\)</span>).</p></li>
 </ol>
@@ -455,7 +436,7 @@
 <div class="fragment">
 <p><em>Other implementations:</em></p>
 <ul>
-<li>pure <code>python</code>, interfacing with <a href="https://github.com/BoPeng/simuPOP"><code>simuPOP</code></a></li>
+<li><a href="https://github.com/ashander/ftprime">pure <code>python</code></a>, interfacing with <a href="https://github.com/BoPeng/simuPOP"><code>simuPOP</code></a></li>
 <li><a href="https://github.com/molpopgen/tutorials/blob/cython_cpp_tutorial/notebooks/wfcython.ipynb">cython</a></li>
 </ul>
 </div>
@@ -485,7 +466,24 @@
 <p>RAM requirements are determined by how often you simplify.</p>
 <!-- 6. advertise other reasons to have output in tree sequences (2min) -->
 </section></section>
-<section><section id="moving-forward" class="title-slide slide level1"><h1>Moving forward</h1></section><section id="tree-sequences" class="slide level2">
+<section><section id="moving-forward" class="title-slide slide level1"><h1>Moving forward</h1></section><section id="tskit-a-toolkit-for-tree-sequences" class="slide level2">
+<h2>tskit : a toolkit for tree sequences</h2>
+<p>Tools in <code>msprime</code> can do these things “very fast”:</p>
+<ol type="1">
+<li>Read in: tables <span class="math inline">\(\rightarrow\)</span> tree sequence</li>
+<li>Write out: tree sequence <span class="math inline">\(\rightarrow\)</span> tables</li>
+<li>Iterate over trees,</li>
+<li>while computing some statistic (AFS, <span class="math inline">\(\pi\)</span>, <span class="math inline">\(f_4\)</span>, LD, ).</li>
+<li>Simplify (i.e., subset).</li>
+</ol>
+<div class="fragment">
+<p><em>Upcoming:</em> will be moved to <a href="https://github.com/tskit-dev/tskit"><em>tskit</em></a>.</p>
+</div>
+</section><section id="tsinfer-real-data-in-tree-sequences" class="slide level2">
+<h2>tsinfer :: real data in tree sequences</h2>
+<p>In progress: <em>tsinfer</em> (Kelleher, Wong, and McVean) infers tree sequences from real genomic data.</p>
+<p>Watch Jerome’s talk: <a href="https://www.youtube.com/watch?v=MH2b9iU4oUA">Simulating, storing &amp; processing genetic variation data w/millions of samples</a></p>
+</section><section id="tree-sequences" class="slide level2">
 <h2>Tree sequences …</h2>
 <ol type="1">
 <li><p>are compact, useful ways to store population history <em>including</em> genome sequence.</p></li>

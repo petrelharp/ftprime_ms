@@ -179,34 +179,6 @@ Sites
 
 
 
-<!-- 2. advertise tskit (1min) -->
-# tskit : a toolkit for tree sequences
-
-## Tree sequence operations
-
-Tools in `msprime`
-can do these things "very fast":
-
-1. Read in: tables $\rightarrow$ tree sequence
-2. Write out: tree sequence $\rightarrow$ tables
-3. Iterate over trees,
-4. while computing some statistic (AFS, $\pi$, $f_4$, LD, \ldots).
-5. Simplify (i.e., subset).
-
-. . .
-
-*Upcoming:* will be moved to [*tskit*](https://github.com/tskit-dev/tskit).
-
-
-## tsinfer :: real data in tree sequences
-
-In progress: *tsinfer* (Kelleher, McVean)
-infers tree sequences from real genomic data.
-
-Watch Jerome's talk:
-[Simulating, storing & processing genetic variation data w/millions of samples](https://www.youtube.com/watch?v=MH2b9iU4oUA)
-
-
 <!-- 3. recall uses for fwds sims (2min) -->
 # Forwards simulations
 
@@ -341,7 +313,7 @@ we want a new tree sequence for which:
 1. All marginal trees match the corresponding subtree 
     in the input tree sequence.
 
-2. Every non-sample node in marginal trees have at least two children.
+2. Every non-sample node in marginal trees has at least two children.
 
 3. All nodes and edges are ancestral to at least one sample.
 
@@ -483,7 +455,7 @@ Every time an individual is born, we must:
 
 *Other implementations:* 
 
-- pure `python`, interfacing with [`simuPOP`](https://github.com/BoPeng/simuPOP)
+- [pure `python`](https://github.com/ashander/ftprime), interfacing with [`simuPOP`](https://github.com/BoPeng/simuPOP)
 - [cython](https://github.com/molpopgen/tutorials/blob/cython_cpp_tutorial/notebooks/wfcython.ipynb)
 
 ## Simulation parameters
@@ -520,6 +492,32 @@ RAM requirements are determined by how often you simplify.
 <!-- 6. advertise other reasons to have output in tree sequences (2min) -->
 
 # Moving forward
+
+<!-- 2. advertise tskit (1min) -->
+## tskit : a toolkit for tree sequences
+
+Tools in `msprime`
+can do these things "very fast":
+
+1. Read in: tables $\rightarrow$ tree sequence
+2. Write out: tree sequence $\rightarrow$ tables
+3. Iterate over trees,
+4. while computing some statistic (AFS, $\pi$, $f_4$, LD, \ldots).
+5. Simplify (i.e., subset).
+
+. . .
+
+*Upcoming:* will be moved to [*tskit*](https://github.com/tskit-dev/tskit).
+
+
+## tsinfer :: real data in tree sequences
+
+In progress: *tsinfer* (Kelleher, Wong, and McVean)
+infers tree sequences from real genomic data.
+
+Watch Jerome's talk:
+[Simulating, storing & processing genetic variation data w/millions of samples](https://www.youtube.com/watch?v=MH2b9iU4oUA)
+
 
 ## Tree sequences ...
 
