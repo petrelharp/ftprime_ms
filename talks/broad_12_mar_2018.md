@@ -98,7 +98,7 @@ with a bit more information (e.g., metadata).
 
 Edges 
 
-:   Common ancestor (i.e., coalescent) events.
+:   Who inherits from who; only *necessary* for coalescent events.
 
     Records: interval (left, right); parent node; child node.
 
@@ -148,7 +148,7 @@ Mutations
 
 :   When state changes along the tree.
 
-    Records: site it occured at; derived state.
+    Records: site it occured at; node it occurred in; derived state.
 
 Sites 
 
@@ -443,7 +443,7 @@ Every time an individual is born, we must:
 ## Benchmark implementation
 
 - Recording, simplifying, and output of tables: 
-    `C` code in `msprime`. (soon: `tskit`)
+    `C` code in `msprime`.
 
 - Simulation: [`fwdpp`](https://github.com/molpopgen/fwdpp), by Kevin Thornton (in `C++`) ([code](https://github.com/molpopgen/fwdpy11_arg_example))
 
@@ -549,6 +549,10 @@ Watch Jerome's talk:
 # Thanks
 
 ## Acknowledgements
+
+Jerome, Jaime, and Kevin: 
+
+[![Jerome](jerome.jpeg){width="30%"}](http://jeromekelleher.net/pages/about.html), [![Jaime](jaime.jpg){width="30%"}](http://www.ashander.info/) [![Kevin](kevin.jpeg){width="30%"}](https://github.com/molpopgen).
 
 Funding: NSF (PR); Wellcome Trust (JK); NIH (KRT); USF&WS (JDA).
 
