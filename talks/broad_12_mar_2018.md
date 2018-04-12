@@ -335,7 +335,7 @@ to the history of the *samples*:
 
 3. If two colors go in the same spot (*coalescence*),
     replace with a new color (unique to that ancestor).
-    Output a node for the ancestor and an edge for the coalescence.)
+    Output a node for the ancestor and an edge for the coalescence.
 
 4. Once all colors have coalesced in a given segment,
     stop propagating it.
