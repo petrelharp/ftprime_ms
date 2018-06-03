@@ -67,6 +67,48 @@ for ax in (ax_fwdpp, ax_fwdpp_arg):
 fig.tight_layout()
 plt.savefig("rawspeed.pdf")
 
+# same, on a log scale
+data = data[data['sel'] == True]
+data.sort_values(by='rho', inplace=True)
+groups = data.groupby(['engine', 'arg', 'queue', 'N'])
+fig, (ax_fwdpp, ax_fwdpp_arg) = plt.subplots(
+    1, 2, sharex=True, sharey=True)
+for name, group in groups:
+    lstyle = '-'
+    if name[0] == 'fwdpy11' and name[1] is False:
+        ax = ax_fwdpp
+    if name[0] == 'fwdpy11' and name[1] is True:
+        ax = ax_fwdpp_arg
+    m = points[name[3]]
+    if name[0] == 'simuPOP':
+        continue
+        ax = ax_simupop
+        if name[1] is True:
+            ax = ax_simupop_arg
+    mfacecolor = colors[name[3]]
+    if name[2] is True:
+        lstyle = 'dashed'
+        mfacecolor = 'none'
+    popsize = int(name[3])
+    ax.plot(group.rho, group.time / (60.**2.), marker=m,
+            ms=4, linestyle=lstyle, label=r'$N = {:.0e}$'.format(popsize),
+            color=colors[name[3]],
+            markerfacecolor=mfacecolor)
+
+ax_fwdpp.legend(loc='upper left',frameon=False)
+ax_fwdpp.set_title("With neutral mutations", fontsize='medium')
+ax_fwdpp_arg.set_title("With pedigree recording", fontsize='medium')
+ax_fwdpp.set_ylabel("Run time (hours)")
+ax_fwdpp.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
+ax_fwdpp_arg.set_xlabel('Scaled recombination rate (' + r'$\rho = 4Nr$)')
+ax_fwdpp_arg.set_xticks([1e3, 1e4, 1e5])
+for ax in (ax_fwdpp, ax_fwdpp_arg):
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+fig.tight_layout()
+plt.savefig("rawspeed_logy.pdf")
+
+
 # Plot the relative speedup due to ARG tracking for the sims with selection
 
 data_arg = data[(data['arg'] == True) & (data['queue'] == False)].copy()

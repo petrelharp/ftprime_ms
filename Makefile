@@ -2,10 +2,10 @@
 
 all: forwards_paper.pdf
 
-forwards_paper.pdf : method_diagram.pdf references.bib example_tree_sequence.pdf wf-before-after.pdf simplify-state-diagram.pdf
+forwards_paper.pdf : method_diagram.pdf references.bib example_tree_sequence.pdf wf-before-after.pdf simplify-state-diagram.pdf review-responses.tex review-response-commands.tex
 
 clean: 
-	-rm *.aux *.log *.bbl *.blg
+	-rm -f *.aux *.log *.bbl *.blg
 
 %.pdf : %.tex %.bbl
 	while ( pdflatex $<;  grep -q "Rerun to get" $*.log ) do true ; done

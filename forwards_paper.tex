@@ -3,11 +3,9 @@
 \usepackage{amsmath, amssymb}
 \usepackage[hidelinks]{hyperref}
 \usepackage[utf8]{inputenc}
-\usepackage{natbib}
 \usepackage{graphicx}
 \usepackage{enumitem}
 \usepackage{listings}
-\bibliographystyle{plainnat}
 % \usepackage[T1]{fontenc}
 
 \include{macros}
@@ -17,6 +15,7 @@
 \newcommand{\justc}{\texttt{C}}
 \newcommand{\cpp}{\texttt{C++}}
 \newcommand{\msprime}{\texttt{msprime}}
+\newcommand{\tskit}{\texttt{tskit}}
 \newcommand{\ftprime}{\texttt{ftprime}}
 \newcommand{\nodes}{\texttt{nodes}}
 \newcommand{\edgesets}{\texttt{edgesets}}
@@ -52,6 +51,42 @@
 \newcommand{\jk}[1]{{\em \color{red} #1}}
 \newcommand{\jda}[1]{{\em \color{cyan} #1}}
 
+%% for submitting with responses to reviews
+\newif\ifsubmission
+% \submissiontrue
+\submissionfalse
+\ifsubmission
+    % % stuff for submission
+    \usepackage[nofiglist,nomarkers,figuresonly]{endfloat}
+    \usepackage{setspace}
+    % \doublespacing
+    \bibliographystyle{plos2015}
+    \newcommand\citet{\cite}
+    \newcommand\citep{\cite}
+    \renewcommand\includegraphics{\relax}
+    \renewcommand{\includegraphics}[2][]{\relax}
+    \renewcommand{\figurename}{Fig.}
+    \newcommand{\Figure}{Fig }
+    \newcommand{\Figures}{Fig }
+\else
+    % for the nice version
+    \usepackage[square,sort,comma,numbers]{natbib} \bibpunct{(}{)}{;}{author-year}{}{,} 
+    \bibliographystyle{plainnat}
+    \newcommand{\Figure}{{Figure }}
+    \newcommand{\Figures}{{Figures }}
+\fi
+% grrr
+\newcommand{\citetx}[2][]{\ifsubmission#1 \cite{#2}\else\citet{#2}\fi}
+
+% Responses to reviews
+\input{review-response-commands}
+% set this to show line numbers and include responses to reviews or not
+\newif\ifreviewresponses
+\reviewresponsestrue  % include them
+% \reviewresponsesfalse  % don't include them
+\newcommand{\responsefile}{review-responses}  % name of the review responses file
+
+
 \begin{document}
 
 \title{Efficient pedigree recording for fast population genetics simulation}
@@ -64,25 +99,37 @@
 
 
 \begin{abstract}
-    In this paper we describe how to
-    efficiently record the entire genetic history of a population
-    during a forwards-time, individual-based population genetics simulation.
-    This dramatically reduces the computational burden of tracking individual genomes
-    by simulating only those loci that may affect reproduction (those having non-neutral variants),
-    and recording history as a \emph{succinct tree sequence} as introduced in the software package \msprime,
+    In this paper we describe how to efficiently record the entire genetic history of a population
+    in forwards-time, individual-based population genetics simulations with arbitrary breeding models,
+    population structure and demography.
+    This approach dramatically reduces the computational burden of tracking individual genomes
+    by allowing us to simulate only those loci that may affect reproduction
+    (those having non-neutral variants).
+    The genetic history of the population is recorded as a succinct tree sequence
+    as introduced in the software package \msprime,
     on which neutral mutations can be quickly placed afterwards.
-    We implement the method in two popular forwards-time simulation frameworks,
-    which speeds up large, whole-genome simulations by one to two orders of magnitude.
-    In addition to speed, the method has several advantages:
+    Recording the results of each breeding event
+    results in a linear growth in the amount of information that must be stored.
+    However, there is a great deal of redundancy in this information,
+    since the majority of individuals simulated over the course of the simulation
+    will leave no descendents in the eventual sample.
+    We solve this storage problem by providing an algorithm to quickly `simplify'
+    a tree sequence by removing this irrelevant history for a given set of genomes.
+    By periodically simplifying the history with respect to the extant population,
+    we show that the total storage space required is modest
+    and overall large efficiency gains can be made over classical forward-time simulations.
+    We implement a general-purpose framework for recording and simplifying genealogical data,
+    which can be used to make simulations of any population model more efficient.
+    We modify two popular forwards-time simulation frameworks to use this new approach
+    and observe efficiency gains in large, whole-genome simulations of one to two orders of magnitude.
+    In addition to speed, our method for recording pedigrees has several advantages:
     (1) All marginal genealogies of the simulated individuals are recorded, rather than just genotypes.
     (2) A population of $N$ individuals with $M$ polymorphic sites
-    can be stored in $O(N \log N + M)$ space, making it feasible to store a simulation's entire final generation (and its' history)
-    rather than only a subset.
-    (3) A simulation can easily be initialized with a more efficient coalescent simulation of deep history.
-    To make these possible,
-    we introduce the \msprime{} Tables API, which allows for the efficient interchange
-    of tree sequences between modular program components,
-    and provide an algorithm to quickly simplify a tree sequence by removing history irrelevant to a given set of genomes.
+        can be stored in $O(N log N + M)$ space,
+        making it feasible to store a simulation's entire final generation
+        (and its history) rather than only a subset.
+    (3) A simulation can easily be initialized with a more efficient coalescent simulation 
+        of deep history.
 \end{abstract}
 
 % NOTE: I tend to use semantic linebreaks.
@@ -115,25 +162,33 @@ Since the 1980's, coalescent theory has enabled computer simulation of the resul
 identical to that which would be produced by large, randomly mating populations over long periods of time
 without actually requiring simulation of so many generations or meioses.
 Coalescent theory thus had three transformative effects on population genetics:
-first, giving researchers better conceptual tools to describe \emph{gene trees} and thus bringing within-population trees into better focus;
-second, producing analytical methods to estimate parameters of interest from genetic data (e.g., $\theta = 4N_e \mu$);
-and finally, providing a computationally feasible method to produce computer simulations of population genetics processes.
+first, giving researchers better conceptual tools to describe \emph{gene trees}
+and thus bringing within-population trees into better focus;
+second,
+producing analytical methods to estimate parameters of interest from genetic data; \revpoint{1}{5}
+and finally, providing a computationally feasible method
+to produce computer simulations of population genetics processes.
 However, these powerful advances came with substantial caveats:
 the backwards-in-time processes that are described by coalescent theory
 are only \emph{Markovian}, and thus feasible to work with,
-thanks to the important assumptions of
+under the following important assumptions: \revpoint{2}{3}
 (a) random mating,
 (b) neutrality,
-and (c) small sample size relative to the population size.
+(c) large population size,
+and (d) small sample size relative to the population size.
 The first two assumptions can be side-stepped to a limited extent \citep{hudson1990gene, Neuhauser1997-nn},
 but it remains a challenge to map results of coalescent models
 onto species that are distributed across continuous geographical
 space~\citep{barton2010new,kelleher2014coalescent}
 and/or have large numbers of loci under various sorts of selection.
-Furthermore, the relationship between the life history of a species --
+Usually, the relationship between the life history of a species --
 fecundity and mortality schedules, density-dependent effects on fitness, and demographic fluctuations --
 are all absorbed into a single compound parameter, the coalescence rate.
-The third assumption is no longer safe, either --
+More mechanistic models are possible using ``forwards--backwards'' simulations,
+that first simulate population size changes forwards in time
+and then thread a coalescent backwards \citep{ray2010splatche2}, \revpoint{1}{3}
+but these still require the assumptions above to be met for each subpopulation.
+The last assumption is no longer safe, either --
 for example, a recent study~\citep{martin2017human}
 simulated 600,000 samples of human chromosome 20 to examine biases in GWAS.
 Several studies have now shown that in samples approaching the size of the population,
@@ -221,18 +276,22 @@ the computational advantages of the data structures we use here~\citep{kelleher2
 
 In this paper, we describe a storage method for \emph{succinct tree sequences}
 (and hence, genome sequence) as well as an algorithm for simplifying these.
-The data structure is \emph{succinct} in the sense that its' space usage is close to optimal,
-while still allowing efficient retrieval of information (see, e.g.,
-\citet{gog2014theory}).
-The storage method and simplification algorithm are both implemented
-as improvements to the algorithmic tools and data structures in \msprime{}.
+The data structure is \emph{succinct} in the sense that its space usage is close to optimal,
+while still allowing efficient retrieval of information (see, e.g., \citet{gog2014theory}).
 We also describe how these tools can efficiently record,
 and later process, the embellished population pedigree from a forwards-time simulation.
-While providing substantial savings in computational time and space, our methods provide much
-more information than simply simulating the genomes -- the tree sequence
+While providing substantial savings in computational time and space, our methods provide 
+in principle much more information than simply simulating the genomes -- the tree sequence
 encodes all marginal genealogies of individuals living at the end of the simulation.
+These marginal genealogies enable fast data storage and processing,
+but also provide additional information that can be used to better understand
+the notoriously complex dynamics of population genetics. \revpoint{1}{4}
 Although we were motivated by a need for more efficient genomic simulations,
 these tools may prove more widely useful.
+This work originated as improvements to the algorithmic tools and data structures 
+in the coalescent simulator \msprime{}; \linelabel{msprime_rel}
+the tools are currently available bundled with the Python package \msprime{},
+but will soon be separately available as a Python package named \tskit{}.
 
 
 %%%%%%%%%%%%%%%%%%%%%
@@ -308,14 +367,14 @@ In fact, our method could in some situations \emph{reduce} the amount of memory 
 if memory usage in the forwards simulation was dominated by the cost of maintaining neutral genetic variants.
 
 \begin{figure}
-    \includegraphics[]{sims/rawspeed}
+    \includegraphics[]{sims/rawspeed_logy}
     \caption{
         \label{fig:runtimes_selection}
     Total run time per single simulation replicate as a function of region length.
     % measured as the scaled recombination parameter $\rho = 4Nr$.
     Line color represents different diploid population sizes ($N$).
     The left figure shows run times for standard simulations including neutral mutations.
-    The right column of panels shows run times of simulations that recorded the pedigree
+    The right column shows run times of simulations that recorded the pedigree
     and added neutral mutations afterwards.
     The dashed line in the right panel shows results for an implementation using \fwdpy{}
     where the pedigree simplification steps were handled in a separate thread of execution
@@ -550,6 +609,9 @@ that records genealogical history in this way.
 The simulation will run for $T$ generations,
 and has $N$ haploid individuals, each carrying a single chromosome of length $L$.
 For simplicity, we sample exactly one crossover per generation.
+Note that the \emph{table recording} portion of the algorithm does not depend on the Wright--Fisher
+nature of the population simulation;  \linelabel{ll:not_wf}
+next we will describe how to record tables from \emph{any} simulation.
 
 We use $\randomuniform(A)$ to denote an element of the set $A$ chosen uniformly at random
 (and all such instances are independent).
@@ -681,25 +743,47 @@ ancestors in the current population, and so the entire path tracing back to
 its common ancestor with 27 is redundant.
 
 \paragraph{Essential steps in tree sequence recording}
-To record a tree sequence, including mutations,
-a simulator must record:
+Since a tree sequence can record the history of genetic inheritance in any situation
+(requiring only unambiguous inheritance and no time travel),
+any individual-based population genetics simulator can maintain a tree sequence
+with only a little bookkeeping. \revpoint{1}{1}
+We have furthermore provided several tools to minimize this bookkeeping,
+only requiring a little one-way output at the birth of each new individual.
+Concretely, to record a tree sequence, including mutations,
+a simulator must record for each new genome
+(so, twice for each new diploid individual): \revpoint{1}{6}
 \begin{itemize}
-    \item the birth time of each individual in the Node Table,
-    \item the genetic segments each individual inherits from its parents in the Edge Table, and
-    \item the individual each new mutation occurs in, and the derived state in the Mutation Table,
-        adding also to the Site Table if the site is previously unmutated.
+    \item the birth time of the genome in the Node Table,
+    \item the segments the genome inherits from its parental genomes in the Edge Table,
+    \item the locations of any new mutations in the Site Table,
+    \item and the derived state of these new mutations in the Mutation Table
+        (as well as the identiy of this genome the mutations appeared in).
 \end{itemize}
-Recall that here we mean ``\emph{haploid} individual'', i.e., gamete.
-Before simplification, time must be translated to ``time ago'' if it is not already.
+Each of these can be simply appended to the ends of the respective tables.
+Besides this, simplification should be run every once in a while (e.g., every 100 generations).
+Before simplification, time in the Node Table must be translated to ``time ago'' if it is not already.
 (This was avoided in Algorithm~\algref{W} since there $t$ denoted
 ``time until the end of the simulation''.)
-Furthermore, since $\tsimplify{P', \Nt, \Et}$ results in the $N$ individuals in $P'$
+There are also several ``cleaning'' steps, for which we provide functions in the Tables API:
+\emph{sorting} according to several criteria for algorithmic efficiency;
+and removing any duplicate sites from the Site Table.
+After simplification, since $\tsimplify{P', \Nt, \Et}$ results in the $N$ individuals in $P'$
 being relabeled in \msprime{}'s tables as $0, 1, \ldots, N-1$,
 there must be bookkeeping that keeps in sync the individual IDs as recorded by the simulator
 with the node IDs recorded in the tables.
-% Finally, the first step in simplification is to \emph{sort} the tables
-% according to several criteria, for algorithmic efficiency,
-% as described in the documentation.
+
+In other words, \linelabel{ll:other_words}
+to record a tree sequence, a simulation needs only to know
+(a) which genomes recombined to produce each new genome, and how;
+(b) the locations and results of any new mutations on each genome;
+and (c) the identities of every currently alive individual at each time simplification occurs.
+
+\paragraph{Storing metadata}
+Applications may also want to store more information not fitting into an existing column of the tables,
+such as the selection coefficient of a mutation, or the sex of an individual.
+This (and, indeed, arbitrary information) can be stored in the \texttt{metadata} columns
+present in Node, Site, and Mutation tables. \revpoint{2}{8}
+
 
 %%%%%%
 \subsection*{Tree sequence simplification}
@@ -771,15 +855,23 @@ but also is useful for extracting subsets of a tree sequence representing a very
 % tree sequence representing a large dataset and wish to extract the
 % information relevant to a subset of the samples.
 
-Our approach to simplification is based on Hudson's algorithm for simulating
-the coalescent with recombination~\citep{hudson1983properties},
-paralleling the implementation in \msprime{} \citep{kelleher2016efficient};
-an implementation in pseudocode is provided in Appendix~\ref{ss:simplify_algorithm},
+We implement simplification by starting at the end of the simulation,
+and moving back up through history,
+recording in the new tree sequence only that information necessary to construct the tree sequence
+of the specified individuals.
+This process of tracing ancestry back through time in a pedigree
+was the motivation for Hudson's coalescent simulation algorithm~\citep{hudson1983properties},
+so it is unsurprising that simplification uses many of the same tools
+as the implementation of Hudson's algorithm in \msprime{} \citep{kelleher2016efficient}.
+The main difference is that events in a coalescent simulation are random, \revpoint{1}{2}
+while here they are predetermined by history.
+An implementation in pseudocode is provided in Appendix~\ref{ss:simplify_algorithm},
 and a python implementation as supplementary information.
+
 Conceptually, this works by
 (a) beginning by painting the chromosome in each sample a distinct color;
 (b) moving back through history,
-copying the colors of each chromosome to the portions of its' parental chromosomes
+copying the colors of each chromosome to the portions of its parental chromosomes
 from which it was inherited;
 (c) each time we would paint two colors in the same spot (a coalescence),
 record that information as an edge and instead paint a brand-new color;
@@ -905,7 +997,10 @@ statistical properties of a marginal tree are fairly well-described by coalescen
 Similar arguments to those below go back at least to \citet{watterson1975number},
 who also explicitly computed smaller order corrections relevant to whole-population genealogies
 of the Wright--Fisher model.
-For an introduction to coalescent theory, see \citet{wakeley2005coalescent}.
+The arguments below are mostly self-contained,
+but for an introduction to coalescent theory, including the basic facts used below,
+see \citet{wakeley2005coalescent}.
+\linelabel{ll:coal_signpost}
 
 
 %% Memory reduction thanks to simplification
@@ -1191,18 +1286,18 @@ simulate transmission along such pedigrees for the purpose of inference.
 % tree sequence functionality, which should make recording and
 % outputting tree sequences from any \justc{}/\cpp{} code straightforward.
 
-\paragraph{A final note:}
-in preparing this manuscript,
-we debated a number of possible terms for the embellished pedigree,
-i.e., the ``pedigree with ancestral recombination information''.
-Etymological consensus \citep{liberman2014little} has
-``pedigree'' derived from the french ``pied de grue'' for the foot of a crane
-(whose branching pattern resembles the bifurcation of a single parent-offspring relationship).
-An analogous term for the embellished pedigree might then be \emph{nedigree},
-from ``nid de grue'',
-as the nest of a crane is a large jumble of (forking) branches.
-We thought it unwise to use this term throughout the manuscript,
-but perhaps it will prove useful elsewhere.
+% \paragraph{A final note:}
+% in preparing this manuscript,
+% we debated a number of possible terms for the embellished pedigree,
+% i.e., the ``pedigree with ancestral recombination information''.
+% Etymological consensus \citep{liberman2014little} has
+% ``pedigree'' derived from the french ``pied de grue'' for the foot of a crane
+% (whose branching pattern resembles the bifurcation of a single parent-offspring relationship).
+% An analogous term for the embellished pedigree might then be \emph{nedigree},
+% from ``nid de grue'',
+% as the nest of a crane is a large jumble of (forking) branches.
+% We thought it unwise to use this term throughout the manuscript,
+% but perhaps it will prove useful elsewhere.
 
 
 %%%%%%%%%%%%%%
@@ -1240,6 +1335,174 @@ and the USF\&WS to H.\ Bradley Shaffer.
 \bibliography{references}
 
 \appendix
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Timing and memory use with no selection}
+\label{ss:timing_nosel}
+\renewcommand{\thefigure}{D\arabic{figure}}
+\setcounter{figure}{0}
+
+We also performed a more limited set of simulations without natural selection.
+For these we used \cpp{} as in the main text, but also provide results from our
+proof-of-concept implementation that uses \simupop{} (see
+Appendix~\ref{ss:simupop}).
+
+The total run times are shown in
+Figure~\ref{sfig:rawspeed_nosel} and for \cpp{} show the same qualitative behavior as simulations with selection
+(Figure~\ref{fig:runtimes_selection}).  The relative improvement due to pedigree tracking is again substantial in these
+simulations (Figure~\ref{sfig:speedup_nosel}).  In fact, we see more of a benefit to pedigree tracking here with \fwdpy{}
+than we did with selection (Figure~\ref{fig:relative_speedup_selection}).  The reason is that the fitness function exits
+close to instantly in simulations without selection that are based on \fwdpp{}, meaning that \fwdpy{} is doing little
+more than generating random numbers and book-keeping in Figures~\ref{sfig:rawspeed_nosel}
+and~\ref{sfig:speedup_nosel}.
+For \simupop{}, the results show a qualitatively similar pattern but (1) the
+simulations for $N = 10000$ or greater did no finish in the 72 hour limit or
+exceed memory limits (more than 500 GB), and (2) the magnitude of the speedup is much less.
+The total RAM use for
+simulations without selection is shown in Figure~\ref{sfig:ramnosel}.
+% Pedigree recording again used more RAM with \fwdpp{} and less
+% RAM with \simupop{}. The reason for reduced RAM use with \simupop{} is unclear;
+% with \fwdpy{}/\fwdpp{}, however the reason for the extra RAM use is as in
+% Appendix~\ref{ss:memuse}.
+
+\begin{figure}[!h]
+    \includegraphics[]{sims/rawspeed_nosel}
+    \caption{\label{sfig:rawspeed_nosel}Total run time for a single simulation replicate as a function of region
+        length, measured as the scaled recombination parameter $\rho = 4Nr$.  The simulations here involve no natural
+    selection.}
+\end{figure}
+
+\begin{figure}
+    \includegraphics[]{sims/speedup_nosel}
+    \caption{\label{sfig:speedup_nosel}Relative performance improvement due to pedigree tracking for simulations without
+    selection.  Data points are taken from Figure~\ref{sfig:rawspeed_nosel} and show the ratio of run times tracking
+neutral variation over the run times tracking the pedigree.}
+\end{figure}
+\begin{figure}
+    \includegraphics[]{sims/memuse_nosel}
+    \caption{\label{sfig:ramnosel}Peak RAM use in gigabytes (GB) for simulations without selection.  The plots are from
+    the same data as in Figure \ref{sfig:rawspeed_nosel}.}
+\end{figure}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Memory usage with selection}
+\label{ss:memuse}
+\renewcommand{\thefigure}{B\arabic{figure}}
+\setcounter{figure}{0}
+
+The peak RAM use in gigabytes (GB) is shown for the simulations with selection in Figure~\ref{sfig:ramsel}.  For our parameters, which involved simplifying every
+$10^3$ generations, simulation while recording pedigrees uses more RAM than a standard simulation.
+This is because with pedigree recording, a non-recombinant
+individual still requires one new edge and two new nodes to be allocated.  Without pedigree recording, no new memory is allocated for such an offspring by \fwdpp{}.
+Thus, pedigree recording accumulates a large amount of data in RAM until
+simplification.  This extra RAM consumption is the trade off for reduced run times and the degree of extra RAM needed
+can be reduced by simplifying more often.  The simulations where we run the simplification step in a separate thread
+require even more RAM (dashed line in Figure \ref{sfig:ramsel}) because up to four sets of unsimplified data are
+stored in RAM.  In practice, the RAM consumption can be minimized by simplifying more often.
+
+%% \krt{I've avoided getting into how this much RAM means parallelization is required to make more progress.}
+
+\begin{figure}
+    \includegraphics[]{sims/memuse}
+    \caption{\label{sfig:ramsel}Peak RAM use in gigabytes (GB) for simulations with selection.  The plots are from the
+        same data as in Figure \ref{fig:runtimes_selection}. Note that the y-axis scales differ considerably across
+    panels.}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%%
+\section{Effect of simplification interval on run time and memory use}
+\label{ss:gcinterval}
+\renewcommand{\thefigure}{C\arabic{figure}}
+
+We performed a limited set of simulations to explore the effect of the simplification interval on run times and memory
+use. Figure~\ref{sfig:gctime} shows that run times increase for simplification intervals less than 100 generations.
+For intervals longer than 100 generations, run times are very similar, with no appreciable difference between $10^3$ and $10^4$
+generations.  As expected, the simplification interval has a near-linear effect on peak RAM use
+(Figure~\ref{sfig:gcmem}).  Taken together Figures~\ref{sfig:gctime} and~\ref{sfig:gcmem} suggest that one can tune the
+simplification interval to available RAM with little effect on run times provided that simplification doesn't occur too
+often.
+
+\begin{figure}[!h]
+    \includegraphics{sims/gc_interval/GCtime}
+    \caption{\label{sfig:gctime}The effect of simplification interval on run times.  A single replicate was done for the
+        parameters shown in the figure.  These simulations were done with the same selection parameters as in
+    Figure~\ref{fig:runtimes_selection}.}
+\end{figure}
+
+\begin{figure}[!h]
+    \includegraphics{sims/gc_interval/GCmem}
+    \caption{\label{sfig:gcmem}Peak RAM use for the simulations shown in Figure~\ref{sfig:gctime}.}
+\end{figure}
+
+
+%%%%%%%%%%%%%%%%%%%%%
+\section{The \simupop{} implementation}
+\label{ss:simupop}
+
+To use the methods with \simupop{}, we created a python module
+(available at \url{https://github.com/ashander/ftprime})
+that manages communication between the forward simulator and \msprime{}.
+We implemented simulations in a Python script, usable as a command-line utility,
+taking input parameters for population size $N$ and scaled recombination rate $\rho$.
+As for the \fwdpp{} simulations above, we set scaled mutation rate $\theta=4N\mu=\rho$
+(where $\mu$ is the per-site mutation rate multiplied by the number of sites),
+and used a simplify interval of 1000 generations and simulated for $T=10N$ generations in each
+simulation.
+% introducing deleterious mutations at a rate of $\rho/100$ per generation.
+% Because \simupop{} requires explicit locations for loci, we set the number of
+% loci $n=\rho / (4Nr)$ and for these simulations without selection marked $0$ of
+% these as selected loci.
+
+We coupled \simupop{} to \msprime{} using a Python class \texttt{RecombCollector} that 1)
+tracks time, and 2) collects and parses recombination information provided by
+the \texttt{Recombinator} class of \simupop{}, adding them to a \tnodetable{} and
+\tedgetable{} upon which simplification is performed every 1000 generations (using
+\texttt{msprime.sort\_tables()} and \texttt{msprime.simplify\_tables}).
+The tables are initialized using the \texttt{TreeSequence} returned from
+\texttt{msprime.simulate($2N$, Ne=$N$, recombination\_rate=$r/2$, length=$n$)}.
+The \texttt{simuPOP.Population()} is initialized and tagged with individual IDs,
+a mapping of these IDs to the \tnodetable{} IDs is passed to
+an instance of \texttt{RecombCollector} and used internally to update the tables.
+The \texttt{simuPOP.Population()} is then evolved.
+Before mating:
+% selected mutations are created (using
+% \texttt{simuPOP.SNPMutator}) and multiplicative selection occurs (using
+% \texttt{simuPOP.PyMlSelector}) only on the selected loci;
+the internal time of the \texttt{RecombCollector} instance is updated.
+During mating: male and female parents are drawn randomly, recombination data is
+output by \simupop{} to the \texttt{RecombCollector} instance.
+After mating: every 1000 generations the tables are simplified.
+
+\texttt{RecombCollector} uses the Python class \texttt{ARGrecorder} internally
+to add data to the tables and perform simplification.
+This class contains the \tnodetable{} and \tedgetable{} and also the mapping from
+(haploid) ids to ids in the tables.
+It also provides methods (\texttt{add\_individual} and \texttt{add\_record})
+to append data to the tables.
+The only functions of
+\texttt{RecombCollector} not delegated to this internal class are computing
+haploid IDs from \simupop{}'s diploid IDs and parsing recombination data into
+data suitable for use with use with \texttt{add\_individual} and
+\texttt{add\_record}; these functions are used to stream data into the tables as
+it is received by an instance of \texttt{RecombCollector}.
+
+% \paragraph{Requirements.}
+% The simulations as implemented depend on the class \texttt{RecombCollector} provided by
+% the Python package \ftprime{} 0.0.6rc0,
+% available at \url{https://www.github.com/ashander/ftprime}.
+% Its requirements are encoded in an \texttt{environment.yml} file, compatible
+% with conda, but \msprime{} must be updated to the version listed below via pip
+% from GitHub \jda{TODO add command?}.
+%
+% In brief the requirements are:
+%
+% \begin{enumerate}
+%     \item \msprime{} 0.5.0
+%     \item \simupop{} 1.1.8.3
+%     \item python 3.5
+% \end{enumerate}
+
 
 %%%%%%%%%%%%%%
 \section{Simplification algorithm}
@@ -1395,177 +1658,18 @@ We then iterate over all segments in $X$, adding the appropriate output edges
 and editing and reinserting the ancestry segment $x$ into the priority queue if
 necessary, as before.
 
-
-\section{Memory usage with selection}
-\label{ss:memuse}
-\renewcommand{\thefigure}{B\arabic{figure}}
-\setcounter{figure}{0}
-
-The peak RAM use in gigabytes (GB) is shown for the simulations with selection in Figure~\ref{sfig:ramsel}.  For our parameters, which involved simplifying every
-$10^3$ generations, simulation while recording pedigrees uses more RAM than a standard simulation.
-This is because with pedigree recording, a non-recombinant
-individual still requires one new edge and two new nodes to be allocated.  Without pedigree recording, no new memory is allocated for such an offspring by \fwdpp{}.
-Thus, pedigree recording accumulates a large amount of data in RAM until
-simplification.  This extra RAM consumption is the trade off for reduced run times and the degree of extra RAM needed
-can be reduced by simplifying more often.  The simulations where we run the simplification step in a separate thread
-require even more RAM (dashed line in Figure \ref{sfig:ramsel}) because up to four sets of unsimplified data are
-stored in RAM.  In practice, the RAM consumption can be minimized by simplifying more often.
-
-%% \krt{I've avoided getting into how this much RAM means parallelization is required to make more progress.}
-
-\begin{figure}
-    \includegraphics[]{sims/memuse}
-    \caption{\label{sfig:ramsel}Peak RAM use in gigabytes (GB) for simulations with selection.  The plots are from the
-        same data as in Figure \ref{fig:runtimes_selection}. Note that the y-axis scales differ considerably across
-    panels.}
-\end{figure}
-
-\newpage
-
-\section{Effect of simplification interval on run time and memory use}
-\label{ss:gcinterval}
-\renewcommand{\thefigure}{C\arabic{figure}}
-
-We performed a limited set of simulations to explore the effect of the simplification interval on run times and memory
-use. Figure~\ref{sfig:gctime} shows that run times increase for simplification intervals less than 100 generations.
-For intervals longer than 100 generations, run times are very similar, with no appreciable difference between $10^3$ and $10^4$
-generations.  As expected, the simplification interval has a near-linear effect on peak RAM use
-(Figure~\ref{sfig:gcmem}).  Taken together Figures~\ref{sfig:gctime} and~\ref{sfig:gcmem} suggest that one can tune the
-simplification interval to available RAM with little effect on run times provided that simplification doesn't occur too
-often.
-
-\begin{figure}[!h]
-    \includegraphics{sims/gc_interval/GCtime}
-    \caption{\label{sfig:gctime}The effect of simplification interval on run times.  A single replicate was done for the
-        parameters shown in the figure.  These simulations were done with the same selection parameters as in
-    Figure~\ref{fig:runtimes_selection}.}
-\end{figure}
-
-\begin{figure}[!h]
-    \includegraphics{sims/gc_interval/GCmem}
-    \caption{\label{sfig:gcmem}Peak RAM use for the simulations shown in Figure~\ref{sfig:gctime}.}
-\end{figure}
-
-
-
-\section{Timing and memory use with no selection}
-\label{ss:timing_nosel}
-\renewcommand{\thefigure}{D\arabic{figure}}
-\setcounter{figure}{0}
-
-We also performed a more limited set of simulations without natural selection.
-For these we used \cpp{} as in the main text, but also provide results from our
-proof-of-concept implementation that uses \simupop{} (see
-Appendix~\ref{ss:simupop}).
-
-The total run times are shown in
-Figure~\ref{sfig:rawspeed_nosel} and for \cpp{} show the same qualitative behavior as simulations with selection
-(Figure~\ref{fig:runtimes_selection}).  The relative improvement due to pedigree tracking is again substantial in these
-simulations (Figure~\ref{sfig:speedup_nosel}).  In fact, we see more of a benefit to pedigree tracking here with \fwdpy{}
-than we did with selection (Figure~\ref{fig:relative_speedup_selection}).  The reason is that the fitness function exits
-close to instantly in simulations without selection that are based on \fwdpp{}, meaning that \fwdpy{} is doing little
-more than generating random numbers and book-keeping in Figures~\ref{sfig:rawspeed_nosel}
-and~\ref{sfig:speedup_nosel}.
-For \simupop{}, the results show a qualitatively similar pattern but (1) the
-simulations for $N = 10000$ or greater did no finish in the 72 hour limit or
-exceed memory limits (more than 500 GB), and (2) the magnitude of the speedup is much less.
-The total RAM use for
-simulations without selection is shown in Figure~\ref{sfig:ramnosel}.
-% Pedigree recording again used more RAM with \fwdpp{} and less
-% RAM with \simupop{}. The reason for reduced RAM use with \simupop{} is unclear;
-% with \fwdpy{}/\fwdpp{}, however the reason for the extra RAM use is as in
-% Appendix~\ref{ss:memuse}.
-
-\begin{figure}[!h]
-    \includegraphics[]{sims/rawspeed_nosel}
-    \caption{\label{sfig:rawspeed_nosel}Total run time for a single simulation replicate as a function of region
-        length, measured as the scaled recombination parameter $\rho = 4Nr$.  The simulations here involve no natural
-    selection.}
-\end{figure}
-
-\begin{figure}
-    \includegraphics[]{sims/speedup_nosel}
-    \caption{\label{sfig:speedup_nosel}Relative performance improvement due to pedigree tracking for simulations without
-    selection.  Data points are taken from Figure~\ref{sfig:rawspeed_nosel} and show the ratio of run times tracking
-neutral variation over the run times tracking the pedigree.}
-\end{figure}
-\begin{figure}
-    \includegraphics[]{sims/memuse_nosel}
-    \caption{\label{sfig:ramnosel}Peak RAM use in gigabytes (GB) for simulations without selection.  The plots are from
-    the same data as in Figure \ref{sfig:rawspeed_nosel}.}
-\end{figure}
-
-
-\section{The \simupop{} implementation}
-\label{ss:simupop}
-
-To use the methods with \simupop{}, we created a python module
-(available at \url{https://github.com/ashander/ftprime})
-that manages communication between the forward simulator and \msprime{}.
-We implemented simulations in a Python script, usable as a command-line utility,
-taking input parameters for population size $N$ and scaled recombination rate $\rho$.
-As for the \fwdpp{} simulations above, we set scaled mutation rate $\theta=\rho$,
-used a simplify interval of 1000 generations and simulated for $T=10N$ generations in each
-simulation.
-% introducing deleterious mutations at a rate of $\rho/100$ per generation.
-% Because \simupop{} requires explicit locations for loci, we set the number of
-% loci $n=\rho / (4Nr)$ and for these simulations without selection marked $0$ of
-% these as selected loci.
-
-We coupled \simupop{} to \msprime{} using a Python class \texttt{RecombCollector} that 1)
-tracks time, and 2) collects and parses recombination information provided by
-the \texttt{Recombinator} class of \simupop{}, adding them to a \tnodetable{} and
-\tedgetable{} upon which simplification is performed every 1000 generations (using
-\texttt{msprime.sort\_tables()} and \texttt{msprime.simplify\_tables}).
-The tables are initialized using the \texttt{TreeSequence} returned from
-\texttt{msprime.simulate($2N$, Ne=$N$, recombination\_rate=$r/2$, length=$n$)}.
-The \texttt{simuPOP.Population()} is initialized and tagged with individual IDs,
-a mapping of these IDs to the \tnodetable{} IDs is passed to
-an instance of \texttt{RecombCollector} and used internally to update the tables.
-The \texttt{simuPOP.Population()} is then evolved.
-Before mating:
-% selected mutations are created (using
-% \texttt{simuPOP.SNPMutator}) and multiplicative selection occurs (using
-% \texttt{simuPOP.PyMlSelector}) only on the selected loci;
-the internal time of the \texttt{RecombCollector} instance is updated.
-During mating: male and female parents are drawn randomly, recombination data is
-output by \simupop{} to the \texttt{RecombCollector} instance.
-After mating: every 1000 generations the tables are simplified.
-
-\texttt{RecombCollector} uses the Python class \texttt{ARGrecorder} internally
-to add data to the tables and perform simplification.
-This class contains the \tnodetable{} and \tedgetable{} and also the mapping from
-(haploid) ids to ids in the tables.
-It also provides methods (\texttt{add\_individual} and \texttt{add\_record})
-to append data to the tables.
-The only functions of
-\texttt{RecombCollector} not delegated to this internal class are computing
-haploid IDs from \simupop{}'s diploid IDs and parsing recombination data into
-data suitable for use with use with \texttt{add\_individual} and
-\texttt{add\_record}; these functions are used to stream data into the tables as
-it is received by an instance of \texttt{RecombCollector}.
-
-% \paragraph{Requirements.}
-% The simulations as implemented depend on the class \texttt{RecombCollector} provided by
-% the Python package \ftprime{} 0.0.6rc0,
-% available at \url{https://www.github.com/ashander/ftprime}.
-% Its requirements are encoded in an \texttt{environment.yml} file, compatible
-% with conda, but \msprime{} must be updated to the version listed below via pip
-% from GitHub \jda{TODO add command?}.
-%
-% In brief the requirements are:
-%
-% \begin{enumerate}
-%     \item \msprime{} 0.5.0
-%     \item \simupop{} 1.1.8.3
-%     \item python 3.5
-% \end{enumerate}
-
+% \newpage
 \newpage
 
 \section*{Python implementation of simplify (supplementary information)}
 
 \lstinputlisting[language=python]{sims/simplify-alg.py}
+
+
+\ifsubmission\processdelayedfloats\fi
+
+% reviews here if toggled above
+\includereviews
 
 
 \end{document}
