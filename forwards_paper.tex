@@ -125,7 +125,7 @@
     In addition to speed, our method for recording pedigrees has several advantages:
     (1) All marginal genealogies of the simulated individuals are recorded, rather than just genotypes.
     (2) A population of $N$ individuals with $M$ polymorphic sites
-        can be stored in $O(N log N + M)$ space,
+        can be stored in $O(N \log N + M)$ space,
         making it feasible to store a simulation's entire final generation
         (and its history) rather than only a subset.
     (3) A simulation can easily be initialized with a more efficient coalescent simulation 
@@ -291,7 +291,9 @@ these tools may prove more widely useful.
 This work originated as improvements to the algorithmic tools and data structures 
 in the coalescent simulator \msprime{}; \linelabel{msprime_rel}
 the tools are currently available bundled with the Python package \msprime{},
-but will soon be separately available as a Python package named \tskit{}.
+but will soon be separately available as a package named \tskit{}, 
+which will include a Python API and an embeddable C library.
+
 
 
 %%%%%%%%%%%%%%%%%%%%%
@@ -378,7 +380,7 @@ if memory usage in the forwards simulation was dominated by the cost of maintain
     and added neutral mutations afterwards.
     The dashed line in the right panel shows results for an implementation using \fwdpy{}
     where the pedigree simplification steps were handled in a separate thread of execution
-    and fitness calculations were parallelized.
+    and fitness calculations were parallelized across four cores.
     Simulations with $N=5 \times 10^4$ timed out for region sizes larger than $10^3$.
     }
 \end{figure}
@@ -572,11 +574,13 @@ and makes it straightforward to transfer data from sources
 such as HDF5 \citep{hdf5} or Dask~\citep{dask}.
 For small scale data and debugging purposes, a simple text based format is also supported.
 
-The \msprime\ Python Tables API provides a general purpose toolkit for importing
-and processing succinct tree sequences. Interoperation with Python simulators
-is then straightforward.  The implementation we benchmark here uses
-\texttt{pybind11} (\url{https://github.com/pybind/pybind11/}) to interface
-with the \fwdpp{} \cpp{} API \citep{fwdpp}. No modifications were
+The \msprime{} Python Tables API provides a general purpose toolkit for importing
+and processing succinct tree sequences, and a collection of tutorials are being developed
+at \url{https://github.com/tskit-dev/tutorials}. \linelabel{ll:tutorials}
+Interoperation with Python simulators is then straightforward.  
+The implementation we benchmark here uses \texttt{pybind11} 
+(\url{https://github.com/pybind/pybind11/}) to interface with the \fwdpp{} \cpp{} API \citep{fwdpp}. 
+No modifications were
 required to the \fwdpp{} code base; rather, we simply need to bookkeep parent/offspring labels,
 and perform simple processing of the recombination breakpoints from each mating
 event to generate node and edge data. This information is then periodically copied

@@ -20,7 +20,10 @@
  
 \vskip 1em
 
-We are pleased to submit a revision of our manuscript, 
+We'd like to thank the reviewers for a careful reading of the paper;
+as detailed below, their helpful comments have resulted in a substantial amount of clarification
+about the overall structure and purpose of the paper.
+We hope you agree that our changes have addressed their comments and concerns.
 
 \noindent \hspace{4em}
 \begin{minipage}{3in}
@@ -58,12 +61,12 @@ We are pleased to submit a revision of our manuscript,
 \end{quote}
 
 We thank the reviewers for helpful feedback, and respond in detail to their points below.
-Something we did that should help address all these points
-was to make more clear the main purpose of this paper:
+In part to address all of these points,
+we have tried to clarify the main purpose of this paper, which is
 to describe algorithms and data structures for tree sequences,
 and how these are useful in simulation.
-Our main goal is not to write a simulation package.
-This is useful and important, because: 
+Our main goal is not to write a standalone simulation package.
+What we do is useful and important, because: 
 (a) we provide a fully functional and flexible, well-documented API
 so that developers can include this idea in their own simulator
 (with no restrictions beyond conserved synteny of chromosomes); and
@@ -73,8 +76,8 @@ and therefore important for even end users of a simulator to understand.
 We describe and implement Wright--Fisher simulations not because of any limitation of our method,
 but to keep things as simple as possible, only focusing on those aspects necessary 
 for recording the tree sequence.
-
-TODO: mention the tutorials?
+We'd also like to note that we are developing a set of tutorials,
+at \url{https://github.com/tskit-dev/tutorials}.
 
 %%%%%%%%%%%%%%
 \reviewersection{1}
@@ -138,7 +141,7 @@ TODO: think about switching to \tskit{} in the paper?
     to implementing this is bookkeeping;
     and we've provided tools to make this bookkeeping easier
     (like the \texttt{sort tables} functionality,
-    so that the simulator does not have to guarentee sortedness of the tables itself).
+    so that the simulator does not have to guarantee sortedness of the tables itself).
 }
 
 
@@ -168,15 +171,17 @@ TODO: think about switching to \tskit{} in the paper?
 \end{point}
 
 \reply{
-    We are assuming that you are drawing the analogy of tree sequence simplification 
-    to the forward-backward scheme used by SPLATCHE.
-    This is a good analogy, since simplification is tracing ancestry back through time
-    as does the coalescent.
-    However, we think it's fair to say that it differs fundamentally:
+    Thanks for drawing our attention to the (good) analogy 
+    between the forward-backward scheme used by SPLATCHE
+    and the process of tree sequence simplification,
+    which we had not considered.
+    While there are indeed deep connections between this approach and tree sequence simplification, 
+    they are however fundamentally different:
     the coalescent is a stochastic process that is dual to the forwards-time process,
     and relies on certain assumptions for correctness;
     whereas tree sequence simplification is deterministic (just ``bookkeeping'').
-    We have added something about SPLATCHE2 to the introduction \revref.
+    We have updated the introduction to discuss this connection with SPLATCHE \revref,
+    and have discussed further the relationship of coalescence to simplification \revreffull{1}{2}.
 }
 
 
@@ -187,10 +192,10 @@ very late in the ms, should be moved up.)
 \end{point}
 
 \reply{
-    We agree this makes nice motivation,
+    We agree that discussion of uses of gene trees would make nice motivation,
     but think it is somewhat outside of the scope of this paper:
     for our purposes here, it suffices to explain that they help everything go faster.
-    We've expanded a bit \revref.
+    We've expanded the discussion \revref.
 }
 
 \begin{point}{}
@@ -281,7 +286,8 @@ Thanks!
     The python interface is documented through the \msprime{} documentation
     (but you need to select ``latest'': \url{https://msprime.readthedocs.io/en/latest/});
     and closely mirrors the underlying C library.
-    We have also written documentation at \plrXXX LINK TO TUTORIALS}.
+    We have also provided a link to the  developing set of tutorials 
+    at \url{https://github.com/tskit-dev/tutorials} \llname{ll:tutorials}.
 }
 
 \begin{point}{}
@@ -323,13 +329,17 @@ that we could see scaling on the low end. Legend for this figure refers to
 \end{point}
 
 \reply{
-    Thanks for the suggestions.
-    \plr{TODO: I've stuck in the "log" figure. What do you think?}
-    \plr{Kevin: how many threads?}
+    Thanks for the suggestions: we've switched the figure to a log scale,
+    and noted the number of threads (four).
+    The speedup is not that impressive for a variety of reasons, though, which
+    are hard to tease apart, so we haven't elaborated on this point.
+    (But, for the reviewer's interest: false sharing is one possible
+    issue, but perhaps $5 \times 10^4$ diploids may be too few to make
+    parallelization ``worth'' it when spawning new threads each generation.)
 }
 
 \begin{point}{}
-"its'" on page 11.
+``its{'}'' on page 11.
 \end{point}
 
 \reply{
