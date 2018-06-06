@@ -130,6 +130,7 @@
         (and its history) rather than only a subset.
     (3) A simulation can easily be initialized with a more efficient coalescent simulation 
         of deep history.
+    The software for recording and processing tree sequences is named \tskit.
 \end{abstract}
 
 % NOTE: I tend to use semantic linebreaks.
@@ -200,7 +201,7 @@ For instance, \citet{harris2016genetic} used SLiM \citep{slim} to simulate ten t
 to assess the impact of genetic load and Neanderthal introgression on human genetic diversity.
 \cite{Sanjak2017-ko} used
 \fwdpp{} \citep{fwdpp} to simulate a series of models of quantitative traits under mutation-selection balance with
-population sizes of $2 \times 10^4$ diploids in stable populations and populations growing up to $\sim 5
+population sizes of $2 \times 10^4$ diploids in stable populations and populations growing up to around $5
 \times 10^5$ individuals, using the output to explore the relationship between the genotype/phenotype model and GWAS
 outcomes.
 
@@ -290,9 +291,9 @@ Although we were motivated by a need for more efficient genomic simulations,
 these tools may prove more widely useful.
 This work originated as improvements to the algorithmic tools and data structures 
 in the coalescent simulator \msprime{}; \linelabel{msprime_rel}
-the tools are currently available bundled with the Python package \msprime{},
-but will soon be separately available as a package named \tskit{}, 
-which will include a Python API and an embeddable C library.
+the software tools described here for working with tree sequences are referred to as \tskit{};
+they are currently bundled with the Python package \msprime{},
+but will soon be separately available as a Python API and an embeddable C library.
 
 
 
@@ -304,9 +305,9 @@ The strategy described above is only of interest if it is computationally feasib
 Therefore,
 we begin by benchmarking the performance improvement achieved by this method,
 implemented using the forwards-time simulation library \fwdpp{} \citep{fwdpp}
-and tree sequence tools implemented in \msprime{}.
+and tree sequence tools implemented in \tskit{}.
 Then, we describe the conceptual and algorithmic foundations for the method:
-(a) a format, implemented in the \msprime{} Python API,
+(a) a format, implemented in the \tskit{} Python API,
 for recording tree sequences efficiently in several \emph{tables};
 (b) an algorithm to record these tables during a forwards-time simulation;
 and (c) an algorithm to \emph{simplify} a tree sequence, i.e., remove redundant information.
@@ -345,7 +346,7 @@ and the time savings due to pedigree recording come from not having to record \t
 
 % When tracking neutral mutations (instead of the pedigree), run times increase dramatically with increasing region size ($4Nr = 4Nu$ for these simulations).
 Pedigree tracking dramatically reduced runtimes, as shown in Figure~\ref{fig:runtimes_selection},
-producing a relative speedup of up to $\approx 50$ fold relative to standard simulations that track neutral mutations
+producing a relative speedup of up to around 50 fold relative to standard simulations that track neutral mutations
 (Figure~\ref{fig:relative_speedup_selection}).
 Pedigree tracking results in greater relative speedups for larger $N$
 and we observe increasing relative speedups as $4Nr$ increases for a given $N$
@@ -448,8 +449,7 @@ who were born one and two units of time in the past, respectively.
         displayed over their corresponding genomic segment
         (for instance, the edge from node 2 to node 4 is present only on the interval from 0 to 5).
         The remaining panels show the specific encoding
-        of this tree sequence in the four tables (nodes, edges, sites and mutations)
-        defined by \msprime.
+        of this tree sequence in the four tables (nodes, edges, sites and mutations).
         \label{fig:example_tree_sequence}
     }
 \end{figure}
@@ -510,7 +510,7 @@ recombination rates of $10^{-8}$ per generation. This resulted
 in about 1 million distinct marginal trees and $1.1$ million infinite-sites
 mutations. The HDF5 file encoding the node, edge, site and mutation tables (as
 described above) for this simulation consumed 157MiB of storage space. Using
-the \msprime\ Python API, the time required to load this file into memory was
+the \tskit{} Python API, the time required to load this file into memory was
 around 1.5 seconds, and the time required to iterate over all 1 million trees
 was 2.7 seconds. In contrast, recording the topological information in Newick
 format would require around 20 TiB and storing the genotype information
@@ -535,21 +535,21 @@ is guaranteed to uniquely describe at each point on the genome
 a collection of directed, acyclic graphs -- in other words, a forest of trees.
 For some applications it is necessary to check that at every point
 there is only a \emph{single} tree.
-Checking this is more difficult, but is implemented in \msprime{}'s API.
-For efficiency, \msprime{} makes several other sortedness requirements on the tables,
+Checking this is more difficult, but is implemented in \tskit{}'s API.
+For efficiency, \tskit{} makes several other sortedness requirements on the tables,
 that are not necessarily satisfied by tables emitted by a forwards-time simulation.
-\msprime{}'s API includes tools to rectify this by first sorting % (using \texttt{sort\_tables})
+\tskit{}'s API includes tools to rectify this by first sorting % (using \texttt{sort\_tables})
 and then using the \texttt{simplify} algorithm described below, which works on sorted tables
-and is guaranteed to produce a valid, \msprime{}-ready tree sequence.
+and is guaranteed to produce a valid, \tskit{}-ready tree sequence.
 
 
 
 %%%%%%
-\subsection*{The \msprime\ Tables API}
+\subsection*{The \tskit{} Tables API}
 
 The facilities for working with succinct tree sequences are implemented as part
-of the \msprime\ Python API, which provides a powerful platform for processing
-tree topology and mutation data. The new portions of \msprime{} that we discuss
+of the \tskit{} Python API, which provides a powerful platform for processing
+tree topology and mutation data. The portions of \tskit{} that we discuss
 here are dedicated to tree sequence input and output using simple tables of
 data, as described above, so we refer to this as the ``Tables API''.
 
@@ -574,7 +574,7 @@ and makes it straightforward to transfer data from sources
 such as HDF5 \citep{hdf5} or Dask~\citep{dask}.
 For small scale data and debugging purposes, a simple text based format is also supported.
 
-The \msprime{} Python Tables API provides a general purpose toolkit for importing
+The \tskit{} Python Tables API provides a general purpose toolkit for importing
 and processing succinct tree sequences, and a collection of tutorials are being developed
 at \url{https://github.com/tskit-dev/tutorials}. \linelabel{ll:tutorials}
 Interoperation with Python simulators is then straightforward.  
@@ -584,12 +584,12 @@ No modifications were
 required to the \fwdpp{} code base; rather, we simply need to bookkeep parent/offspring labels,
 and perform simple processing of the recombination breakpoints from each mating
 event to generate node and edge data. This information is then periodically copied
-to the \msprime\ Tables API, where it is sorted and simplified.
+to the \tskit{} Tables API, where it is sorted and simplified.
 
 \paragraph{Flexibility.}
 To demonstrate the flexibility provided by the Tables API and provide an
 implementation that decouples forward simulation internals from transfer of data
-to \msprime, we also implemented a version of the simulations described in
+to \tskit, we also implemented a version of the simulations described in
 ``Simulation benchmarks'' separately in Python, described in Appendix~\ref{ss:simupop}.
 In this proof-of-concept implementation, the simulation engine (we use \simupop{}, \citet{simupop})
 invokes callbacks at critical points of the simulation, and we infer nodes and edges
@@ -772,7 +772,7 @@ There are also several ``cleaning'' steps, for which we provide functions in the
 \emph{sorting} according to several criteria for algorithmic efficiency;
 and removing any duplicate sites from the Site Table.
 After simplification, since $\tsimplify{P', \Nt, \Et}$ results in the $N$ individuals in $P'$
-being relabeled in \msprime{}'s tables as $0, 1, \ldots, N-1$,
+being relabeled in \tskit{}'s tables as $0, 1, \ldots, N-1$,
 there must be bookkeeping that keeps in sync the individual IDs as recorded by the simulator
 with the node IDs recorded in the tables.
 
@@ -1222,7 +1222,7 @@ and the fact that these are correlated,
 sequential tree algorithms similar to those in~\citep{kelleher2016efficient}
 can do this in roughly $O(n + m + t \log n)$ operations, where
 $t$ is the number of distinct trees.
-The \msprime{} API provides a method to compute $\pi$ among arbitrary subsets of the
+The \tskit{} API provides a method to compute $\pi$ among arbitrary subsets of the
 samples in a tree sequence, which took about 0.7 seconds when
 applied to an example simulation of 100 megabases of human-like
 sequence for 200,000 samples (about 500K sites). The corresponding
@@ -1267,8 +1267,8 @@ use the methods described here to generate succinct tree sequences under coalesc
 in \msprime{}, such as the coalescent with gene conversion \citep{Wiuf2000-rc}, using the structured coalescent to
 model various forms of natural selection \citep{Kaplan1988-in,Kaplan1989-rt,Braverman1995-gn},
 or the coalescent within a known pedigree.  For such models, one
-could in principle generate tables of nodes and edges to be simplified in \msprime{}.  The resulting succinct tree
-sequence object would be in the same format as those generated by \msprime{}'s built-in simulate function, and therefore
+could in principle generate tables of nodes and edges to be simplified in \tskit{}.  The resulting succinct tree
+sequence object would be in the same format as those generated by \tskit{}'s built-in simulate function, and therefore
 compatible with existing methods for downstream analyses.
 
 Another application of our methods would be the case of simulating coalescent histories conditional on known pedigrees.
@@ -1283,7 +1283,7 @@ simulate transmission along such pedigrees for the purpose of inference.
 % gains over current simulation methods, they are far from optimal. Because
 % forwards time simulation is highly CPU intensive, most simulation engines
 % are written in \justc{} or \cpp{} out of necessity. Therefore, the simplest and most
-% efficient approach would be to call the \msprime{} \justc{} library directly as part of
+% efficient approach would be to call the \tskit{} \justc{} library directly as part of
 % the core simulation logic, in the manner outlined in Algorithm \algref{W}. If designed
 % in this way, the simulation engine would not need to keep copies of the node and edge information.
 % To facilitate this usage, we plan to release a standalone, embeddable \justc{} library encompassing the core
@@ -1307,7 +1307,7 @@ simulate transmission along such pedigrees for the purpose of inference.
 %%%%%%%%%%%%%%
 \section*{Methods}
 
-We implemented simulations and the connection to \msprime{} in \cpp{}, using \fwdpp{} library functions and
+We implemented simulations and the connection to \tskit{} in \cpp{}, using \fwdpp{} library functions and
 interface code using a continuum-sites model for both mutation
 and recombination. Simulations were run using \fwdpy{} (version 0.13.a0), a Python package based
 on \fwdpp{} (version 0.5.7).  The majority of results are presented based on a single-threaded implementation.  However,
@@ -1446,7 +1446,7 @@ often.
 
 To use the methods with \simupop{}, we created a python module
 (available at \url{https://github.com/ashander/ftprime})
-that manages communication between the forward simulator and \msprime{}.
+that manages communication between the forward simulator and \tskit{}.
 We implemented simulations in a Python script, usable as a command-line utility,
 taking input parameters for population size $N$ and scaled recombination rate $\rho$.
 As for the \fwdpp{} simulations above, we set scaled mutation rate $\theta=4N\mu=\rho$
@@ -1458,13 +1458,13 @@ simulation.
 % loci $n=\rho / (4Nr)$ and for these simulations without selection marked $0$ of
 % these as selected loci.
 
-We coupled \simupop{} to \msprime{} using a Python class \texttt{RecombCollector} that 1)
+We coupled \simupop{} to \tskit{} using a Python class \texttt{RecombCollector} that 1)
 tracks time, and 2) collects and parses recombination information provided by
 the \texttt{Recombinator} class of \simupop{}, adding them to a \tnodetable{} and
 \tedgetable{} upon which simplification is performed every 1000 generations (using
-\texttt{msprime.sort\_tables()} and \texttt{msprime.simplify\_tables}).
+\texttt{tskit.sort\_tables()} and \texttt{tskit.simplify\_tables}).
 The tables are initialized using the \texttt{TreeSequence} returned from
-\texttt{msprime.simulate($2N$, Ne=$N$, recombination\_rate=$r/2$, length=$n$)}.
+\texttt{tskit.simulate($2N$, Ne=$N$, recombination\_rate=$r/2$, length=$n$)}.
 The \texttt{simuPOP.Population()} is initialized and tagged with individual IDs,
 a mapping of these IDs to the \tnodetable{} IDs is passed to
 an instance of \texttt{RecombCollector} and used internally to update the tables.
@@ -1496,7 +1496,7 @@ it is received by an instance of \texttt{RecombCollector}.
 % the Python package \ftprime{} 0.0.6rc0,
 % available at \url{https://www.github.com/ashander/ftprime}.
 % Its requirements are encoded in an \texttt{environment.yml} file, compatible
-% with conda, but \msprime{} must be updated to the version listed below via pip
+% with conda, but \tskit{} must be updated to the version listed below via pip
 % from GitHub \jda{TODO add command?}.
 %
 % In brief the requirements are:
@@ -1535,7 +1535,7 @@ write $Q[0]$.
 Finally, note that to keep the exposition simple,
 the algorithm described here requires that the input node table
 is sorted by time since the parent's birth;
-but the version implemented in \msprime{} makes different sortedness assumptions
+but the version implemented in \tskit{} makes different sortedness assumptions
 (described in the documentation).
 
 \begin{taocpalg}{S}{Simplify a tree sequence}

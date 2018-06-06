@@ -25,6 +25,20 @@ as detailed below, their helpful comments have resulted in a substantial amount 
 about the overall structure and purpose of the paper.
 We hope you agree that our changes have addressed their comments and concerns.
 
+There is one change of note that we should explain:
+since initial submission, we have decided to separate out the tools for dealing with tree sequences
+into a standalone package, called \tskit,
+from the coalescent simulation code (called \msprime).
+This should help avoid confusion.
+However, although we're a good ways towards this goal,
+we haven't yet completed the clean separation,
+so that currently the \tskit{} page instructs users to install \msprime{}.
+We think this slightly confusing situation is preferable to the alternative,
+which would have the terms in our paper outdated in a few months
+(when we move the tools discussed here
+from \msprime{} to \tskit{}).
+
+
 \noindent \hspace{4em}
 \begin{minipage}{3in}
 \noindent
@@ -298,9 +312,10 @@ scaling, is this expected?
 \end{point}
 
 \reply{
-    This is actually the fault of a quadratic algorithm for counting mutations
+    Good spot: this is actually the fault of a quadratic algorithm for counting mutations
     under the hood in \fwdpp{}.
-    In fact, some of us (KRT) are currently using ideas from tree sequences to fix this bottleneck.
+    In fact, some of us (KRT) have used ideas from tree sequences to fix this bottleneck,
+    and the fix will be part of the next \fwdpp{}.
 }
 
 %%%  Minor comments:
