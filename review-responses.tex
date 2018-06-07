@@ -1,0 +1,403 @@
+%%%%%%
+%%
+%%  Don't reorder the reviewer points; that'll mess up the automatic referencing!
+%%
+%%%%%
+
+\begin{minipage}[b]{2.5in}
+  Resubmission Cover Letter \\
+  {\it PLoS Computational Biology}
+\end{minipage}
+\hfill
+\begin{minipage}[b]{2.5in}
+  \today
+\end{minipage}
+ 
+\vskip 2em
+ 
+\noindent
+{\bf To the Editor(s) -- }
+ 
+\vskip 4em
+
+We'd like to thank the reviewers for a careful reading of the paper;
+as detailed below, their helpful comments have resulted in a substantial amount of clarification
+about the overall structure and purpose of the paper.
+We hope you agree that our changes have addressed their comments and concerns.
+
+There is one change of note that we should explain:
+since initial submission, we have decided to separate out the tools for dealing with tree sequences
+into a standalone package, called \tskit,
+from the coalescent simulation code (called \msprime).
+This should help avoid confusion.
+However, although we're a good ways towards this goal,
+we haven't yet completed the clean separation,
+so that currently the \tskit{} page instructs users to install \msprime{}.
+We think this slightly confusing situation is preferable to the alternative,
+which would have the terms in our paper outdated in a few months
+(when we move the tools discussed here
+from \msprime{} to \tskit{}).
+
+\vskip 4em
+
+\noindent \hspace{4em}
+\begin{minipage}{3in}
+\noindent
+{\bf Sincerely,}
+
+\vskip 2em
+
+{\bf 
+    Jerome Kelleher, Kevin Thornton, \\
+    Jaime Ashander \emph{and} Peter Ralph \\
+}\\
+\end{minipage}
+
+\vskip 4em
+
+\clearpage
+\setcounter{page}{1}
+
+%%%%%%%%%%%%%%
+\reviewersection{AE}
+
+\begin{quote}
+    Both reviewers are clearly very enthusiastic about this manuscript, but both
+    have made suggestions that require major revisions to address. Please be
+    very careful in addressing the following points exhaustively:
+    \begin{itemize}
+        \item  Discuss the limitations imposed by Wright-Fisher assumptions (Rev 1) 
+            and how the proposed approach may/may not be extended 
+            to other demographic and population scenarios.
+
+        \item  Improve the readability of the text and provide necessary background information (Rev 1)
+
+        \item  Discuss implementation availability (Rev 2)
+    \end{itemize}
+\end{quote}
+
+We thank the reviewers for helpful feedback, and respond in detail to their points below.
+In part to address all of these points,
+we have tried to clarify the main purpose of this paper, which is
+to describe algorithms and data structures for tree sequences,
+and how these are useful in simulation.
+Our main goal is not to write a standalone simulation package.
+What we do is useful and important, because: 
+(a) we provide a fully functional and flexible, well-documented API
+so that developers can include this idea in their own simulator
+(with no restrictions beyond conserved synteny of chromosomes); and
+(b) we explain the data structures,
+which are closely tied to the idea of a tree sequence,
+and therefore important for even end users of a simulator to understand.
+We describe and implement Wright--Fisher simulations not because of any limitation of our method,
+but to keep things as simple as possible, only focusing on those aspects necessary 
+for recording the tree sequence.
+We'd also like to note that we are developing a set of tutorials,
+at \url{https://github.com/tskit-dev/tutorials}.
+
+%%%%%%%%%%%%%%
+\reviewersection{1}
+
+\begin{quote}
+    Kelleher and colleagues present a novel method to efficiently record pedigree
+    information in forward-time individual-based simulations of the Wright-Fisher
+    process in a single large population of haploids. The method shows a large
+    performance improvement compared to forward-time simulations of the same
+    Wright-Fisher model without pedigree recording. The gain obtained with pedigree
+    recording is due to the fact that mutations are generated post-hoc by placing
+    them on the gene trees that resulted from the forward-time demographic process
+    recorded as pedigree and cross-over information. The method for storing
+    "succinct tree sequences" has been implemented in the coalescent-simulation
+    software msprime and the authors here provide a Python API to use the data
+    format previously developed in msprime in forward-time simulators. This
+    represents a neat addition to the tool kit of population genetics simulations.
+\end{quote}
+
+We'd like to emphasize that although the tools for dealing with tree sequences
+are currently bundled with the coalescent simulator, \msprime{},
+this is for historical reasons only, 
+and we are in the process of separating out these tools into a separate package,
+to be called \tskit.
+The format for storing tree sequences was developed for the coalescent simulator,
+but the work we describe here generalized the data structure and algorithms
+to allow it to be used in any simulator.
+We have stated this more clearly in the text at \llname{msprime_rel}.
+
+
+\begin{point}{}
+    Overall, I find the method very clever and appealing, and I am convinced that
+    it will be well received by the community. However, nowadays, researchers
+    generate and use genomic data in organisms other than humans and from wild
+    populations that by far are not Wright-Fisher populations. How are you selling
+    your method to that broader category of researchers? Compared to SPLATCHE,
+    which simulates structured populations with gene flow, it may look like a
+    regression (quantiNemo implemented something similar, but I don't think it was
+    ever published).
+    \emph{[\ldots]}
+    As a developer, I am interested in the limitations and the constraints that may
+    prevent me to implement your method to model populations that are not W-F.
+    populations. In particular, you didn't address the question of structured
+    populations with gene flow, or the effect of overlapping generations. Although
+    developing an approach that is efficient in structured populations is probably
+    out of scope here, giving a minimum of guidelines or just discussing the issue
+    would greatly improve the scope of the manuscript.
+\end{point}
+
+\reply{
+    We're sorry to have not made this more clear,
+    but our goal was \emph{not} to make a faster WF simulator,
+    but rather to describe a scheme that can be easily applied to \emph{any} simulator
+    whatsoever, as long as it has the notion of a recombining chromosome.
+    We have added a note to this effect before the proof-of-concept WF algorithm \llname{ll:not_wf};
+    and substantially expanded the discussion of what steps need to be taken in general \revref.
+    Also see the summarizing paragraph at \llname{ll:other_words}.
+    The only thing that should stand in your way as a developer
+    to implementing this is bookkeeping;
+    and we've provided tools to make this bookkeeping easier
+    (like the \texttt{sort tables} functionality,
+    so that the simulator does not have to guarantee sortedness of the tables itself).
+}
+
+
+\begin{point}{}
+    More generally, I found the ms very technical and addressed to a specialized
+    audience. I would not assume, as you do, that readers are necessarily
+    proficient in coalescent theory. Therefore, please improve the introduction by
+    providing more information on: \emph{(points below)}
+\end{point}
+
+\reply{
+    Thanks for the suggestion;
+    since this paper is entirely about forwards simulation,
+    we hope not to depend on coalescent theory at all in any crucial way.
+    We have added some more explanation of the relationship to simplification
+    at \revref;
+    and have tried to better signpost the technical arguments at \llname{ll:coal_signpost}.
+}
+
+
+\begin{point}{}
+    The idea of running simulations forward in time for the demography and then
+    backward in time for the neutral genetics is by far not new and was already
+    implemented in the software SPLATCHE (Ray, Currat, Foll, Excoffier,
+    Bioinformatics 2010, 26: 2993-2994), although probably not as efficiently. The
+    reference should be added.
+\end{point}
+
+\reply{
+    Thanks for drawing our attention to the (good) analogy 
+    between the forward-backward scheme used by SPLATCHE
+    and the process of tree sequence simplification,
+    which we had not considered.
+    While there are indeed deep connections between this approach and tree sequence simplification, 
+    they are however fundamentally different:
+    the coalescent is a stochastic process that is dual to the forwards-time process,
+    and relies on certain assumptions for correctness;
+    whereas tree sequence simplification is deterministic (just ``bookkeeping'').
+    We have updated the introduction to discuss this connection with SPLATCHE \revref,
+    and have discussed further the relationship of coalescence to simplification \revreffull{1}{2}.
+}
+
+
+\begin{point}{}
+  What is the use of gene trees? What can be inferred/calculated from them that
+  we cannot get from the endpoint genetic polymorphism data? (An example comes
+very late in the ms, should be moved up.)
+\end{point}
+
+\reply{
+    We agree that discussion of uses of gene trees would make nice motivation,
+    but think it is somewhat outside of the scope of this paper:
+    for our purposes here, it suffices to explain that they help everything go faster.
+    We've expanded the discussion \revref.
+}
+
+\begin{point}{}
+  Spell out once what is meant with $\theta = 4N_e\mu$ (and make clear that $\mu$ is
+  the num loci $\times$ mutation rate)
+\end{point}
+
+\reply{
+    We agree this was out of place; but rather than explain, we have removed this. \revref
+}
+
+
+\begin{point}{}
+  Make clear how to transfer from haploid to diploid case (I guess by having
+  about twice the data recorded).
+\end{point}
+
+\reply{
+    We've tried to make this more clear. \revref
+}
+
+\begin{point}{}
+  Figure 3 doesn't show the red stars mentioned in the main text (p8).
+\end{point}
+
+\reply{
+    These are visible for us; there may have been a problem with PDF transparency;
+    we've set opacity on these to 100\%; let us know if they are still invisible?
+}
+
+
+
+%%%%%%%%%%%%%%
+\reviewersection{2}
+
+
+\begin{quote}
+    This manuscript presents algorithms that could very well change the way
+    population genetic simulations are done. The current methods are either
+    coalescent simulations (which build trees backwards in time, but for all
+    intents and purposes do not allow selection) or forward simulations (which are
+    as flexible as the user desires, but comes at the cost of being slow). The
+    algorithms here are super creative solutions that allow the user to simulate a
+    sequence tree forward in time. This approach can dramatically shrink the
+    computational time needed to do large-scale simulations. The API proposed goes
+    one step further. It is based on the msprime architecture, so a user could
+    ostensibly seamlessly switch from coalescent to forward simulations very easily
+    (or stitch the two together to generate ancient history using the coalescent
+    and then forward simulate based on the output). This really could be a game
+    changing paper for the population genetics world (as well as possibly others,
+    as noted in the manuscript).
+
+    I've thought quite a bit about how to record trees in a forward simulation, and
+    could only come up with ways that drastically exploded the run time. The
+    approach presented here is very creative.
+
+    In addition, the use of the compressed format of the sequence tree is quite
+    amazing. The 144k over the VCF equivalent is unbelievable.
+\end{quote}
+
+Thanks!
+
+
+\begin{point}{}
+    I only see one major criticism: accessibility. The authors do not provide a
+    clear overview of how to obtain/install/use the algorithms presented. A
+    ``proof-of-concept implementation'' is really not sufficient. In contrast,
+    msprime has great documentation, but the current website does not seem to
+    describe the forward simulation model (in contrast to what is suggested by the
+    manuscript). \url{https://github.com/ashander/ftprime} does have installation
+    instructions, but seems to be entirely geared toward integration with simuPOP.
+    Most of the figures are generated with fwdpp, which are supposedly included
+    here (\url{https://github.com/petrelharp/ftprime_ms}), but it is not at all clear how
+    one would access the code given the current organization of this repository. It
+    is unrealistic to expect all downstream users to code up the algorithms
+    themselves (and would result in code that is not as well tested). The authors
+    should have a more dedicated repository for users to access the software and
+    start running their own simulations.
+\end{point}
+
+\reply{
+    As the reviewer suggests, our main goal here is to provide easy access
+    to the \emph{algorithm}, not to a forward simulation model --
+    we aren't describing a forward simulation model, 
+    but rather a way to speed up and get more information out of an existing one.
+    But, is the algorithm accessible?
+    An interface to our algorithms is available at the python level or at the C level.
+    The python interface is documented through the \msprime{} documentation
+    (but you need to select ``latest'': \url{https://msprime.readthedocs.io/en/latest/});
+    and closely mirrors the underlying C library.
+    We have also provided a link to the  developing set of tutorials 
+    at \url{https://github.com/tskit-dev/tutorials} \llname{ll:tutorials}.
+}
+
+\begin{point}{}
+Figure 1 shows that pedigree recording seems to scale poorly in N. Going from
+N=1e3 to N=1e4 results in what seems like a $\sim 5 \times$ increase in runtime, but going
+up to N=5e4 results in a $> 10 \times$ increase in runtime. Given your attention to
+scaling, is this expected?
+\end{point}
+
+\reply{
+    Good spot: this is actually the fault of a quadratic algorithm for counting mutations
+    under the hood in \fwdpp{}.
+    In fact, some of us (KRT) have used ideas from tree sequences to fix this bottleneck,
+    and the fix will be part of the next \fwdpp{}.
+}
+
+%%%  Minor comments:
+
+\begin{point}{}
+The word "thanks” in the discussion of coalescent caveats is awkward.
+\end{point}
+
+\reply{
+    Thanks; fixed. \revref
+}
+
+\begin{point}{}
+The Appendices seem to be out of order with the text. The current order does
+not seem any more logical.
+\end{point}
+
+\reply{
+    Good point. Fixed.
+}
+
+\begin{point}{}
+In Figure 1, it would potentially be helpful to see y-axis on a log scale so
+that we could see scaling on the low end. Legend for this figure refers to
+``right column of panels''. How many threads were used to obtain the dashed line?
+\end{point}
+
+\reply{
+    Thanks for the suggestions: we've switched the figure to a log scale,
+    and noted the number of threads (four).
+    The speedup is not that impressive for a variety of reasons, though, which
+    are hard to tease apart, so we haven't elaborated on this point.
+    (But, for the reviewer's interest: false sharing is one possible
+    issue, but perhaps $5 \times 10^4$ diploids may be too few to make
+    parallelization ``worth'' it when spawning new threads each generation.)
+}
+
+\begin{point}{}
+``its{'}'' on page 11.
+\end{point}
+
+\reply{
+    Thanks. Fixed, in two places.
+}
+
+\begin{point}{}
+I appreciate the ``how does it perform in theory?'' section, but the final note
+on the use of ``nedigree'' seems unnecessary. If you are going to use it (which I
+do not recommend), you can justify it, otherwise drop it.
+\end{point}
+
+\reply{
+    We agree that the discussion of ``nedigree'' is perhaps strictly unnecessary (as we note),
+    but think that small touches like this generally improve the tone 
+    and accessibility of scientific discourse,
+    without obscuring the content.
+    So, unless the AE objects, we'd rather keep it in.
+    (And, we really do think that the field needs a better term for this concept!)
+}
+
+\begin{point}{}
+What characteristics of each simulated mutation are stored? On page 10, it
+suggests you store the node in which they first occur, the derived state, and
+the genomic position. However, the selection coefficient and dominance
+coefficient? Are there other features that can be stored (e.g., nucleotide
+context)?
+\end{point}
+
+\reply{
+    Good question;
+    the answer is that anything can be stored (as arbitrary bytes);
+    we've added a note about this. \revref
+}
+
+\begin{point}{}
+The code for the Python implementation of simplify is included as supplementary
+information. This is entirely unnecessary, as this code should be easily
+accessible from the appropriate github repository.
+\end{point}
+
+\reply{
+    Perhaps, but since github does not provide a permanent home,
+    and a working implementation is, arguably, the most clear explanation of an algorithm,
+    we'd prefer to keep this in as supplementary material.
+}
