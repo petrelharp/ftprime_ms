@@ -85,7 +85,7 @@ def simplify(S, Ni, Ei, L):
 
     # Sort the output edges and compact them as much as possible into
     # the output table. We skip this for the algorithm listing as it's pretty mundane.
-    # TODO replace this with a calls to squash_edges() and sort_tables()
+    # Note: could be replaced with calls to squash_edges() and sort_tables()
     E = list(Eo)
     Eo.clear()
     E.sort(key=lambda e: (e.parent, e.child, e.right, e.left))

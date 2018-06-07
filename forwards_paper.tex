@@ -53,8 +53,8 @@
 
 %% for submitting with responses to reviews
 \newif\ifsubmission
-% \submissiontrue
-\submissionfalse
+\submissiontrue
+% \submissionfalse
 \ifsubmission
     % % stuff for submission
     \usepackage[nofiglist,nomarkers,figuresonly]{endfloat}
@@ -63,8 +63,8 @@
     \bibliographystyle{plos2015}
     \newcommand\citet{\cite}
     \newcommand\citep{\cite}
-    \renewcommand\includegraphics{\relax}
-    \renewcommand{\includegraphics}[2][]{\relax}
+    % \renewcommand\includegraphics{\relax}
+    % \renewcommand{\includegraphics}[2][]{\relax}
     \renewcommand{\figurename}{Fig.}
     \newcommand{\Figure}{Fig }
     \newcommand{\Figures}{Fig }
@@ -79,11 +79,11 @@
 \newcommand{\citetx}[2][]{\ifsubmission#1 \cite{#2}\else\citet{#2}\fi}
 
 % Responses to reviews
-\input{review-response-commands}
 % set this to show line numbers and include responses to reviews or not
 \newif\ifreviewresponses
 \reviewresponsestrue  % include them
 % \reviewresponsesfalse  % don't include them
+\input{review-response-commands}
 \newcommand{\responsefile}{review-responses}  % name of the review responses file
 
 
@@ -95,7 +95,6 @@
         Jaime Ashander\footnote{Ecology and Evolutionary Biology, University of California at Los Angeles}, and
         Peter L. Ralph\footnote{Institute for Ecology and Evolution, University of Oregon}}
 \maketitle
-
 
 
 \begin{abstract}

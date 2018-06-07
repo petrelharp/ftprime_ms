@@ -1,18 +1,19 @@
-\usepackage{lineno}
-% \usepackage[hypertexnames=false]{hyperref}   % not working correctly
-% \usepackage{latexml}
-
-\linenumbers
-
-
 %%%%%  PUT THIS IN HEADER OF FILE
 % % Responses to reviews:
-% \input{review-response-commands}
 % % set this to show line numbers and include responses to reviews or not
 % \newif\ifreviewresponses
 % \reviewresponsestrue  % include them
 % % \reviewresponsesfalse  % don't include them
+% \input{review-response-commands}
 % \newcommand{\responsefile}{pbio-reviews-19sept12-responses.tex}  % name of the review reponses file
+
+\ifreviewresponses
+    \usepackage{lineno}
+    % \usepackage[hypertexnames=false]{hyperref}   % not working correctly
+    \linenumbers
+\else
+    \newcommand{\linelabel}[1]{}
+\fi
 
 % counters for reviewer points
 %% instead do reviewer labels
