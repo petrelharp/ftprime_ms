@@ -108,11 +108,8 @@
     The genetic history of the population is recorded as a succinct tree sequence
     as introduced in the software package \msprime,
     on which neutral mutations can be quickly placed afterwards.
-    Recording the results of each breeding event
-    results in a linear growth in the amount of information that must be stored.
-    However, there is a great deal of redundancy in this information,
-    since the majority of individuals simulated over the course of the simulation
-    will leave no descendents in the eventual sample.
+    Recording the results of each breeding event requires storage that grows linearly with time,
+    but there is a great deal of redundancy in this information.
     We solve this storage problem by providing an algorithm to quickly `simplify'
     a tree sequence by removing this irrelevant history for a given set of genomes.
     By periodically simplifying the history with respect to the extant population,
@@ -127,7 +124,7 @@
     (2) A population of $N$ individuals with $M$ polymorphic sites
         can be stored in $O(N \log N + M)$ space,
         making it feasible to store a simulation's entire final generation
-        (and its history) rather than only a subset.
+        as well as its history.
     (3) A simulation can easily be initialized with a more efficient coalescent simulation 
         of deep history.
     The software for recording and processing tree sequences is named \tskit.
@@ -752,7 +749,7 @@ Since a tree sequence can record the history of genetic inheritance in any situa
 any individual-based population genetics simulator can maintain a tree sequence
 with only a little bookkeeping. \revpoint{1}{1}
 We have furthermore provided several tools to minimize this bookkeeping,
-only requiring a little one-way output at the birth of each new individual.
+only requiring one-way output at the birth of each new individual.
 Concretely, to record a tree sequence, including mutations,
 a simulator must record for each new genome
 (so, twice for each new diploid individual): \revpoint{1}{6}
