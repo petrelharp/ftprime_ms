@@ -36,7 +36,8 @@ installer.  At this point, you may need to follow the conda installation instruc
     must add a --gcc flag to the last command in the following code block.  I (KRT) make 
     no guarantees about success on OS X.
 
-Instructions for conda on Linux:
+Instructions for conda on Linux, which assume that the current working directory is 
+ftprime_ms/fwdpy11_arg_example:
 
 .. code-block:: bash
 
@@ -46,8 +47,6 @@ Instructions for conda on Linux:
     conda config --add channels bioconda
     conda config --add channels conda-forge
     conda install gcc fwdpy11==0.1.4 msprime==0.5.0 pybind11==2.2.1 pandas
-    git clone https://github.com/molpopgen/fwdpy11_arg_example
-    cd fwdpy11_arg_example
     python setup.py build_ext -i
 
 Test simulation
