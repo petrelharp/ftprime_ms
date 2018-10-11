@@ -36,6 +36,11 @@ installer.  At this point, you may need to follow the conda installation instruc
     must add a --gcc flag to the last command in the following code block.  I (KRT) make 
     no guarantees about success on OS X.
 
+    Further, this repos requires msprime 0.5.0, which is the version developed for the
+    Kelleher et al. paper.  Recent versions of msprime (currently 0.6.x) have slight tweaks
+    to the Tables API that would require some changes to this code. The best bet is to
+    install msprime 0.5.0, for example using conda as shown below.
+
 Instructions for conda on Linux, which assume that the current working directory is 
 ftprime_ms/fwdpy11_arg_example:
 
