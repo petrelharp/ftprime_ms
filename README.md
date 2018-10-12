@@ -4,6 +4,7 @@
   that directory are a simple copy of what can be found in the
   [repository](https://github.com/molpopgen/fwdpy11_arg_example) where it was developed.  You will find instructions in
   the README of that subdirectory.
+* The flexible Python implementation (which uses `simuPOP`) is available in the [`ftprime` repository as version 0.0.6](https://github.com/ashander/ftprime/tree/0.0.6)
 * We have generated a set of [tutorials](https://tskit-dev.github.io/tutorials/) on integrating forward simulations with the simplification algorithm as
   implemented in [msprime](https://msprime.readthedocs.io/en/stable/)
 
