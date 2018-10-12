@@ -1,14 +1,17 @@
 """
 Simulation of WF model and output resulting tree sequence.
+
+Requires msprime >= 0.6.0
 """
 import random
 import msprime
+
 
 def wright_fisher(N, delta, L, T):
     """
     Direct implementation of Algorithm W.
     """
-    edges = msprime.EdgeTable()
+    tables = msprime.TableCollection(L)
     tau = []
     P = [j for j in range(N)]
     for j in range(N):
@@ -26,17 +29,16 @@ def wright_fisher(N, delta, L, T):
                 a = random.randint(0, N - 1)
                 b = random.randint(0, N - 1)
                 x = random.uniform(0, L)
-                edges.add_row(0, x, P[a], n)
-                edges.add_row(x, L, P[b], n)
+                tables.edges.add_row(0, x, P[a], n)
+                tables.edges.add_row(x, L, P[b], n)
                 n += 1
             j += 1
         P = Pp
-    nodes = msprime.NodeTable()
     P = set(P)
     for j in range(n):
-        nodes.add_row(time=tau[j], flags=int(j in P))
-    msprime.sort_tables(nodes=nodes, edges=edges)
-    return msprime.load_tables(nodes=nodes, edges=edges)
+        tables.nodes.add_row(time=tau[j], flags=int(j in P))
+    tables.sort()
+    return tables.tree_sequence()
 
 
 
@@ -55,7 +57,5 @@ if __name__ == "__main__":
     # Rescale the height so that the nodes in the new tree are at the
     # same height as those in the old tree.
     h = h * 6 / 7
-    print(t.draw(format="unicode", node_label_text=node_labels))
-    t.draw(path="wf-after.svg", node_label_text=node_labels, width=200, height=h)
-
-
+    print(t.draw(format="unicode", node_labels=node_labels))
+    t.draw(path="wf-after.svg", node_labels=node_labels, width=200, height=h)

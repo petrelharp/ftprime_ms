@@ -11,3 +11,15 @@
 
 The results in this paper were generated with what ultimately became msprime version 0.5.0. The current version of
 msprime (0.6.x) contains a faster and more streamlined version of the algorithm that gives the same results.
+
+## Algorithm reference implementations
+
+We provide some reference implementations of the algorithms described in the paper. To ensure that 
+these will work as easily as possible in the future, they require mprime >= 0.6.0.
+
+* The file ``sims/simplify-alg.py`` contains a direct Python implementation of the simplify 
+  algorithm (algorithm S).
+
+
+* The file ``sims/wf-figures.py`` contains a direct Python implementation of Wright-Fisher 
+  forwards time simulation (algorithm W).

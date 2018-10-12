@@ -5,6 +5,8 @@ The example works by generating an initial TreeSequence
 for a sample of 10 haplotypes using msprime.  We then
 simplify the node/edge table in that TreeSequence with
 respect to the first three samples.
+
+Requires msprime >= 0.6.0
 """
 import heapq
 import numpy as np
@@ -37,8 +39,9 @@ def simplify(S, Ni, Ei, L):
     This is an implementation of the simplify algorithm described in Appendix A
     of the paper.
     """
-    No = msprime.NodeTable()
-    Eo = msprime.EdgeTable()
+    tables = msprime.TableCollection(L)
+    No = tables.nodes
+    Eo = tables.edges
     A = [[] for _ in range(len(Ni))]
     Q = []
 
@@ -101,7 +104,7 @@ def simplify(S, Ni, Ei, L):
     j = len(E)
     Eo.add_row(E[start].left, E[j - 1].right, E[j - 1].parent, E[j - 1].child)
 
-    return msprime.load_tables(nodes=No, edges=Eo)
+    return tables.tree_sequence()
 
 
 
@@ -134,7 +137,7 @@ def verify():
 
 
 if __name__ == "__main__":
-    verify()
+    # verify()
 
     # Generate initial TreeSequence
     ts = msprime.simulate(10, recombination_rate=2, random_seed=1)
