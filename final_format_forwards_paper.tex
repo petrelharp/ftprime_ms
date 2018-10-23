@@ -1,14 +1,223 @@
-\documentclass{article}
-\usepackage{fullpage}
-\usepackage{amsmath, amssymb}
+% Template for PLoS
+% Version 3.5 March 2018
+%
+% % % % % % % % % % % % % % % % % % % % % %
+%
+% -- IMPORTANT NOTE
+%
+% This template contains comments intended 
+% to minimize problems and delays during our production 
+% process. Please follow the template instructions
+% whenever possible.
+%
+% % % % % % % % % % % % % % % % % % % % % % % 
+%
+% Once your paper is accepted for publication, 
+% PLEASE REMOVE ALL TRACKED CHANGES in this file 
+% and leave only the final text of your manuscript. 
+% PLOS recommends the use of latexdiff to track changes during review, as this will help to maintain a clean tex file.
+% Visit https://www.ctan.org/pkg/latexdiff?lang=en for info or contact us at latex@plos.org.
+%
+%
+% There are no restrictions on package use within the LaTeX files except that 
+% no packages listed in the template may be deleted.
+%
+% Please do not include colors or graphics in the text.
+%
+% The manuscript LaTeX source should be contained within a single file (do not use \input, \externaldocument, or similar commands).
+%
+% % % % % % % % % % % % % % % % % % % % % % %
+%
+% -- FIGURES AND TABLES
+%
+% Please include tables/figure captions directly after the paragraph where they are first cited in the text.
+%
+% DO NOT INCLUDE GRAPHICS IN YOUR MANUSCRIPT
+% - Figures should be uploaded separately from your manuscript file. 
+% - Figures generated using LaTeX should be extracted and removed from the PDF before submission. 
+% - Figures containing multiple panels/subfigures must be combined into one image file before submission.
+% For figure citations, please use "Fig" instead of "Figure".
+% See http://journals.plos.org/plosone/s/figures for PLOS figure guidelines.
+%
+% Tables should be cell-based and may not contain:
+% - spacing/line breaks within cells to alter layout or alignment
+% - do not nest tabular environments (no tabular environments within tabular environments)
+% - no graphics or colored text (cell background color/shading OK)
+% See http://journals.plos.org/plosone/s/tables for table guidelines.
+%
+% For tables that exceed the width of the text column, use the adjustwidth environment as illustrated in the example table in text below.
+%
+% % % % % % % % % % % % % % % % % % % % % % % %
+%
+% -- EQUATIONS, MATH SYMBOLS, SUBSCRIPTS, AND SUPERSCRIPTS
+%
+% IMPORTANT
+% Below are a few tips to help format your equations and other special characters according to our specifications. For more tips to help reduce the possibility of formatting errors during conversion, please see our LaTeX guidelines at http://journals.plos.org/plosone/s/latex
+%
+% For inline equations, please be sure to include all portions of an equation in the math environment.  For example, x$^2$ is incorrect; this should be formatted as $x^2$ (or $\mathrm{x}^2$ if the romanized font is desired).
+%
+% Do not include text that is not math in the math environment. For example, CO2 should be written as CO\textsubscript{2} instead of CO$_2$.
+%
+% Please add line breaks to long display equations when possible in order to fit size of the column. 
+%
+% For inline equations, please do not include punctuation (commas, etc) within the math environment unless this is part of the equation.
+%
+% When adding superscript or subscripts outside of brackets/braces, please group using {}.  For example, change "[U(D,E,\gamma)]^2" to "{[U(D,E,\gamma)]}^2". 
+%
+% Do not use \cal for caligraphic font.  Instead, use \mathcal{}
+%
+% % % % % % % % % % % % % % % % % % % % % % % % 
+%
+% Please contact latex@plos.org with any questions.
+%
+% % % % % % % % % % % % % % % % % % % % % % % %
+
+\documentclass[10pt,letterpaper]{article}
+\usepackage[top=0.85in,left=2.75in,footskip=0.75in]{geometry}
+
+% amsmath and amssymb packages, useful for mathematical formulas and symbols
+\usepackage{amsmath,amssymb}
+
+% Use adjustwidth environment to exceed column width (see example table in text)
+\usepackage{changepage}
+
+% Use Unicode characters when possible
+\usepackage[utf8x]{inputenc}
+
+% textcomp package and marvosym package for additional characters
+\usepackage{textcomp,marvosym}
+
+% cite package, to clean up citations in the main text. Do not remove.
+\usepackage{cite}
+
+% Use nameref to cite supporting information files (see Supporting Information section for more info)
 \usepackage[hidelinks]{hyperref}
-\usepackage[utf8]{inputenc}
-\usepackage{graphicx}
+\usepackage{nameref}
+
+% line numbers
+\usepackage[right]{lineno}
+
+% ligatures disabled
+\usepackage{microtype}
+\DisableLigatures[f]{encoding = *, family = * }
+
+% color can be used to apply background shading to table cells only
+\usepackage[table]{xcolor}
+
+% array package and thick rules for tables
+\usepackage{array}
+
+% create "+" rule type for thick vertical lines
+\newcolumntype{+}{!{\vrule width 2pt}}
+
+% create \thickcline for thick horizontal lines of variable length
+\newlength\savedwidth
+\newcommand\thickcline[1]{%
+  \noalign{\global\savedwidth\arrayrulewidth\global\arrayrulewidth 2pt}%
+  \cline{#1}%
+  \noalign{\vskip\arrayrulewidth}%
+  \noalign{\global\arrayrulewidth\savedwidth}%
+}
+
+% \thickhline command for thick horizontal lines that span the table
+\newcommand\thickhline{\noalign{\global\savedwidth\arrayrulewidth\global\arrayrulewidth 2pt}%
+\hline
+\noalign{\global\arrayrulewidth\savedwidth}}
+
+
+% Remove comment for double spacing
+%\usepackage{setspace} 
+%\doublespacing
+
+% Text layout
+\raggedright
+\setlength{\parindent}{0.5cm}
+\textwidth 5.25in 
+\textheight 8.75in
+
+% Bold the 'Figure #' in the caption and separate it from the title/caption with a period
+% Captions will be left justified
+\usepackage[aboveskip=1pt,labelfont=bf,labelsep=period,justification=raggedright,singlelinecheck=off]{caption}
+\renewcommand{\figurename}{Fig}
+
+% Use the PLoS provided BiBTeX style
+\bibliographystyle{plos2015}
+
+% Remove brackets from numbering in List of References
+\makeatletter
+\renewcommand{\@biblabel}[1]{\quad#1.}
+\makeatother
+
+% Header and Footer with logo
+\usepackage{lastpage,fancyhdr,graphicx}
+\usepackage{epstopdf}
+%\pagestyle{myheadings}
+\pagestyle{fancy}
+\fancyhf{}
+%\setlength{\headheight}{27.023pt}
+%\lhead{\includegraphics[width=2.0in]{PLOS-submission.eps}}
+\rfoot{\thepage/\pageref{LastPage}}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrule}{\hrule height 2pt \vspace{2mm}}
+\fancyheadoffset[L]{2.25in}
+\fancyfootoffset[L]{2.25in}
+\lfoot{\today}
+
+%% Include all macros below
+
+
 \usepackage{enumitem}
 \usepackage{listings}
-% \usepackage[T1]{fontenc}
 
-\include{macros}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\C}{\mathbb{C}}
+
+\renewcommand{\P}{\mathbb{P}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\var}{\mathop{\mbox{Var}}}
+\newcommand{\cov}{\mathop{\mbox{cov}}}
+%\newcommand{\det}{\mathop{\mbox{det}}}
+\newcommand{\supp}{\mathop{\mbox{supp}}}
+\newcommand{\sgn}{\mathop{\mbox{sgn}}}
+\newcommand{\EE}[1]{\E\!\left[#1\right]}
+\newcommand{\PP}[1]{\P\!\left\{#1\right\}}
+\newcommand{\PPP}[2]{\P_{#1}\!\left\{#2\right\}}
+\newcommand{\EEE}[2]{\E_{#1}\!\left[#2\right]}
+\newcommand{\EEsup}[2]{\E^{#1}\!\left[#2\right]}
+
+\newcommand{\bone}{\mathbf{1}}
+
+% These macros are borrowed from TAOCPMAC.tex
+\newcommand{\slug}{\hbox{\kern1.5pt\vrule width2.5pt height6pt depth1.5pt\kern1.5pt}}
+\def\xskip{\hskip 7pt plus 3pt minus 4pt}
+\newdimen\algindent
+\newif\ifitempar \itempartrue % normally true unless briefly set false
+\def\algindentset#1{\setbox0\hbox{{\bf #1.\kern.25em}}\algindent=\wd0\relax}
+\def\algbegin #1 #2{\algindentset{#21}\alg #1 #2} % when steps all have 1 digit
+\def\aalgbegin #1 #2{\algindentset{#211}\alg #1 #2} % when 10 or more steps
+\def\alg#1(#2). {\medbreak % Usage: \algbegin Algorithm A (algname). This...
+  \noindent{\bf#1}({\it#2\/}).\xskip\ignorespaces}
+\def\kalgstep#1.{\ifitempar\smallskip\noindent\else\itempartrue
+   \hskip-\parindent\fi
+   \hbox to\algindent{\bf\hfil #1.\kern.25em}%
+   \hangindent=\algindent\hangafter=1\ignorespaces}
+
+\newcommand{\algstep}[3]{\kalgstep #1 [#2] #3 }
+\newenvironment{taocpalg}[3]{%
+\vspace{1em}%
+\algbegin Algorithm #1. ({#2}). #3 }
+{\vspace{1em}}
+
+\newcommand{\randomuniform}[0]{\mathcal{R}_U}
+\newcommand{\randomdiscrete}[0]{\mathcal{R}_D}
+\newcommand{\algref}[1]{#1}
+
+% \newcommand{\tablenotation}[1]{\mathcal{#1}}
+% \newcommand{\tableaddrow}[0]{\mbox{add}}
 \newcommand{\simupop}{\texttt{simuPOP}}
 \newcommand{\fwdpp}{\texttt{fwdpp}}
 \newcommand{\fwdpy}{\texttt{fwdpy11}}
@@ -51,53 +260,52 @@
 \newcommand{\jk}[1]{{\em \color{red} #1}}
 \newcommand{\jda}[1]{{\em \color{cyan} #1}}
 
-%% for submitting with responses to reviews
-\newif\ifsubmission
-% \submissiontrue
-\submissionfalse
-\ifsubmission
-    % % stuff for submission
-    \usepackage[nofiglist,nomarkers,figuresonly]{endfloat}
-    \usepackage{setspace}
-    % \doublespacing
-    \bibliographystyle{plos2015}
-    \newcommand\citet{\cite}
-    \newcommand\citep{\cite}
-    % \renewcommand\includegraphics{\relax}
-    % \renewcommand{\includegraphics}[2][]{\relax}
-    \renewcommand{\figurename}{Fig.}
-    \newcommand{\Figure}{Fig }
-    \newcommand{\Figures}{Fig }
-\else
-    % for the nice version
-    \usepackage[square,sort,comma,numbers]{natbib} \bibpunct{(}{)}{;}{author-year}{}{,} 
-    \bibliographystyle{plainnat}
-    \newcommand{\Figure}{{Figure }}
-    \newcommand{\Figures}{{Figures }}
-\fi
-% grrr
-\newcommand{\citetx}[2][]{\ifsubmission#1 \cite{#2}\else\citet{#2}\fi}
+% % stuff for submission
+\usepackage[nofiglist,nomarkers,figuresonly]{endfloat}
+\newcommand\citet{\cite}
+\newcommand\citep{\cite}
+\renewcommand\includegraphics{\relax}
+\renewcommand{\includegraphics}[2][]{\relax}
+\newcommand{\revpoint}[2]{}
 
-% Responses to reviews
-% set this to show line numbers and include responses to reviews or not
-\newif\ifreviewresponses
-% \reviewresponsestrue  % include them
-\reviewresponsesfalse  % don't include them
-\input{review-response-commands}
-\newcommand{\responsefile}{review-responses}  % name of the review responses file
+%% END MACROS SECTION
 
 
 \begin{document}
+\vspace*{0.2in}
+% Title must be 250 characters or less.
+\begin{flushleft}
+{\Large
+\textbf\newline{Efficient pedigree recording for fast population genetics simulation}
+}
+\newline
+% Insert author names, affiliations and corresponding author email (do not include titles, positions, or degrees).
+\\
+    Jerome Kelleher\textsuperscript{1},
+    Kevin R.\ Thornton\textsuperscript{2},
+    Jaime Ashander\textsuperscript{3},
+    Peter L.\ Ralph\textsuperscript{4,*},
+\\
+\bigskip
+\textbf{1} 
+    {Big Data Institute, University of Oxford, UK}
+\\
+\textbf{2} 
+    {Ecology and Evolutionary Biology, University of California at Irvine, USA}
+\\
+\textbf{3} 
+    {Ecology and Evolutionary Biology, University of California at Los Angeles, USA}
+\\
+\textbf{4} 
+    {Institute for Ecology and Evolution, University of Oregon, USA}
+\bigskip
 
-\title{Efficient pedigree recording for fast population genetics simulation}
-\author{Jerome Kelleher\footnote{Big Data Institute, University of Oxford},
-        Kevin R. Thornton\footnote{Ecology and Evolutionary Biology, University of California at Irvine},
-        Jaime Ashander\footnote{Ecology and Evolutionary Biology, University of California at Los Angeles}, and
-        Peter L. Ralph\footnote{Institute for Ecology and Evolution, University of Oregon}}
-\maketitle
+% Use the asterisk to denote corresponding authorship and provide email address in note below.
+\textbf{*} \url{plr@uoregon.edu}
 
-
-\begin{abstract}
+\end{flushleft}
+% Please keep the abstract below 300 words
+\section*{Abstract}
     In this paper we describe how to efficiently record the entire genetic history of a population
     in forwards-time, individual-based population genetics simulations with arbitrary breeding models,
     population structure and demography.
@@ -105,7 +313,7 @@
     by allowing us to simulate only those loci that may affect reproduction
     (those having non-neutral variants).
     The genetic history of the population is recorded as a succinct tree sequence
-    as introduced in the software package \msprime,
+    as introduced in the software package msprime,
     on which neutral mutations can be quickly placed afterwards.
     Recording the results of each breeding event requires storage that grows linearly with time,
     but there is a great deal of redundancy in this information.
@@ -126,14 +334,12 @@
         as well as its history.
     (3) A simulation can easily be initialized with a more efficient coalescent simulation 
         of deep history.
-    The software for recording and processing tree sequences is named \tskit.
-\end{abstract}
-
-% NOTE: I tend to use semantic linebreaks.
-% Please excuse the ragged right margins in the source.
+    The software for recording and processing tree sequences is named tskit.
 
 
-%%%%%%%%%%%%%%%%%%%%%%
+% Please keep the Author Summary between 150 and 200 words
+% Use first person. PLOS ONE authors please skip this step. 
+% Author Summary not valid for PLOS ONE submissions.   
 \section*{Author Summary}
 
 Sexually reproducing organisms are related to the others in their species
@@ -151,6 +357,7 @@ from simulations of large populations in which we have not explicitly recorded n
 we find that this results in computational run times of up to 50 times faster
 than simulations forced to explicitly carry along that information.
 
+\linenumbers
 
 %%%%%%%%%%%%%%%%%%%%%%
 \section*{Introduction}
@@ -341,35 +548,35 @@ coalescent \citep{Neuhauser1997-nn}.  Therefore, these selected mutations must b
 and the time savings due to pedigree recording come from not having to record \textit{neutral} mutations.
 
 % When tracking neutral mutations (instead of the pedigree), run times increase dramatically with increasing region size ($4Nr = 4Nu$ for these simulations).
-Pedigree tracking dramatically reduced runtimes, as shown in Figure~\ref{fig:runtimes_selection},
+Pedigree tracking dramatically reduced runtimes, as shown in Fig~\ref{fig:runtimes_selection},
 producing a relative speedup of up to around 50 fold relative to standard simulations that track neutral mutations
-(Figure~\ref{fig:relative_speedup_selection}).
+(Fig~\ref{fig:relative_speedup_selection}).
 Pedigree tracking results in greater relative speedups for larger $N$
 and we observe increasing relative speedups as $4Nr$ increases for a given $N$
-(Figure~\ref{fig:relative_speedup_selection}).
+(Fig~\ref{fig:relative_speedup_selection}).
 Importantly, runtimes are approximately linear in region size $\rho$ when pedigree tracking
-(partially obscured by the log scale of the horizontal axis in Figure~\ref{fig:runtimes_selection}).
+(partially obscured by the log scale of the horizontal axis in Fig~\ref{fig:runtimes_selection}).
 %% don't know what an 'edge' is yet
 % The reason for this behavior is that, when tracking pedigrees, the simulations are generating a constant number of new edges on average
 % each generation as the number of new recombination breakpoints is Poisson distributed with expectation $\rho$.
 In a more limited set of neutral simulations we found the same qualitative behavior,
-and a numerically larger speedup by using pedigree tracking (see Appendix~\ref{ss:timing_nosel}).
+and a numerically larger speedup by using pedigree tracking (see \nameref{ss:timing_nosel}).
 
 In our implementation, simulations with pedigree recording
-used substantially more RAM than simple forward simulations (see Appendix~\ref{ss:memuse}).
+used substantially more RAM than simple forward simulations (see \nameref{ss:memuse}).
 This is unsurprising:
 unsimplified tree sequences grow quickly, and so storing history can use arbitrarily much memory.
 However, this is not a requirement of the method, only a straightforwards consequence of a speed--memory tradeoff:
 the amount of required memory is mostly determined by the interval between simplification steps,
-but less frequent simplification reduces overall computation time (see Appendix~\ref{ss:gcinterval}).
+but less frequent simplification reduces overall computation time (see \nameref{ss:gcinterval}).
 In fact, our method could in some situations \emph{reduce} the amount of memory required,
 if memory usage in the forwards simulation was dominated by the cost of maintaining neutral genetic variants.
 
 \begin{figure}
-    \includegraphics[]{sims/rawspeed_logy}
+    % \includegraphics[]{sims/rawspeed_logy}
     \caption{
         \label{fig:runtimes_selection}
-    Total run time per single simulation replicate as a function of region length.
+    \textbf{Total run time per single simulation replicate as a function of region length.}
     % measured as the scaled recombination parameter $\rho = 4Nr$.
     Line color represents different diploid population sizes ($N$).
     The left figure shows run times for standard simulations including neutral mutations.
@@ -384,13 +591,13 @@ if memory usage in the forwards simulation was dominated by the cost of maintain
 
 
 \begin{figure}
-    \includegraphics[]{sims/speedup}
+    % \includegraphics[]{sims/speedup}
     \caption{
         \label{fig:relative_speedup_selection}
-        Relative speedup of simulations due to pedigree recording.
+        \textbf{Relative speedup of simulations due to pedigree recording.}
         Each line shows the ratio of total run times of standard simulations to
         those of simulations with pedigree recording.
-        Data points are taken from Figure~\ref{fig:runtimes_selection}
+        Data points are taken from Fig~\ref{fig:runtimes_selection}
         for simulations that ran to completion in both cases.
     }
 \end{figure}
@@ -414,7 +621,7 @@ Tree sequences are efficient because branches that are shared by adjacent trees 
 rather than repeatedly for each tree.
 The topology of a tree sequence is defined via its \emph{nodes} and \emph{edges},
 while information about variants is recorded as \emph{sites} and \emph{mutations};
-we give an example in Figure~\ref{fig:example_tree_sequence}.
+we give an example in Fig~\ref{fig:example_tree_sequence}.
 This formulation is derived from the ``coalescence records'' encoding of tree
 sequences~\citep{kelleher2016efficient}, normalised to remove redundancy
 and generalised to include a more general class of tree topologies.
@@ -427,17 +634,17 @@ thought of as the node's birth time, which determines the height of any vertices
 the node is associated with.
 (Note that since each node time is equal to the amount of time since the {birth} of the
 corresponding parent, time is measured in clock time, not in meioses.)
-The example of Figure~\ref{fig:example_tree_sequence} has five nodes:
+The example of Fig~\ref{fig:example_tree_sequence} has five nodes:
 nodes 0, 1 and 2 occur at time 0 and are the \emph{samples},
 while nodes 3 and 4 represent those ancestors necessary to record their genealogy,
 who were born one and two units of time in the past, respectively.
 
 \begin{figure}
     \begin{center}
-        \includegraphics[width=\textwidth]{example_tree_sequence}
+        % \includegraphics[width=\textwidth]{example_tree_sequence}
     \end{center}
     \caption{
-        An example tree sequence with three samples over a chromosome of length 10.
+        \textbf{An example tree sequence with three samples over a chromosome of length 10.}
         The leftmost panels show the tree sequence pictorially in two different ways:
         (top) a sequence of tree topologies; the first tree extends from genomic position 0 to 5,
         and the second from 5 to 10; and
@@ -457,7 +664,7 @@ the endpoints $[\ell, r)$ of the half-open genomic interval defining the
 spatial extent of the edge;
 and the identities $p$ and $c$ of the parent and child nodes
 of a single branch that occurs in all trees in this interval.
-The spatial extent of the edges defining the topology of Figure~\ref{fig:example_tree_sequence}
+The spatial extent of the edges defining the topology of Fig~\ref{fig:example_tree_sequence}
 are shown in the bottom left panel.
 For example, the branch joining nodes 1 to 3 appears in both trees,
 and so is recorded as a single edge extending over the whole chromosome.
@@ -484,14 +691,14 @@ Given the topology defined by the nodes and edges, \emph{sites} and \emph{mutati
 encode the sequence information for each sample in an efficient way. Each site
 records two things: its position on the genome and an ancestral state.
 For example,
-in Figure~\ref{fig:example_tree_sequence} we have two sites, one at position
+in Fig~\ref{fig:example_tree_sequence} we have two sites, one at position
 2.5 with ancestral state `A' and the other at position 7.5 with ancestral state `G'.
 If no mutations occur at a given site, all nodes inherit the ancestral state.
 Each mutation records three things: the site at which it occurs,
 the first node to inherit the mutation, and the derived state.
 Thus, all nodes below the mutation's node in the tree will inherit this state,
 unless further mutations are encountered.
-Three mutations are shown in Figure~\ref{fig:example_tree_sequence},
+Three mutations are shown in Fig~\ref{fig:example_tree_sequence},
 illustrated by red stars.
 The first site, in the left-hand tree,
 has a single mutation, which results in node $2$ inheriting the state `T'.
@@ -586,14 +793,14 @@ to the \tskit{} Tables API, where it is sorted and simplified.
 To demonstrate the flexibility provided by the Tables API and provide an
 implementation that decouples forward simulation internals from transfer of data
 to \tskit, we also implemented a version of the simulations described in
-``Simulation benchmarks'' separately in Python, described in Appendix~\ref{ss:simupop}.
+``Simulation benchmarks'' separately in Python, described in \nameref{ss:simupop}.
 In this proof-of-concept implementation, the simulation engine (we use \simupop{}, \citet{simupop})
 invokes callbacks at critical points of the simulation, and we infer nodes and edges
 from the information that is provided. Rows are appended to the tables
 one-by-one, and the tables are periodically sorted and simplified to control
 memory usage.
 Benchmarking results from this implementation are shown (alongside results from \fwdpp{})
-for simulations without selection in Appendix~\ref{ss:timing_nosel}:
+for simulations without selection in \nameref{ss:timing_nosel}:
 a relatively modest speedup of around $5 \times$ is achieved, likely due to increased overhead.
 
 
@@ -697,10 +904,11 @@ Step \algref{W7} loops these steps until the required number of generations have
 
 \begin{figure}
     \begin{center}
-        \includegraphics{wf-before-after}
+        % \includegraphics{wf-before-after}
     \end{center}
-    \caption{An example of a marginal genealogy from a Wright-Fisher simulation
-    with $N=5$. \textbf{(A)} the original tree including all
+    \caption{
+        \textbf{An example of a marginal genealogy from a Wright-Fisher simulation with $N=5$.}
+        \textbf{(A)} the original tree including all
     intermediate nodes and dead-ends, and \textbf{(B)} the minimal tree
     relating all of the currently-alive individuals (27--31).
     \label{fig:wf-trees}
@@ -719,7 +927,7 @@ Neutral mutations can be generated after the simulation has completed, thus
 avoiding the cost of generating the many mutations that are lost in the population.
 This is straightforward to do because we have access to the marginal genealogies.
 
-Figure~\ref{fig:wf-trees} shows
+Fig~\ref{fig:wf-trees} shows
 an example of a marginal genealogy produced by a forwards-time Wright--Fisher
 process like Algorithm~\algref{W}.
 On the left is the tree showing all the edges output by the simulation,
@@ -738,7 +946,7 @@ and only some small subset will correspond to coalescences within the marginal
 trees. The second source of redundancy in the (unsimplified) output of Algorithm~\algref{W}
 is due to the fact that lineages die out: a large number of
 individuals in the simulation leave no descendants in the present day population.
-Node 26 in Figure~\ref{fig:wf-trees}a, for example, leaves no
+Node 26 in Fig~\ref{fig:wf-trees}a, for example, leaves no
 ancestors in the current population, and so the entire path tracing back to
 its common ancestor with 27 is redundant.
 
@@ -816,10 +1024,10 @@ having the following properties:
 
 \begin{figure}
     \begin{center}
-        \includegraphics{method_diagram}
+        % \includegraphics{method_diagram}
     \end{center}
     \caption{
-        An example of tree sequence simplification.
+        \textbf{An example of tree sequence simplification.}
         \textbf{(A)} The augmented pedigree diagram on the left
         relates the ten homologous chromosomes of five diploid individuals (BC, DE, FG, HI, and JK)
         to each other and to a common ancestral chromosome (A);
@@ -865,7 +1073,7 @@ so it is unsurprising that simplification uses many of the same tools
 as the implementation of Hudson's algorithm in \msprime{} \citep{kelleher2016efficient}.
 The main difference is that events in a coalescent simulation are random, \revpoint{1}{2}
 while in our simplification algorithm they are predetermined by history.
-An implementation in pseudocode is provided in Appendix~\ref{ss:simplify_algorithm},
+An implementation in pseudocode is provided in \nameref{ss:simplify_algorithm},
 and a python implementation as supplementary information.
 
 Conceptually, this works by
@@ -882,24 +1090,24 @@ This ``paint pot'' description misses some details --
 for instance, we must ensure that all coalescing segments in a given individual
 are assigned the \emph{same} new color --
 but is reasonably close.
-Figure~\ref{fig:method_diagram} shows an example tree sequence,
+Fig~\ref{fig:method_diagram} shows an example tree sequence,
 before and after simplification,
-and Figure~\ref{fig:simplify_state} depicts the ``paint pot'' state of the algorithm
+and Fig~\ref{fig:simplify_state} depicts the ``paint pot'' state of the algorithm
 during the process of simplifying this tree sequence.
 Since the method begins with the samples and moves back through time,
 in the output tree sequence, the $n$ samples will be numbered $0, 1, \ldots, n-1$
 and subsequent nodes will be ordered by time since birth.
-This is seen in the red labels of Figure~\ref{fig:method_diagram}.
+This is seen in the red labels of Fig~\ref{fig:method_diagram}.
 
 
 \begin{figure}
     \begin{center}
-        \includegraphics{simplify-state-diagram}
+        % \includegraphics{simplify-state-diagram}
     \end{center}
     \caption{
-        A depiction of each state of the simplification algorithm
+        \textbf{A depiction of each state of the simplification algorithm}
         as it moves up through the embellished pedigree
-        in the example of Figure~\ref{fig:method_diagram}A.
+        in the example of Fig~\ref{fig:method_diagram}A.
         Following the ``paint pot'' description in the text,
         we begin by coloring J and K's genomes in red and blue respectively,
         then trace how these colors were inherited back up through the pedigree
@@ -911,7 +1119,7 @@ This is seen in the red labels of Figure~\ref{fig:method_diagram}.
         Each time a red and a blue segment overlap, a coalescence occurs, two edges are output,
         and we stop propagating that segment.
         For instance, both J and K inherit from H between 0.5 and 0.9,
-        which resulted in the first two edges of the simplified table of Figure~\ref{fig:method_diagram}C.
+        which resulted in the first two edges of the simplified table of Fig~\ref{fig:method_diagram}C.
         Later, both inherit from E between 0.2 and 0.5,
         along the paths J-H-G-E and K-I-E respectively,
         resulting in the next two edges.
@@ -949,7 +1157,7 @@ be \emph{begun} with a tree sequence produced by some other method -- for
 instance, by a coalescent simulation with \msprime,
 providing an easy, efficient way to specify prior history.
 A natural question is now: how often should simplification occur?
-Limited testing (described in Appendix~\ref{ss:gcinterval})
+Limited testing (described in \nameref{ss:gcinterval})
 found that different simplification intervals affect run times by approximately
 25\%, with the lowest run time occurring when simplifying every $10^3$ generations.
 Thus, there is a memory-versus-speed tradeoff
@@ -969,7 +1177,7 @@ Thus, there is a memory-versus-speed tradeoff
 
 % I may need to cite my student's t-shirt for the following line:
 %  "that's all very good in practice, but how does it hold up in theory?"
-Figures \ref{fig:runtimes_selection} and \ref{fig:relative_speedup_selection} show that this method
+Fig \ref{fig:runtimes_selection} and Fig \ref{fig:relative_speedup_selection} show that this method
 can dramatically improve simulation performance in practice --
 but, how does it perform in theory?
 % The simulation results shown in Figures \ref{fig:runtimes_selection} and \ref{fig:relative_speedup_selection} show that
@@ -1097,21 +1305,21 @@ This implies that the number of edges required to store the last $T$ generations
 of history for the entire chromosome of a population of size $N$
 grows as $O(N \log T)$ -- proportionally to $N$ at first but rapidly tapering off.
 The bound holds up reasonably well in practice,
-as shown in Figure~\ref{fig:simplify_complexity}.
+as shown in Fig~\ref{fig:simplify_complexity}.
 
 
 \begin{figure}
     \begin{center}
-        \includegraphics{sims/simplify-results}
+        % \includegraphics{sims/simplify-results}
     \end{center}
     \caption{
-        Time and space complexity of simplify.
+        \textbf{Time and space complexity of simplify.}
         \textbf{(A)}
         Number of edges in the simplified tree sequence
         for 10 replicate Wright--Fisher simulations with $N=100$ as a function
         of number of generations.
         Each line is one simulation, the heavy blue line gives the average,
-        and the dashed line is the upper bound of equation \eqref{eqn:edge_bound}.
+        and the dashed line is the upper bound of Eq~\eqref{eqn:edge_bound}.
         \textbf{(B)}
         Time required to simplify the first $k$ edges of a large (4.2GiB)
         unsimplified tree sequence produced by a forwards-time simulation plotted
@@ -1158,7 +1366,7 @@ Simply because it must process each edge,
 % https://github.com/petrelharp/ftprime_ms/pull/37#discussion_r156617283
 the simplification algorithm is at least linear in the number of edges of the input tree sequence.
 Empirically the algorithm is exactly linear,
-as seen in Figure~\ref{fig:simplify_complexity}B,
+as seen in Fig~\ref{fig:simplify_complexity}B,
 which shows the time required to simplify increasingly large subsets of a large tree sequence.
 When simplifying the result of a forwards-time sequence, the number of edges is the main contributing factor.
 Suppose on the other hand we want to
@@ -1166,7 +1374,7 @@ simplify an already-minimal but large tree sequence with $N$ nodes
 to a subsample of size $n$.
 How does the required time scale with $n$?
 In this case, the computation is dominated by the size of the output tree sequence,
-which grows with $\log(n)$, as shown in Figure~\ref{fig:simplify_complexity}C.
+which grows with $\log(n)$, as shown in Fig~\ref{fig:simplify_complexity}C.
 
 
 %% the below assumes naive propagation of genotypes
@@ -1253,7 +1461,7 @@ sequence of trees which differ by subtree-prune-and-regraft
 operations. Since each such operation requires a constant amount of space to encode, the total
 space required is $O(n + t)$ for $t$ trees with $n$ leaves~\citep{kelleher2016efficient}.
 For instance, the large numbers of large, correlated trees produced by
-MCMC samplers used in Bayesian phylogenetics \citep[e.g.,][]{drummond2012bayesian}
+MCMC samplers used in Bayesian phylogenetics (e.g., \citet{drummond2012bayesian})
 might be compactly stored as a tree sequence,
 which would then allow highly efficient computation of properties of the posterior distribution.
 
@@ -1270,7 +1478,7 @@ and therefore compatible with existing methods for downstream analyses.
 Another application of our methods would be the case of simulating coalescent histories conditional on known pedigrees.
 The standard description of the Wright-Fisher coalescent averages over pedigrees.  However, conditional on a realized
 pedigree, the distribution of coalescent times in the recent past differs from that of the unconditional coalescent
-\citep{Wakeley2012-kw}.  For populations with known pedigrees \citep[\textit{e.g.}][]{Aguillon2017-ac}, it may be of use to
+\citep{Wakeley2012-kw}.  For populations with known pedigrees (e.g., \citet{Aguillon2017-ac}), it may be of use to
 simulate transmission along such pedigrees for the purpose of inference.
 
 % JK: This needs more context. Probably not worth putting in here.
@@ -1313,8 +1521,8 @@ thread. Our implementation allows a maximum of four simplification intervals to 
 parallelized version also performed fitness calculation in parallel using two threads of execution in C++.
 
 Code for all simulations and figures is available at \url{https://github.com/petrelharp/ftprime_ms}.
-These made use of the GNU Scientific Library \citep[version 1.16][]{galassi2018scientific},
-pybind11 \citep[version 2.2.1][]{pybind11},
+These made use of the GNU Scientific Library (version 1.16, \citet{galassi2018scientific}),
+pybind11 (version 2.2.1, \citep{pybind11}),
 and GCC (version 4.8.5).
 We ran all benchmarks on an Ubuntu Linux (version 16.04) system with two 2.6 GHz Intel E5-2650 CPU with
 hyperthreading enabled.
@@ -1324,353 +1532,303 @@ and the Linux \texttt{time} command to record run time and peak memory usage of 
 %% Our simulation scripts separately recorded the time spent in various steps of each run.
 
 
+% \bibliography{references}
+
+\begin{thebibliography}{10}
+
+\bibitem{hudson1990gene}
+Hudson RR.
+\newblock Gene genealogies and the coalescent process.
+\newblock Oxford surveys in evolutionary biology. 1990;7(1):44.
+
+\bibitem{Neuhauser1997-nn}
+Neuhauser C, Krone SM.
+\newblock The genealogy of samples in models with selection.
+\newblock Genetics. 1997;145(2):519--534.
+
+\bibitem{barton2010new}
+Barton NH, Kelleher J, Etheridge AM.
+\newblock A new model for extinction and recolonization in two dimensions:
+  quantifying phylogeography.
+\newblock Evolution. 2010;64(9):2701--2715.
+
+\bibitem{kelleher2014coalescent}
+Kelleher J, Etheridge A, Barton N.
+\newblock Coalescent simulation in continuous space: Algorithms for large
+  neighbourhood size.
+\newblock Theoretical population biology. 2014;95:13--23.
+
+\bibitem{ray2010splatche2}
+Ray N, Currat M, Foll M, Excoffier L.
+\newblock {SPLATCHE2}: a spatially explicit simulation framework for complex
+  demography, genetic admixture and recombination.
+\newblock Bioinformatics. 2010;26(23):2993--2994.
+\newblock doi:{10.1093/bioinformatics/btq579}.
+
+\bibitem{martin2017human}
+Martin AR, Gignoux CR, Walters RK, Wojcik GL, Neale BM, Gravel S, et~al.
+\newblock Human demographic history impacts genetic risk prediction across
+  diverse populations.
+\newblock The American Journal of Human Genetics. 2017;100(4):635--649.
+
+\bibitem{wakeley2003gene}
+Wakeley J, Takahashi T.
+\newblock Gene genealogies when the sample size exceeds the effective size of
+  the population.
+\newblock Mol Biol Evol. 2003;20(2):208--213.
+
+\bibitem{maruvka2011recovering}
+Maruvka YE, Shnerb NM, Bar-Yam Y, Wakeley J.
+\newblock Recovering population parameters from a single gene genealogy: an
+  unbiased estimator of the growth rate.
+\newblock Mol Biol Evol. 2011;28(5):1617--1631.
+
+\bibitem{bhaskar2014distortion}
+Bhaskar A, Clark AG, Song YS.
+\newblock Distortion of genealogical properties when the sample is very large.
+\newblock Proc Natl Acad Sci USA. 2014;111(6):2385--2390.
+
+\bibitem{harris2016genetic}
+Harris K, Nielsen R.
+\newblock The Genetic Cost of {Neanderthal} Introgression.
+\newblock Genetics. 2016;203(2):881--891.
+
+\bibitem{slim}
+Messer PW.
+\newblock {SLiM}: simulating evolution with selection and linkage.
+\newblock Genetics. 2013;194(4):1037--1039.
+
+\bibitem{Sanjak2017-ko}
+Sanjak JS, Long AD, Thornton KR.
+\newblock A Model of Compound Heterozygous, {Loss-of-Function} Alleles Is
+  Broadly Consistent with Observations from {Complex-Disease} {GWAS} Datasets.
+\newblock PLoS Genet. 2017;13(1):e1006573.
+
+\bibitem{fwdpp}
+Thornton KR.
+\newblock A {C++} template library for efficient forward-time population
+  genetic simulation of large populations.
+\newblock Genetics. 2014;198(1):157--166.
+
+\bibitem{wright1931evolution}
+Wright S.
+\newblock Evolution in {Mendelian} populations.
+\newblock Genetics. 1931;16(2):97--159.
+
+\bibitem{wakeley2005coalescent}
+Wakeley J.
+\newblock Coalescent Theory, an Introduction.
+\newblock Greenwood Village, CO: Roberts and Company; 2005.
+\newblock Available from: \url{http://www.coalescentheory.com/}.
+
+\bibitem{haller2017flexible}
+Haller BC, Messer PW.
+\newblock {SLiM} 2: Flexible, Interactive Forward Genetic Simulations.
+\newblock Molecular Biology and Evolution. 2017;34(1):230--240.
+\newblock doi:{10.1093/molbev/msw211}.
+
+\bibitem{Hernandez2015-wf}
+Hernandez RD, Uricchio LH.
+\newblock {SFS\_CODE}: More Efficient and Flexible Forward Simulations; 2015.
+
+\bibitem{aberer2013rapid}
+Aberer AJ, Stamatakis A.
+\newblock Rapid forward-in-time simulation at the chromosome and genome level.
+\newblock BMC Bioinformatics. 2013;14(1):216.
+\newblock doi:{10.1186/1471-2105-14-216}.
+
+\bibitem{padhukasahasram2008exploring}
+Padhukasahasram B, Marjoram P, Wall JD, Bustamante CD, Nordborg M.
+\newblock Exploring Population Genetic Models With Recombination Using
+  Efficient Forward-Time Simulations.
+\newblock Genetics. 2008;178(4):2417--2427.
+\newblock doi:{10.1534/genetics.107.085332}.
+
+\bibitem{griffiths1991two}
+Griffiths RC.
+\newblock The two-locus ancestral graph.
+\newblock In: Selected Proceedings of the Sheffield Symposium on Applied
+  Probability. vol.~18; 1991. p. 100--117.
+
+\bibitem{griffiths1997ancestral}
+Griffiths RC, Marjoram P.
+\newblock An ancestral recombination graph.
+\newblock In: Progress in population genetics and human evolution
+  ({M}inneapolis, {MN}, 1994). vol.~87 of IMA Vol. Math. Appl. New York:
+  Springer; 1997. p. 257--270.
+\newblock Available from:
+  \url{http://www.math.canterbury.ac.nz/~r.sainudiin/recomb/ima.pdf}.
+
+\bibitem{wiuf1997number}
+Wiuf C, Hein J.
+\newblock On the number of ancestors to a {DNA} sequence.
+\newblock Genetics. 1997;147(3):1459--1468.
+
+\bibitem{wiuf1999ancestry}
+Wiuf C, Hein J.
+\newblock The ancestry of a sample of sequences subject to recombination.
+\newblock Genetics. 1999;151(3):1217--1228.
+
+\bibitem{marjoram2006coalescent}
+Marjoram P, Wall JD.
+\newblock Fast ``coalescent'' simulation.
+\newblock BMC Genet. 2006;7:16--16.
+\newblock doi:{10.1186/1471-2156-7-16}.
+
+\bibitem{wilton2015smc}
+Wilton PR, Carmi S, Hobolth A.
+\newblock The {SMC'} Is a Highly Accurate Approximation to the Ancestral
+  Recombination Graph.
+\newblock Genetics. 2015;200(1):343--355.
+\newblock doi:{10.1534/genetics.114.173898}.
+
+\bibitem{kelleher2016efficient}
+Kelleher J, Etheridge AM, McVean G.
+\newblock Efficient coalescent simulation and genealogical analysis for large
+  sample sizes.
+\newblock PLoS computational biology. 2016;12(5):e1004842.
+
+\bibitem{gog2014theory}
+Gog S, Beller T, Moffat A, Petri M.
+\newblock From theory to practice: Plug and play with succinct data structures.
+\newblock In: International Symposium on Experimental Algorithms. Springer;
+  2014. p. 326--337.
+
+\bibitem{abadi2006integrating}
+Abadi D, Madden S, Ferreira M.
+\newblock Integrating compression and execution in column-oriented database
+  systems.
+\newblock In: Proceedings of the 2006 ACM SIGMOD international conference on
+  Management of data. ACM; 2006. p. 671--682.
+
+\bibitem{walt2011numpy}
+Walt Svd, Colbert SC, Varoquaux G.
+\newblock The {NumPy} array: a structure for efficient numerical computation.
+\newblock Computing in Science \& Engineering. 2011;13(2):22--30.
+
+\bibitem{hdf5}
+{The HDF Group}. {Hierarchical Data Format, version 5}; 1997-2018.
+
+\bibitem{dask}
+{Dask Development Team}. Dask: Library for dynamic task scheduling; 2016.
+\newblock Available from: \url{http://dask.pydata.org}.
+
+\bibitem{simupop}
+Peng B, Kimmel M.
+\newblock simuPOP: a forward-time population genetics simulation environment.
+\newblock Bioinformatics. 2005;21(18):3686--3687.
+
+\bibitem{hudson1983properties}
+Hudson RR.
+\newblock Properties of a neutral allele model with intragenic recombination.
+\newblock Theor Popul Biol. 1983;23:183--201.
+
+\bibitem{watterson1975number}
+Watterson GA.
+\newblock On the number of segregating sites in genetical models without
+  recombination.
+\newblock Theor Popul Biol. 1975;7(2):256--276.
+
+\bibitem{wilkins2004separation}
+Wilkins JF.
+\newblock A Separation-of-Timescales Approach to the Coalescent in a Continuous
+  Population.
+\newblock Genetics. 2004;168(4):2227--2244.
+\newblock doi:{10.1534/genetics.103.022830}.
+
+\bibitem{barton2002neutral}
+Barton NH, Depaulis F, Etheridge AM.
+\newblock Neutral Evolution in Spatially Continuous Populations.
+\newblock Theoretical Population Biology. 2002;61(1):31--48.
+
+\bibitem{cox2002stepping}
+Cox JT, Durrett R.
+\newblock The stepping stone model: New formulas expose old myths.
+\newblock Ann Appl Probab. 2002;12(4):1348--1377.
+\newblock doi:{10.1214/aoap/1037125866}.
+
+\bibitem{drummond2012bayesian}
+Drummond AJ, Suchard MA, Xie D, Rambaut A.
+\newblock Bayesian phylogenetics with {BEAUti} and the {BEAST} 1.7.
+\newblock Mol Biol Evol. 2012;29(8):1969--1973.
+\newblock doi:{10.1093/molbev/mss075}.
+
+\bibitem{Wiuf2000-rc}
+Wiuf C, Hein J.
+\newblock The Coalescent With Gene Conversion.
+\newblock Genetics. 2000;155(1):451--462.
+
+\bibitem{Kaplan1988-in}
+Kaplan NL, Darden T, Hudson RR.
+\newblock The coalescent process in models with selection.
+\newblock Genetics. 1988;120(3):819--829.
+
+\bibitem{Kaplan1989-rt}
+Kaplan NL, Hudson RR, Langley CH.
+\newblock The ``hitchhiking effect'' revisited.
+\newblock Genetics. 1989;123(4):887--899.
+
+\bibitem{Braverman1995-gn}
+Braverman JM, Hudson RR, Kaplan NL, Langley CH, Stephan W.
+\newblock The hitchhiking effect on the site frequency spectrum of {DNA}
+  polymorphisms.
+\newblock Genetics. 1995;140(2):783--796.
+
+\bibitem{Wakeley2012-kw}
+Wakeley J, King L, Low BS, Ramachandran S.
+\newblock Gene genealogies within a fixed pedigree, and the robustness of
+  Kingman's coalescent.
+\newblock Genetics. 2012;190(4):1433--1445.
+
+\bibitem{Aguillon2017-ac}
+Aguillon SM, Fitzpatrick JW, Bowman R, Schoech SJ, Clark AG, Coop G, et~al.
+\newblock Deconstructing isolation-by-distance: The genomic consequences of
+  limited dispersal.
+\newblock PLoS Genet. 2017;13(8):e1006911.
+
+\bibitem{liberman2014little}
+Liberman A. Little triumphs of etymology: ``pedigree''; 2014.
+\newblock \url{https://blog.oup.com/2014/05/pedigree-etymology-word-origin/}.
+
+\bibitem{galassi2018scientific}
+{Galassi et al} M. GNU Scientific Library Reference Manual; 2018.
+\newblock Available from: \url{https://www.gnu.org/software/gsl/}.
+
+\bibitem{pybind11}
+Jakob W, Rhinelander J, Moldovan D. {pybind11} -- Seamless operability between
+  {C++11} and {Python}; 2016.
+
+\bibitem{Tange2011a}
+Tange O.
+\newblock GNU Parallel - The Command-Line Power Tool.
+\newblock ;login: The USENIX Magazine. 2011;36(1):42--47.
+
+\end{thebibliography}
+
+\section*{Supporting information}
+
+\paragraph*{S1 Text}
+\label{ss:timing_nosel}
+\label{ss:memuse}
+\label{ss:gcinterval}
+\label{ss:simupop}
+\label{ss:simplify_algorithm}
+{\bf Additional benchmarks and algorithm listings.}
+The supplementary text contains 
+(A) benchmarking of run time and memory usage on simulations without selection;
+(B) benchmarking of memory usage with selection;
+(C) an analysis of the effect of simplification interval on run times;
+(D) details for the \simupop{} implementation;
+and (E) more details, and a listing, of the simplification algorithm.
+
+
 %%%%%%%%%%%%%%%%%%%%%%
 \section*{Acknowledgements}
 Thanks to Gil McVean, Jared Galloway, Brad Shaffer, and Evan McCartney--Melstad for useful discussions.
-Work on this project was supported by funding from
-the Sloan Foundation and the NSF (under DBI-1262645) to PR;
-the Wellcome Trust (grant 100956/Z/13/Z) to Gil McVean;
-the NIH (R01GM115564) to KRT;
-and the USF\&WS to H.\ Bradley Shaffer.
-
-\bibliography{references}
-
-\appendix
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Timing and memory use with no selection}
-\label{ss:timing_nosel}
-\renewcommand{\thefigure}{D\arabic{figure}}
-\setcounter{figure}{0}
-
-We also performed a more limited set of simulations without natural selection.
-For these we used \cpp{} as in the main text, but also provide results from our
-proof-of-concept implementation that uses \simupop{} (see
-Appendix~\ref{ss:simupop}).
-
-The total run times are shown in
-Figure~\ref{sfig:rawspeed_nosel} and for \cpp{} show the same qualitative behavior as simulations with selection
-(Figure~\ref{fig:runtimes_selection}).  The relative improvement due to pedigree tracking is again substantial in these
-simulations (Figure~\ref{sfig:speedup_nosel}).  In fact, we see more of a benefit to pedigree tracking here with \fwdpy{}
-than we did with selection (Figure~\ref{fig:relative_speedup_selection}).  The reason is that the fitness function exits
-close to instantly in simulations without selection that are based on \fwdpp{}, meaning that \fwdpy{} is doing little
-more than generating random numbers and book-keeping in Figures~\ref{sfig:rawspeed_nosel}
-and~\ref{sfig:speedup_nosel}.
-For \simupop{}, the results show a qualitatively similar pattern but (1) the
-simulations for $N = 10000$ or greater did no finish in the 72 hour limit or
-exceed memory limits (more than 500 GB), and (2) the magnitude of the speedup is much less.
-The total RAM use for
-simulations without selection is shown in Figure~\ref{sfig:ramnosel}.
-% Pedigree recording again used more RAM with \fwdpp{} and less
-% RAM with \simupop{}. The reason for reduced RAM use with \simupop{} is unclear;
-% with \fwdpy{}/\fwdpp{}, however the reason for the extra RAM use is as in
-% Appendix~\ref{ss:memuse}.
-
-\begin{figure}[!h]
-    \includegraphics[]{sims/rawspeed_nosel}
-    \caption{\label{sfig:rawspeed_nosel}Total run time for a single simulation replicate as a function of region
-        length, measured as the scaled recombination parameter $\rho = 4Nr$.  The simulations here involve no natural
-    selection.}
-\end{figure}
-
-\begin{figure}
-    \includegraphics[]{sims/speedup_nosel}
-    \caption{\label{sfig:speedup_nosel}Relative performance improvement due to pedigree tracking for simulations without
-    selection.  Data points are taken from Figure~\ref{sfig:rawspeed_nosel} and show the ratio of run times tracking
-neutral variation over the run times tracking the pedigree.}
-\end{figure}
-\begin{figure}
-    \includegraphics[]{sims/memuse_nosel}
-    \caption{\label{sfig:ramnosel}Peak RAM use in gigabytes (GB) for simulations without selection.  The plots are from
-    the same data as in Figure \ref{sfig:rawspeed_nosel}.}
-\end{figure}
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Memory usage with selection}
-\label{ss:memuse}
-\renewcommand{\thefigure}{B\arabic{figure}}
-\setcounter{figure}{0}
-
-The peak RAM use in gigabytes (GB) is shown for the simulations with selection in Figure~\ref{sfig:ramsel}.  For our parameters, which involved simplifying every
-$10^3$ generations, simulation while recording pedigrees uses more RAM than a standard simulation.
-This is because with pedigree recording, a non-recombinant
-individual still requires one new edge and two new nodes to be allocated.  Without pedigree recording, no new memory is allocated for such an offspring by \fwdpp{}.
-Thus, pedigree recording accumulates a large amount of data in RAM until
-simplification.  This extra RAM consumption is the trade off for reduced run times and the degree of extra RAM needed
-can be reduced by simplifying more often.  The simulations where we run the simplification step in a separate thread
-require even more RAM (dashed line in Figure \ref{sfig:ramsel}) because up to four sets of unsimplified data are
-stored in RAM.  In practice, the RAM consumption can be minimized by simplifying more often.
-
-%% \krt{I've avoided getting into how this much RAM means parallelization is required to make more progress.}
-
-\begin{figure}
-    \includegraphics[]{sims/memuse}
-    \caption{\label{sfig:ramsel}Peak RAM use in gigabytes (GB) for simulations with selection.  The plots are from the
-        same data as in Figure \ref{fig:runtimes_selection}. Note that the y-axis scales differ considerably across
-    panels.}
-\end{figure}
-
-%%%%%%%%%%%%%%%%%%
-\section{Effect of simplification interval on run time and memory use}
-\label{ss:gcinterval}
-\renewcommand{\thefigure}{C\arabic{figure}}
-
-We performed a limited set of simulations to explore the effect of the simplification interval on run times and memory
-use. Figure~\ref{sfig:gctime} shows that run times increase for simplification intervals less than 100 generations.
-For intervals longer than 100 generations, run times are very similar, with no appreciable difference between $10^3$ and $10^4$
-generations.  As expected, the simplification interval has a near-linear effect on peak RAM use
-(Figure~\ref{sfig:gcmem}).  Taken together Figures~\ref{sfig:gctime} and~\ref{sfig:gcmem} suggest that one can tune the
-simplification interval to available RAM with little effect on run times provided that simplification doesn't occur too
-often.
-
-\begin{figure}[!h]
-    \includegraphics{sims/gc_interval/GCtime}
-    \caption{\label{sfig:gctime}The effect of simplification interval on run times.  A single replicate was done for the
-        parameters shown in the figure.  These simulations were done with the same selection parameters as in
-    Figure~\ref{fig:runtimes_selection}.}
-\end{figure}
-
-\begin{figure}[!h]
-    \includegraphics{sims/gc_interval/GCmem}
-    \caption{\label{sfig:gcmem}Peak RAM use for the simulations shown in Figure~\ref{sfig:gctime}.}
-\end{figure}
-
-
-%%%%%%%%%%%%%%%%%%%%%
-\section{The \simupop{} implementation}
-\label{ss:simupop}
-
-To use the methods with \simupop{}, we created a python module
-(available at \url{https://github.com/ashander/ftprime}, version 0.0.6)
-that manages communication between the forward simulator and \tskit{}.
-We implemented simulations in a Python script, usable as a command-line utility,
-taking input parameters for population size $N$ and scaled recombination rate $\rho$.
-As for the \fwdpp{} simulations above, we set scaled mutation rate $\theta=4N\mu=\rho$
-(where $\mu$ is the per-site mutation rate multiplied by the number of sites),
-and used a simplify interval of 1000 generations and simulated for $T=10N$ generations in each
-simulation.
-% introducing deleterious mutations at a rate of $\rho/100$ per generation.
-% Because \simupop{} requires explicit locations for loci, we set the number of
-% loci $n=\rho / (4Nr)$ and for these simulations without selection marked $0$ of
-% these as selected loci.
-
-We coupled \simupop{} to \tskit{} using a Python class \texttt{RecombCollector} that 1)
-tracks time, and 2) collects and parses recombination information provided by
-the \texttt{Recombinator} class of \simupop{}, adding them to a \tnodetable{} and
-\tedgetable{} upon which simplification is performed every 1000 generations (using
-\texttt{tskit.sort\_tables()} and \texttt{tskit.simplify\_tables}).
-The tables are initialized using the \texttt{TreeSequence} returned from
-\texttt{tskit.simulate($2N$, Ne=$N$, recombination\_rate=$r/2$, length=$n$)}.
-The \texttt{simuPOP.Population()} is initialized and tagged with individual IDs,
-a mapping of these IDs to the \tnodetable{} IDs is passed to
-an instance of \texttt{RecombCollector} and used internally to update the tables.
-The \texttt{simuPOP.Population()} is then evolved.
-Before mating:
-% selected mutations are created (using
-% \texttt{simuPOP.SNPMutator}) and multiplicative selection occurs (using
-% \texttt{simuPOP.PyMlSelector}) only on the selected loci;
-the internal time of the \texttt{RecombCollector} instance is updated.
-During mating: male and female parents are drawn randomly, recombination data is
-output by \simupop{} to the \texttt{RecombCollector} instance.
-After mating: every 1000 generations the tables are simplified.
-
-\texttt{RecombCollector} uses the Python class \texttt{ARGrecorder} internally
-to add data to the tables and perform simplification.
-This class contains the \tnodetable{} and \tedgetable{} and also the mapping from
-(haploid) ids to ids in the tables.
-It also provides methods (\texttt{add\_individual} and \texttt{add\_record})
-to append data to the tables.
-The only functions of
-\texttt{RecombCollector} not delegated to this internal class are computing
-haploid IDs from \simupop{}'s diploid IDs and parsing recombination data into
-data suitable for use with use with \texttt{add\_individual} and
-\texttt{add\_record}; these functions are used to stream data into the tables as
-it is received by an instance of \texttt{RecombCollector}.
-
-% \paragraph{Requirements.}
-% The simulations as implemented depend on the class \texttt{RecombCollector} provided by
-% the Python package \ftprime{} 0.0.6rc0,
-% available at \url{https://www.github.com/ashander/ftprime}.
-% Its requirements are encoded in an \texttt{environment.yml} file, compatible
-% with conda, but \tskit{} must be updated to the version listed below via pip
-% from GitHub \jda{TODO add command?}.
-%
-% In brief the requirements are:
-%
-% \begin{enumerate}
-%     \item \msprime{} 0.5.0
-%     \item \simupop{} 1.1.8.3
-%     \item python 3.5
-% \end{enumerate}
-
-
-%%%%%%%%%%%%%%
-\section{Simplification algorithm}
-\label{ss:simplify_algorithm}
-
-Here we provide a concrete implementation of the simplification algorithm.
-The algorithm uses a few simple structures
-besides the node and edge tables discussed earlier. As the algorithm needs to track the mapping
-between input and output node IDs over specific genomic intervals, we use a $\ancsegment$
-type to track these individual mappings. Thus, a segment $x$ has three attributes:
-$\attrleft{x}$ and $\attrright{x}$ represent the genomic interval in the usual way,
-and $\attrnode{x}$ represents the output node ID that is assigned to this interval.
-These output node IDs correspond to colors in the ``paint pot'' analogy.
-The per-interval segments are assigned to input IDs via the $\Al$ mapping,
-which is the main state required by the algorithm. Each element $\Al[u]$
-is a list of ancestral segments, describing the output node IDs mapped to input
-node ID $u$ over a set of intervals.
-For each input node, we need to process the ancestral segments
-to find overlaps (and hence coalescences), and to update $\Al$.
-We do this using a $\priorityq{}$ type, which maintains a list of ancestral
-segments sorted by left coordinate. For a priority queue $Q$, the operation
-$\pqpush{Q}{x}$ inserts the segment $x$ into the queue, and $\pqpop{Q}$
-removes and returns the segment in $Q$ with the smallest left coordinate.
-To obtain the segment currently in the queue with the smallest left value we
-write $Q[0]$.
-Finally, note that to keep the exposition simple,
-the algorithm described here requires that the input node table
-is sorted by time since the parent's birth;
-but the version implemented in \tskit{} makes different sortedness assumptions
-(described in the documentation).
-
-\begin{taocpalg}{S}{Simplify a tree sequence}
-{Input consists of
-    a list $S$ of sample IDs,
-    a list $\Nt_I$ of nodes (ordered by birth time),
-    a list $\Et_I$ of edges,
-    and the genome length, $L$.
-    The output is a
-    nodes $\Nt_O$,
-    and list of edges $\Et_O$.
-}
-
-\algstep{S1.}{Initialisation.}{
-    Set $\Al_u \leftarrow \listnew{}$ for $0 \leq u < |\Nt_I|$. Then,
-    for each $u$ in $S$, set $v \leftarrow \taddrow{\Nt_O}{\Nt_I[u]}$ and
-    call $\listappend{\Al[u]}{\ancsegment{0, L, v}}$. Then set $Q \leftarrow \priorityq{}$
-    and $u \leftarrow 0$.
-}
-
-\algstep{S2.}{Select parent edges.}{
-    Set $E \leftarrow \{e \in \Et_I : \attrparent{e} = u \}$.
-    Set $v \leftarrow -1$.  If $|E| = 0$, go to \algref{S9}.
-}
-
-\algstep{S3.}{Insert edge/ancestry intersections.}{
-    For each $e\in E$ and each $x \in \Al[\attrchild{e}]$,
-    if $\attrright{x} > \attrleft{e}$ and $\attrright{e} > \attrleft{x}$,
-    set $\ell \leftarrow \max(\attrleft{x}, \attrleft{e})$,
-    $r \leftarrow \min(\attrright{x}, \attrright{e})$,
-    $y \leftarrow \ancsegment{\ell, r, \attrnode{x}}$ and call
-    $\pqpush{Q}{y}$.
-}
-
-\algstep{S4.}{Find segments with minimum left coordinate.}{
-    Set $\ell \leftarrow \attrleft{Q[0]}$, $r \leftarrow L$ and $X \leftarrow \mbox{List}()$.
-    Then, while $|Q| > 0$ and $\attrleft{Q[0]} = \ell$, set $x \leftarrow \pqpop{Q}$,
-    $r \leftarrow \min(r, \attrright{x})$ and call $\listappend{X}{x}$.
-    Afterwards, if $|Q| > 0$, set $r \leftarrow \min(r, \attrleft{Q[0]})$. If
-    $|X| > 1$ go to \algref{S6}.
-}
-
-\algstep{S5.}{No overlapping segments.}{
-    Set $x \leftarrow X[0]$ and $\alpha \leftarrow x$. If $|Q| > 0$ and
-    $\attrleft{Q[0]} < \attrright{x}$, set $\alpha \leftarrow
-    \ancsegment{\attrleft{x}, \attrright{Q[0]}, \attrnode{x}}$,
-    $\attrleft{x} \leftarrow \attrleft{Q[0]}$ and call $\pqpush{Q}{x}$.
-    Go to \algref{S8}.
-}
-
-\algstep{S6.}{Overlap; new output node.}{
-    If $v = -1$, set $v \leftarrow \taddrow{\Nt_0}{\Nt_I[u]}$.
-}
-
-\algstep{S7.}{Record edges.}{
-    Set $\alpha \leftarrow \ancsegment{\ell, r, v}$. Then for each $x \in X$
-    call $\taddrow{\Et_O}{l, r, v, \attrnode{x}}$ and, if $\attrright{x} > r$,
-    set $\attrleft{x} \leftarrow r$ and call $\pqpush{Q}{x}$.
-}
-
-\algstep{S8.}{Left coordinate loop.}{
-    Call $\listappend{\Al[u]}{\alpha}$. If $|Q| > 0$ return to \algref{S4}.
-}
-
-\algstep{S9.}{Parent loop.}{
-    Set $u \leftarrow u + 1$. If $u < |\Nt_I|$, go to \algref{S2}.
-}
-
-\end{taocpalg}
-
-The algorithm begins in \algref{S1} by allocating an empty list to store ancestral
-segments for each of the $|\Nt_I|$ input nodes, and then creating the initial
-state for the samples in $S$. For each input sample with node ID $u$, we
-add a row in the output node table $\Nt_O$, and create a mapping for this
-new node $v$. After this initial state has been created, we then allocate our
-priority queue $Q$, and set the current input ID $u$ to $0$.
-Recall that the function $\taddrow{\Nt}{t}$ adds a new node to the node table $\Nt$
-with birth time $t$, and returns the ID (i.e., index) of that new node in $\Nt$.
-So, the operation $v \leftarrow \taddrow{\Nt_O}{\Nt_I[u]}$ looks up the birth time
-for input node ID $u$ in $\Nt_I$, adds a new node with this time to $\Nt_O$,
-and stores the resulting (output) node ID in $v$.
-
-To process ancestral information moving back up through the pedigree, steps \algref{S2}--\algref{S9}
-consider each node $u$ in turn (note we are assuming that nodes are ordered by time-since-birth).
-In \algref{S2} we first find all edges in the input where the parent is equal to
-our current input ID $u$, and then set the corresponding output ID $v$ to $-1$.
-Then, in \algref{S3} we find all intersections between these input edges and the
-mapped ancestry segments of their child nodes.
-For each of these intersections we
-create a new segment $y$ and insert it into the priority queue.
-(In the paint pot analogy,
-this stores in $Q$ all segments of color that must be transferred to the ancestor
-with input ID $u$.)
-
-After finding all overlaps and filling the priority queue with the resulting ancestry
-segments, we then need to process these segments. Steps \algref{S4}--\algref{S8}
-loop over the segments in the queue, considering each in turn until the queue is empty.
-Step \algref{S4} builds a list $X$ of all segments covering the current left-most coordinate
-(along with some bookkeeping to keep track of where our next
-right coordinate $r$ is), removing them from $Q$. If there is only one element in $X$
-this means that we have no overlapping ancestral segments at this coordinate and
-we proceed to \algref{S5}.
-
-In this case, only a single segment covers the leftmost region of the segments,
-so there is no change in the mapping between input and output IDs,
-and the ancestry segment $\alpha$ is not changed (this is assigned to $\Al_u$ in \algref{S8}).
-(The color in this segment of the offspring can simply be transferred to the parent.)
-However, if other segments in $Q$ intersect with $x$
-(since $x$ is the current left-most segment, these have left coordinate less then $\attrright{x}$),
-then we can only transfer the portion of $x$ up until it overlaps with other segments.
-Therefore, we change the left coordinate
-of $x$ to this coordinate and reinsert it into $Q$ where it will be processed again
-later, effectively cutting off (and propagating) the leftmost segment of $x$.
-After doing this, we proceed to \algref{S8}, update the ancestry mapping for
-the input node $u$, and loop back to \algref{S4} if $Q$ is not empty.
-
-On the other hand, if there is more than one segment in $X$, we know that an
-overlap among the ancestral segments has occurred and we must update the output
-nodes and edges accordingly. In step \algref{S6} we first allocate a new output
-node $v$ for input node $u$, if it has not been done already (we may have many overlapping
-segments along the genome). Step \algref{S7} then continues by creating a new
-ancestry segment $\alpha$ mapping the current interval to the output node $v$.
-We then iterate over all segments in $X$, adding the appropriate output edges
-and editing and reinserting the ancestry segment $x$ into the priority queue if
-necessary, as before.
-
-% \newpage
-\newpage
-
-\section*{Python implementation of simplify (supplementary information)}
-
-\lstinputlisting[language=python]{sims/simplify-alg.py}
-
-
-\ifsubmission\processdelayedfloats\fi
-
-% reviews here if toggled above
-\includereviews
-
+% Work on this project was supported by funding from
+% the Sloan Foundation and the NSF (under DBI-1262645) to PR;
+% the Wellcome Trust (grant 100956/Z/13/Z) to Gil McVean;
+% the NIH (R01GM115564) to KRT;
+% and the USF\&WS to H.\ Bradley Shaffer.
 
 \end{document}
