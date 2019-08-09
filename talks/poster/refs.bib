@@ -1,0 +1,48 @@
+@article{kelleher2018efficient,
+  abstract = {In this paper we describe how to efficiently record the entire genetic history of a population in forwards-time, individual-based population genetics simulations with arbitrary breeding models, population structure and demography. This approach dramatically reduces the computational burden of tracking individual genomes by allowing us to simulate only those loci that may affect reproduction (those having non-neutral variants). The genetic history of the population is recorded as a succinct tree sequence as introduced in the software package msprime, on which neutral mutations can be quickly placed afterwards. Recording the results of each breeding event requires storage that grows linearly with time, but there is a great deal of redundancy in this information. We solve this storage problem by providing an algorithm to quickly {\textquoteright}simplify{\textquoteright} a tree sequence by removing this irrelevant history for a given set of genomes. By periodically simplifying the history with respect to the extant population, we show that the total storage space required is modest and overall large efficiency gains can be made over classical forward-time simulations. We implement a general-purpose framework for recording and simplifying genealogical data, which can be used to make simulations of any population model more efficient. We modify two popular forwards-time simulation frameworks to use this new approach and observe efficiency gains in large, whole-genome simulations of one to two orders of magnitude. In addition to speed, our method for recording pedigrees has several advantages: (1) All marginal genealogies of the simulated individuals are recorded, rather than just genotypes. (2) A population of N individuals with M polymorphic sites can be stored in O(N log N + M) space, making it feasible to store a simulation{\textquoteright}s entire final generation as well as its history. (3) A simulation can easily be initialized with a more efficient coalescent simulation of deep history. The software for recording and processing tree sequences is named tskit.},
+  added-at = {2018-07-11T21:01:11.000+0200},
+  author = {Kelleher, Jerome and Thornton, Kevin and Ashander, Jaime and Ralph, Peter},
+  journal = {PLoS Computational Biology},
+  keywords = {ARG empirical_genealogy forwards_simulation methods myown tree_sequence},
+  timestamp = {2018-07-11T21:01:11.000+0200},
+  title = {Efficient pedigree recording for fast population genetics simulation},
+  url = {https://www.biorxiv.org/content/early/2018/06/07/248500},
+  volume = {accepted},
+  year = 2018
+}
+
+@article{haller2018treesequence,
+  abstract = {There is an increasing demand for evolutionary models to incorporate relatively realistic dynamics, ranging from selection at many genomic sites to complex demography, population structure, and ecological interactions. Such models can generally be implemented as individual-based forward simulations, but the large computational overhead of these models often makes simulation of whole chromosome sequences in large populations infeasible. This situation presents an important obstacle to the field that requires conceptual advances to overcome. The recently developed tree-sequence recording method (Kelleher et al., 2018), which stores the genealogical history of all genomes in the simulated population, could provide such an advance. This method has several benefits: (1) it allows neutral mutations to be omitted entirely from forward-time simulations and added later, thereby dramatically improving computational efficiency; (2) it allows neutral burn-in to be constructed extremely efficiently after the fact, using "recapitation"; (3) it allows direct examination and analysis of the genealogical trees along the genome; and (4) it provides a compact representation of a population{\textquoteright}s genealogy that can be analyzed in Python using the msprime package. We have implemented the tree-sequence recording method in SLiM 3 (a free, open-source evolutionary simulation software package) and extended it to allow the recording of non-neutral mutations, greatly broadening the utility of this method. To demonstrate the versatility and performance of this approach, we showcase several practical applications that would have been beyond the reach of previously existing methods, opening up new horizons for the modeling and exploration of evolutionary processes.},
+  added-at = {2018-09-10T06:43:55.000+0200},
+  author = {Haller, Benjamin C. and Galloway, Jared and Kelleher, Jerome and Messer, Philipp W. and Ralph, Peter L.},
+  biburl = {https://www.bibsonomy.org/bibtex/24dbb90f2f8394778106175bafdbb2d24/peter.ralph},
+  eprint = {https://www.biorxiv.org/content/early/2018/09/04/407783.full.pdf},
+  interhash = {e93c723cea298e2fa58a0727410d6bcb},
+  intrahash = {4dbb90f2f8394778106175bafdbb2d24},
+  journal = {bioRxiv},
+  keywords = {SLiM myown simulation tree_sequence},
+  publisher = {Cold Spring Harbor Laboratory},
+  timestamp = {2018-09-10T06:43:55.000+0200},
+  title = {Tree-sequence recording in {SLiM} opens new horizons for forward-time simulation of whole genomes},
+  url = {https://www.biorxiv.org/content/early/2018/09/04/407783},
+  year = 2018
+}
+
+@article{kelleher2016efficient,
+  abstract = {A central challenge in the analysis of genetic variation is to provide realistic genome simulation across millions of samples. Present day coalescent simulations do not scale well, or use approximations that fail to capture important long-range linkage properties. Analysing the results of simulations also presents a substantial challenge, as current methods to store genealogies consume a great deal of space, are slow to parse and do not take advantage of shared structure in correlated trees. We solve these problems by introducing sparse trees and coalescence records as the key units of genealogical analysis. Using these tools, exact simulation of the coalescent with recombination for chromosome-sized regions over hundreds of thousands of samples is possible, and substantially faster than present-day approximate methods. We can also analyse the results orders of magnitude more quickly than with existing methods.},
+  added-at = {2016-11-02T07:19:06.000+0100},
+  author = {Kelleher, J and Etheridge, A M and McVean, G},
+  biburl = {https://www.bibsonomy.org/bibtex/2ce2b70617dcb3b064cf68c70e5b2e071/peter.ralph},
+  interhash = {36b388104f10ef752bd77b57e6b22a8d},
+  intrahash = {ce2b70617dcb3b064cf68c70e5b2e071},
+  journal = {PLoS Comput Biol},
+  keywords = {coalescent_theory methods pedigree simulation software},
+  month = may,
+  number = 5,
+  pmid = {27145223},
+  timestamp = {2016-11-02T07:19:06.000+0100},
+  title = {Efficient Coalescent Simulation and Genealogical Analysis for Large Sample Sizes},
+  url = {https://www.ncbi.nlm.nih.gov/pubmed/27145223},
+  volume = 12,
+  year = 2016
+}

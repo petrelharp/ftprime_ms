@@ -26,4 +26,4 @@ done
 
 inkscape --without-gui --export-pdf=/dev/stdout $TMPFILE
 
-# [ -f $TMPFILE ] && rm $TMPFILE
+[ -f $TMPFILE ] && rm $TMPFILE

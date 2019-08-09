@@ -1,8 +1,11 @@
 .PHONY: all, clean
 
-all: forwards_paper.pdf
+all: probgen-2018-poster.pdf
 
-forwards_paper.pdf : method_diagram.pdf references.bib example_tree_sequence.pdf wf-before-after.pdf simplify-state-diagram.pdf
+probgen-2018-poster.pdf : refs.bib stats_1.pdf stats_2.pdf stats_3.pdf
+
+stats_%.pdf : stats.ink.svg
+	../export-layers-svg.sh $< tree_$* numbers_$* > $@
 
 clean: 
 	-rm *.aux *.log *.bbl *.blg
